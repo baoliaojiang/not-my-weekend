@@ -3,6 +3,9 @@
   "version": "0.5.1",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "esbuild": "0.24.0"
+  },
   "description": "《不属于我的周末》校园调查视觉小说原型（HTML/CSS/JS）",
   "scripts": {
     "start": "python -m http.server 8080 --bind 127.0.0.1",

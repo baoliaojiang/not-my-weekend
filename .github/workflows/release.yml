@@ -23,6 +23,17 @@ jobs:
         with:
           node-version: '22'
 
+      - name: 安装依赖（esbuild 用于打包网页）
+        run: npm install --no-audit --no-fund
+
+      # make-dist 会重建 dist（把旧的改名成 dist-old），
+      # 所以先把已提交进仓库的 APK 与 Windows 分卷挪到临时目录，最后再放回来附到 Release。
+      - name: 暂存 APK 与 Windows 分卷
+        run: |
+          mkdir -p /tmp/rel/apk /tmp/rel/win
+          cp dist/apk/*.apk /tmp/rel/apk/ 2>/dev/null || true
+          cp dist/win/* /tmp/rel/win/ 2>/dev/null || true
+
       - name: 构建网页产物
         run: node build/make-www.mjs
 
@@ -38,6 +49,7 @@ jobs:
       - name: 生成 version.json 与热更包
         run: node tools/make-dist.mjs --notes "自动构建发布（网页版 + 热更包）"
 
+      # Pages 只放网页版，不带 APK/分卷（体积大，也没必要）。
       - name: 部署到 GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -45,14 +57,39 @@ jobs:
           publish_dir: ./dist
           publish_branch: gh-pages
 
-      - name: 发布 Release（附热更包）
+      - name: 放回 APK 与 Windows 分卷
+        run: |
+          mkdir -p dist/apk dist/win
+          cp /tmp/rel/apk/* dist/apk/ 2>/dev/null || true
+          cp /tmp/rel/win/* dist/win/ 2>/dev/null || true
+
+      - name: 发布 Release（附全部产物）
         uses: softprops/action-gh-release@v2
         with:
           files: |
             dist/www-*.zip
             dist/version.json
+            dist/apk/*.apk
+            dist/win/*
           body: |
-            自动构建发布：网页版与热更新包。
-            网页版（免安装）：https://baoliaojiang.github.io/not-my-weekend/dist/
-            APK / EXE 的热更新会读取本 Release 里的 version.json 与 www-*.zip。
-            Android 双包与 Windows 便携版由作者在发布说明里手动附上。
+            校园调查题材的视觉小说 Demo。个人制作、非商业、免费。
+
+            ## 本版更新
+
+            - 更换应用图标：夜里亮着灯的教室窗前，一个背着书包、低头看手里那叠纸的学生剪影。
+            - 设置 / 关于页移除「素材说明」「关于图标」两段，统一放在 README。
+            - 「检查更新」与「编译着色器」两屏不再允许跳过（避免带着旧资源进游戏）。
+            - 查到新资源时以浮层弹窗列出改动与体积，由你决定是否更新。
+            - 老设备兜底：启动时若检测到系统 WebView 内核过旧（< 70），弹出原生对话框，可「用浏览器打开网页版」或「仍要继续」。
+
+            ## 关于「兼容版」
+
+            兼容版**不内嵌任何浏览器内核**（Android WebView 是系统组件，无法随安装包分发），只解决布局 / API 缺失。内核真的太老，请用上面的「用浏览器打开网页版」，或更新 Android System WebView / Chrome。
+
+            ## 下载（见本发布下方附件）
+
+            - Android 标准版 / 兼容版：`不属于我的周末-0.6.2.3-标准版.apk` / `-兼容版.apk`（存档互通）
+            - Windows 便携版：因超过 GitHub 单文件 100MB，拆 3 段 + `合并.bat`；下载后运行 `合并.bat` 得到 zip 再解压
+            - 网页版（免安装）：https://baoliaojiang.github.io/not-my-weekend/dist/
+
+            存档保存在本地，覆盖安装不会丢。反馈：提 Issue，或游戏主界面右下角「反馈问题」填问卷。

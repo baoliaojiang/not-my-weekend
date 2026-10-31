@@ -1,9 +1,19 @@
 /* 把网页打包成「可直接用 file:// 打开」的静态站点：ES Module 合并为单个传统脚本 */
-import * as esbuild from 'file:///C:/Users/12821/.workbuddy/binaries/node/workspace/node_modules/esbuild/lib/main.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = 'D:/workbuddy/2026-10-23-16-33-10';
+// 项目根按脚本位置推导，不写死盘符（CI 跑在 Linux 上，写死 D: 会找不到文件）
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// esbuild：CI 里由 npm install 装到本地 node_modules，优先用裸包名；
+// 本地没装就退回 WorkBuddy 自带的那份，保证两套环境都能打包。
+let esbuild;
+try {
+  esbuild = await import('esbuild');
+} catch (err) {
+  esbuild = await import('file:///C:/Users/12821/.workbuddy/binaries/node/workspace/node_modules/esbuild/lib/main.js');
+}
 const OUT = path.join(ROOT, 'build/www');
 
 fs.rmSync(OUT, { recursive: true, force: true });
