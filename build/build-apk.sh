@@ -13,8 +13,8 @@ PROJ="$ROOT/build/apk-work"
 PYEXE="C:/Users/12821/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
 PKG="com.zhouri.bufanxiao"
 NAME="不属于我的周末"
-VER_CODE="20"
-VER_NAME="0.6.2.2"
+VER_CODE="21"
+VER_NAME="0.6.2.3"
 
 # 变体：标准版（默认，依赖系统 WebView）/ 兼容版（自带 polyfill 与降级样式）
 # 用法：bash build/build-apk.sh compat
