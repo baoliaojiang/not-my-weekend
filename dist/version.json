@@ -3,11 +3,11 @@
   "shell": "0.6.2",
   "shellMin": "0.6.2",
   "www": "./www-0.6.2.zip",
-  "sha256": "6ec6edc39f7dde60aab57e8c8b5dfe6e01aa8eafbc2b34760e278b18c70109ca",
-  "size": 35020800,
+  "sha256": "b50cb1a08efb6605abab6d0b751ecc3d3a1f04efdd0111eff3720f1ef6e167fb",
+  "size": 35031040,
   "notes": [
-    "主题曲换 AI 版，其余改为钢琴音色",
-    "资源加密 + 双 APK + 日志导出"
+    "热更新前先列出更新内容并由玩家确认",
+    "主题曲换 AI 版，其余改为钢琴音色"
   ],
-  "releasedAt": "2026-10-31T11:45:15.240Z"
+  "releasedAt": "2026-10-31T11:52:24.913Z"
 }

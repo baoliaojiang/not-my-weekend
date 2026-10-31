@@ -137,6 +137,18 @@ python tools/bg_tone.py 底图.jpg 输出.jpg dusk                   # 场景调
 
 `version.json` 同时给出 `content` / `shell` / `shellMin`。客户端读到 `shell < shellMin` 时会明确提示去下载新安装包，不会假装能热更。
 
+**更新前会先问你。** 启动时如果查到新的网页资源，「检查更新」那一屏会列出本次改了哪几条、包有多大，然后给两个按钮：「立即更新」和「下次再说」。不点就一直停在这一屏，不会偷偷下载、也不会自己重载。
+
+下载源按 jsDelivr → GitHub Pages → raw.githubusercontent 的顺序试，哪个先回来用哪个（国内访问 raw 经常不通，所以不把它放在第一位）。
+
+发布页：[Releases](https://github.com/baoliaojiang/not-my-weekend/releases/latest)
+
+**更新前会先问你。** 启动时如果查到新的网页资源，「检查更新」那一屏会列出本次改了哪几条、包有多大，然后给两个按钮：「立即更新」和「下次再说」。不点就一直停在这一屏，不会偷偷下载、也不会自己重载。
+
+下载源按 jsDelivr → GitHub Pages → raw.githubusercontent 的顺序试，哪个先回来用哪个（国内访问 raw 经常不通，所以不把它放在第一位）。
+
+发布页：[Releases](https://github.com/baoliaojiang/not-my-weekend/releases/latest)
+
 发版：推一个 `v*` 标签 → GitHub Actions 构建网页产物 → 部署 Pages → 上传热更包与 `version.json` 到 Release。
 
 > 首次使用前，把 `scripts/config/game.js` 里 `update.baseUrl` 的 `OWNER/REPO` 换成自己的仓库。

@@ -4487,3 +4487,55 @@ body.motion-off .boot-avatar{ animation:none; }
   color:rgba(233,230,223,.52);
 }
 .boot-ids.is-dim{ color:rgba(233,230,223,.3); letter-spacing:.12em; }
+
+/* ---- 热更新确认：清单 + 两个按钮 ---- */
+.boot-upd-list{
+  margin:2px 0 14px; padding:12px 14px; border-radius:12px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
+  max-height:170px; overflow-y:auto;
+}
+.boot-upd-list p{
+  margin:0 0 8px; font-size:.76rem; line-height:1.7;
+  color:rgba(233,230,223,.68); text-align:left;
+}
+.boot-upd-list p:last-child{ margin-bottom:0; }
+.boot-upd-actions{ display:flex; gap:10px; margin:4px 0 12px; }
+.boot-btn{
+  flex:1 1 0; padding:9px 0; border-radius:10px; cursor:pointer;
+  font-size:.78rem; letter-spacing:.04em;
+  background:rgba(255,255,255,.07); color:rgba(233,230,223,.86);
+  border:1px solid rgba(255,255,255,.12);
+  transition:background .16s ease, transform .12s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.boot-btn:active{ transform:scale(.985); }
+.boot-btn.is-primary{
+  background:rgba(233,230,223,.9); color:#15171b; border-color:transparent; font-weight:600;
+}
+.boot-btn[disabled]{ opacity:.55; }
+
+/* ---- 热更新确认：清单 + 两个按钮 ---- */
+.boot-upd-list{
+  margin:2px 0 14px; padding:12px 14px; border-radius:12px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
+  max-height:170px; overflow-y:auto;
+}
+.boot-upd-list p{
+  margin:0 0 8px; font-size:.76rem; line-height:1.7;
+  color:rgba(233,230,223,.68); text-align:left;
+}
+.boot-upd-list p:last-child{ margin-bottom:0; }
+.boot-upd-actions{ display:flex; gap:10px; margin:4px 0 12px; }
+.boot-btn{
+  flex:1 1 0; padding:9px 0; border-radius:10px; cursor:pointer;
+  font-size:.78rem; letter-spacing:.04em;
+  background:rgba(255,255,255,.07); color:rgba(233,230,223,.86);
+  border:1px solid rgba(255,255,255,.12);
+  transition:background .16s ease, transform .12s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.boot-btn:active{ transform:scale(.985); }
+.boot-btn.is-primary{
+  background:rgba(233,230,223,.9); color:#15171b; border-color:transparent; font-weight:600;
+}
+.boot-btn[disabled]{ opacity:.55; }

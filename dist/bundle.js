@@ -1477,7 +1477,9 @@
         <h2 class="boot-card-h">检查更新</h2>
         <p class="boot-card-t" id="bootUpdText">正在获取版本信息…</p>
         <div class="boot-upd-bar"><i id="bootUpdBar"></i></div>
-        <p class="boot-card-f">资源更新不会影响你的存档</p>
+        <div class="boot-upd-list" id="bootUpdList" hidden></div>
+        <div class="boot-upd-actions" id="bootUpdActions" hidden></div>
+        <p class="boot-card-f" id="bootUpdFoot">资源更新不会影响你的存档</p>
       </div>
     </div>`
     },
@@ -1685,23 +1687,13 @@
           if (ubar) ubar.style.width = "65%";
           updateResult = await checkUpdate2();
           const k = updateResult && updateResult.kind;
-          if (k === "content" || k === "both") {
-            msg = `发现新版本 v${updateResult.content}，正在热更新…`;
-            if (text) text.textContent = msg;
-            const res = typeof applyUpdate === "function" ? await applyUpdate(updateResult.remote || {}) : { ok: false };
-            msg = res && res.ok ? "已更新，正在重新载入…" : "热更新没成功，先用当前版本";
-            if (res && res.ok) {
-              try {
-                if (!sessionStorage.getItem("zb_updated_once")) {
-                  sessionStorage.setItem("zb_updated_once", String(Date.now()));
-                  setTimeout(() => location.reload(), 1400);
-                  return;
-                }
-              } catch (e) {
-              }
-            }
-          } else if (k === "shell") {
-            msg = "客户端需要更新";
+          if (k === "content") {
+            clearTimeout(guard);
+            done = true;
+            showContentOffer();
+            return;
+          } else if (k === "both" || k === "shell") {
+            msg = "客户端需要更新，热更新无法覆盖这部分";
           }
         }
       } catch (e) {
@@ -1716,6 +1708,69 @@
       waiting = false;
       clear();
       timer = setTimeout(() => show(i + 1), 1200);
+    }
+    function showContentOffer() {
+      const remote = updateResult && updateResult.remote || {};
+      const text = stage2.querySelector("#bootUpdText");
+      const bar2 = stage2.querySelector("#bootUpdBar");
+      const list = stage2.querySelector("#bootUpdList");
+      const actions = stage2.querySelector("#bootUpdActions");
+      const foot = stage2.querySelector("#bootUpdFoot");
+      waiting = true;
+      if (bar2) bar2.style.width = "100%";
+      if (text) text.textContent = `发现新版本 v${updateResult.content}（当前 v${version}）`;
+      const notes = String(remote.notes || "").split("\n").map((x) => x.trim()).filter(Boolean);
+      if (list) {
+        if (notes.length) {
+          list.innerHTML = notes.map((x) => `<p>· ${x}</p>`).join("");
+        } else {
+          list.innerHTML = "<p>· 本次更新包含剧情与素材调整</p>";
+        }
+        list.hidden = false;
+      }
+      if (foot) foot.textContent = `下载约 ${remote.size ? Math.round(remote.size / 1048576) + " MB" : "几 MB"} · 不会影响存档`;
+      if (!actions) {
+        waiting = false;
+        show(i + 1);
+        return;
+      }
+      actions.hidden = false;
+      actions.innerHTML = '<button class="boot-btn" id="updLater" type="button">下次再说</button><button class="boot-btn is-primary" id="updNow" type="button">立即更新</button>';
+      const later = actions.querySelector("#updLater");
+      const now = actions.querySelector("#updNow");
+      if (later) later.addEventListener("click", (e) => {
+        e.stopPropagation();
+        waiting = false;
+        if (text) text.textContent = "已跳过本次更新";
+        if (actions) actions.hidden = true;
+        timer = setTimeout(() => show(i + 1), 500);
+      });
+      if (now) now.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        now.disabled = true;
+        later.disabled = true;
+        now.textContent = "正在下载…";
+        if (text) text.textContent = "正在下载新资源…";
+        const res = typeof applyUpdate === "function" ? await applyUpdate(remote) : { ok: false };
+        if (res && res.ok) {
+          if (text) text.textContent = "已更新，正在重新载入…";
+          try {
+            if (!sessionStorage.getItem("zb_updated_once")) {
+              sessionStorage.setItem("zb_updated_once", String(Date.now()));
+              setTimeout(() => location.reload(), 1200);
+              return;
+            }
+          } catch (err) {
+          }
+          waiting = false;
+          timer = setTimeout(() => show(i + 1), 800);
+        } else {
+          now.disabled = false;
+          later.disabled = false;
+          now.textContent = "重试";
+          if (text) text.textContent = res && res.reason === "no-shell" ? "网页版刷新页面即可拿到新版本" : "下载没成功（网络或存储问题），可以重试或稍后再来";
+        }
+      });
     }
     if (skipBtn) skipBtn.addEventListener("click", (e) => {
       e.stopPropagation();
