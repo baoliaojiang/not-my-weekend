@@ -1,0 +1,24 @@
+{
+  "name": "zhoubu-bufanxiao",
+  "version": "0.5.1",
+  "private": true,
+  "type": "module",
+  "description": "《不属于我的周末》校园调查视觉小说原型（HTML/CSS/JS）",
+  "scripts": {
+    "start": "python -m http.server 8080 --bind 127.0.0.1",
+    "serve": "npx --yes serve -l 8080 .",
+    "validate": "node tools/validate.mjs",
+    "smoke": "node tools/smoke.mjs",
+    "flow": "node tools/flow.mjs",
+    "story": "node tools/export-story.mjs",
+    "build:www": "node build/make-www.mjs",
+    "build:apk": "bash build/build-apk.sh",
+    "build:exe": "bash build/build-exe.sh",
+    "icons": "python build/make-icons.py",
+    "test:side": "node tools/test-side.mjs",
+    "test:side2": "node tools/test-side2.mjs",
+    "story:md": "node tools/story-md.mjs export",
+    "story:md:import": "node tools/story-md.mjs import",
+    "story:md:verify": "node tools/story-md.mjs verify"
+  }
+}

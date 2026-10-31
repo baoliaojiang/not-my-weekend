@@ -1,0 +1,583 @@
+  /* ================= 设置 =================
+     分组：阅读 / 声音 / 界面 / AI 接口 / 数据。
+     阅读组带一个试读框：改字号和速度当场就能看见效果，不用回游戏里试。 */
+  openSettings() {
+    const s = this.settings;
+    const ai = s.ai || {};
+    const speedSeg = CONFIG.textSpeeds.map(x =>
+      `<button data-speed="${x.id}" class="${s.textSpeed === x.id ? 'on' : ''}">${x.label}</button>`).join('');
+    const scalePct = Math.round((s.dlgScale || 1) * 100);
+    const pvLine = '早自习的铃刚响过，走廊里还飘着食堂的味道。';
+
+    // 常用服务的地址与默认模型；点一下就填好，Key 仍要自己去后台拿
+    const presets = [
+      { id: 'deepseek', name: 'DeepSeek', base: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+      { id: 'agnes', name: 'Agnes（免费）', base: 'https://apihub.agnes-ai.cn/v1', model: 'agnes-3.0-flash' },
+      { id: 'zhipu', name: '智谱', base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
+      { id: 'moonshot', name: 'Moonshot', base: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+      { id: 'qwen', name: '通义', base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
+      { id: 'local', name: '本地 Ollama', base: 'http://localhost:11434/v1', model: 'qwen2.5:7b' }
+    ];
+
+    const body = `
+      <h4 class="set-group-t">阅读</h4>
+
+      <div class="pv-box">
+        <span class="pv-name">试读</span>
+        <p class="pv-text" id="pvText">${pvLine}</p>
+        <div class="pv-bar">
+          <button class="btn btn-sm" id="pvPlay" type="button">按当前速度试读</button>
+          <span class="pv-meta" id="pvMeta"></span>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">文字显示速度</div>
+        <div class="setting-hint">点击对话框可立即显示整句。改完点一下上面的试读，当场听（看）效果。</div></div>
+        <div class="seg" id="speedSeg">${speedSeg}</div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">对话字号</div>
+        <div class="setting-hint">拖滑块或直接改数字，上面的试读会同步变。只影响对话正文，界面其它字号不动。</div></div>
+        <div class="setting-ctl range-row">
+          <input type="range" id="dlgScaleRange" min="80" max="160" step="1" value="${scalePct}" />
+          <input class="num-in" id="dlgScaleNum" type="number" min="80" max="160" step="1" value="${scalePct}" />
+          <span class="range-val" style="min-width:12px">%</span>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">自动播放速度</div>
+        <div class="setting-hint">整句显示之后的停顿时间。</div></div>
+        <div class="setting-ctl">
+          <input type="range" id="autoSpeed" min="0.5" max="2.5" step="0.25" value="${s.autoSpeed}" />
+          <span id="autoSpeedVal" style="font-size:.78rem;color:var(--ink-3);width:38px">${s.autoSpeed}x</span>
+        </div>
+      </div>
+
+      <h4 class="set-group-t">声音</h4>
+
+      <div class="setting">
+        <div><div class="setting-label">音乐</div>
+        <div class="setting-hint">切换场景时不会重头播放同一首曲子。</div></div>
+        <div class="setting-ctl">
+          <button class="toggle ${s.bgmOn ? 'on' : ''}" id="bgmToggle" aria-label="音乐开关"></button>
+          <input type="range" id="bgmVol" min="0" max="1" step="0.05" value="${s.bgmVolume}" />
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">音效</div></div>
+        <div class="setting-ctl">
+          <input type="range" id="sfxVol" min="0" max="1" step="0.05" value="${s.sfxVolume}" />
+        </div>
+      </div>
+
+      <h4 class="set-group-t">界面</h4>
+
+      <div class="setting">
+        <div><div class="setting-label">黑暗模式</div>
+        <div class="setting-hint">弹窗、设置、历史这些界面用深色底，和主界面一致。关掉回到纸感的浅色；手机模拟器与政务平台不受影响。</div></div>
+        <button class="toggle ${s.nightMode !== false ? 'on' : ''}" id="nightToggle"></button>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">通透模式<span class="beta-tag">Beta</span></div>
+        <div class="setting-hint">全局界面改成半透明模糊的玻璃质感，能看见背后的画面。默认关闭：这是测试功能，低端机和部分 WebView 会掉帧，文字对比度也会比实色底低一档，看不清就关掉它。</div></div>
+        <button class="toggle ${s.glassMode ? 'on' : ''}" id="glassToggle"></button>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">减少动效</div>
+        <div class="setting-hint">关掉界面滑动、弹窗缩放与立绘位移，只保留淡入淡出。晕动症或低端机可以打开。</div></div>
+        <button class="toggle ${s.motion === 'reduced' ? 'on' : ''}" id="motionToggle"></button>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">画面方向</div>
+        <div class="setting-hint">${TOUCH ? '竖屏时立绘更紧凑，说话的人立在最前面、位置更高。默认跟随设备。' : '电脑端只有横屏排版；竖屏是为手机准备的，窗口再窄也不会切成竖屏。'}</div></div>
+        <div class="seg" id="screenSeg">
+          ${(TOUCH ? [['auto', '跟随设备'], ['portrait', '竖屏'], ['landscape', '横屏']] : [['auto', '跟随窗口'], ['landscape', '横屏']]).map(([k, label]) =>
+            `<button data-screen="${k}" class="${(s.screenMode || 'auto') === k ? 'on' : ''}">${label}</button>`).join('')}
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">显示地点标签</div></div>
+        <button class="toggle ${s.showPlaceTag ? 'on' : ''}" id="placeToggle"></button>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">跳过未读剧情时询问</div>
+        <div class="setting-hint">关闭后，跳过将直接越过未读内容。</div></div>
+        <button class="toggle ${s.skipUnreadAsk ? 'on' : ''}" id="skipAskToggle"></button>
+      </div>
+
+      <h4 class="set-group-t">AI 接口（可选）</h4>
+
+      <div class="setting">
+        <div><div class="setting-label">启用 AI 接口</div>
+        <div class="setting-hint">只影响政务服务平台里的办理答复：开了由模型现场写，每次措辞不同；不开就用内置答复。剧情、判定、结局一条都不依赖它。</div></div>
+        <button class="toggle ${ai.on ? 'on' : ''}" id="aiToggle"></button>
+      </div>
+
+      <details class="ai-help">
+        <summary>怎么弄到一个 API Key（DeepSeek 几块钱，Agnes 有免费模型）</summary>
+        <div class="ai-help-body">
+          <h4>一、DeepSeek（按量付费，充一块钱能用很久）</h4>
+          <ol>
+            <li>打开 <code>platform.deepseek.com</code>，用手机号注册。</li>
+            <li>左侧「API keys」→「创建 API key」，名字随便填，复制那串 <code>sk-</code> 开头的字符（只显示一次，关掉就看不到了）。</li>
+            <li>「充值」里充 <span class="ai-price">¥1</span> 就够用很久。本作只在生成政务答复时调一次，几百字一条，单次成本不到一分钱。</li>
+            <li>回到这里：地址 <code>https://api.deepseek.com/v1</code>，模型 <code>deepseek-chat</code>，把 Key 粘进来，点「测试连接」。</li>
+          </ol>
+          <h4>二、Agnes（自带免费模型，不用充钱）</h4>
+          <ol>
+            <li>打开 <code>apihub.agnes-ai.cn</code> 注册，在控制台里创建 API Key。</li>
+            <li>据作者在 2026 年 10 月 31 日看到的情况，<code>agnes-2.5-flash</code> 与 <code>agnes-3.0-flash</code> 属于免费模型。</li>
+            <li>地址填 <code>https://apihub.agnes-ai.cn/v1</code>，模型可以点「拉取列表」从返回的名单里挑。</li>
+            <li>免费额度一般带频率限制，慢一点、偶尔失败都正常；失败时本作会自动换回内置答复，不会卡住流程。</li>
+          </ol>
+          <h4>三、其它兼容 OpenAI 协议的服务</h4>
+          <p>智谱、Moonshot、通义、OpenAI、本地 Ollama / vLLM 都能用。点上面的预设按钮会填好地址和常用模型名，Key 仍要你自己去各家后台拿。</p>
+          <div class="ai-help-note">
+            <b>说明</b>：这里只是把「去哪儿注册、填什么」写清楚，省得你到处找，不构成任何推荐或担保。价格、免费政策、模型名字都可能随时调整，以各家官网为准；免费模型也可能某天开始收费。<br>
+            <b>关于 Key</b>：Key 只存在这台设备的本地存档里，本作不会把它上传到任何服务器；但凡是含 Key 的截图、录屏，发出去之前请先打码。公用电脑上用完，记得点下面的「清空 AI 配置」。
+          </div>
+        </div>
+      </details>
+
+      <div class="setting-col" id="aiFields">
+        <div class="ai-chips" id="aiPresets">
+          ${presets.map(p => `<button class="ai-chip" type="button" data-preset="${p.id}">${p.name}</button>`).join('')}
+        </div>
+        <label>接口地址<input class="ai-input" id="aiBase" spellcheck="false"
+          value="${escapeHtml(ai.baseUrl || '')}" placeholder="https://api.deepseek.com/v1"></label>
+        <label>模型
+          <span class="ai-model-row">
+            <input class="ai-input" id="aiModel" spellcheck="false"
+              value="${escapeHtml(ai.model || '')}" placeholder="deepseek-chat">
+            <button class="btn btn-sm" id="aiFetchModels" type="button">拉取列表</button>
+          </span>
+        </label>
+        <div class="ai-model-box" id="aiModelBox" hidden>
+          <div class="ai-model-bar">
+            <input class="ai-input ai-model-filter" id="aiModelFilter" spellcheck="false" placeholder="按名字筛选…">
+            <span class="ai-model-count" id="aiModelCount"></span>
+          </div>
+          <div class="ai-model-list" id="aiModelList"></div>
+          <p class="ai-model-tip" id="aiModelTip"></p>
+        </div>
+        <label>API Key
+          <input class="ai-input" id="aiKey" type="text" spellcheck="false" autocomplete="off"
+            value="${escapeHtml(ai.apiKey || '')}" placeholder="sk-…">
+        </label>
+        <p class="ai-msg" id="aiKeyWarn">Key 现在是明文显示的，方便核对有没有粘错。截图、录屏、共享屏幕前请先遮住这一行。</p>
+        <details class="ai-help">
+          <summary>高级参数（温度、长度、超时、自定义提示词）</summary>
+          <div class="ai-help-body">
+            <div class="setting">
+              <div><div class="setting-label">温度</div>
+              <div class="setting-hint">越高措辞越发散，越低越像固定模板。答复类建议 0.7–1.0。</div></div>
+              <div class="setting-ctl range-row">
+                <input type="range" id="aiTemp" min="0" max="1.5" step="0.05" value="${Number(ai.temperature ?? 0.9)}" />
+                <span class="range-val" id="aiTempVal">${Number(ai.temperature ?? 0.9).toFixed(2)}</span>
+              </div>
+            </div>
+            <div class="setting">
+              <div><div class="setting-label">最大回复长度</div>
+              <div class="setting-hint">单位是 token。答复一般 4–6 段，800 就够；太长只会让模型啰嗦。</div></div>
+              <div class="setting-ctl">
+                <input class="num-in" id="aiMaxTokens" type="number" min="128" max="4096" step="64" value="${Number(ai.maxTokens || 1000)}" />
+              </div>
+            </div>
+            <div class="setting">
+              <div><div class="setting-label">请求超时</div>
+              <div class="setting-hint">超过这个时间没回就放弃并换内置答复，避免卡住对话框。</div></div>
+              <div class="setting-ctl">
+                <input class="num-in" id="aiTimeout" type="number" min="3000" max="60000" step="1000" value="${Number(ai.timeout || 8000)}" />
+                <span class="range-val" style="min-width:20px">ms</span>
+              </div>
+            </div>
+            <label style="display:block;margin-top:10px;font-size:.78rem;color:var(--ink-2)">自定义提示词（追加在内置提示之后）
+              <textarea class="ai-area" id="aiSystem" spellcheck="false"
+                placeholder="例如：语气更冷淡一点，少用「我们高度重视」这类套话。">${escapeHtml(ai.systemPrompt || '')}</textarea>
+            </label>
+          </div>
+        </details>
+        <div class="ai-actions">
+          <button class="btn btn-sm" id="aiTest">测试连接</button>
+          <button class="btn btn-sm" id="aiClear">清空 AI 配置</button>
+          <span class="ai-msg" id="aiTestMsg">答复正文会由这个接口生成，其余内容不受影响。</span>
+        </div>
+      </div>
+
+      <h4 class="set-group-t">数据</h4>
+
+      <div class="setting">
+        <div><div class="setting-label">已读剧情</div>
+        <div class="setting-hint">清除后，所有剧情都会被视为未读（不影响存档）。</div></div>
+        <button class="btn btn-sm" id="resetRead">清除已读记录</button>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">恢复默认设置</div>
+        <div class="setting-hint">把所有设置项改回出厂值，存档、已读记录、AI 的 Key 之外的进度都不动。</div></div>
+        <button class="btn btn-sm" id="resetSettings">恢复默认</button>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">素材说明</div>
+        <div class="setting-hint">立绘、背景、音乐为占位素材，来源见下。</div></div>
+        <button class="btn btn-sm" id="assetInfo">查看</button>
+      </div>
+    `;
+
+    this.openPanel({ title: '设置', body });
+
+    /* ---- 试读：字号与速度都在这一句上试 ---- */
+    const pvText = $('#pvText', this.el.panelBody);
+    const pvMeta = $('#pvMeta', this.el.panelBody);
+    const speedMeta = () => {
+      const sp = CONFIG.textSpeeds.find(x => x.id === this.settings.textSpeed) || CONFIG.textSpeeds[1];
+      if (pvMeta) pvMeta.textContent = sp.ms === 0 ? '瞬显 · 不打字' : `${sp.ms}ms / 字`;
+    };
+    speedMeta();
+    const playPreview = () => {
+      if (!pvText) return;
+      clearInterval(this._pvTimer);
+      const sp = CONFIG.textSpeeds.find(x => x.id === this.settings.textSpeed) || CONFIG.textSpeeds[1];
+      if (sp.ms === 0) { pvText.textContent = pvLine; return; }
+      pvText.textContent = '';
+      let i = 0;
+      this._pvTimer = setInterval(() => {
+        if (!pvText.isConnected) { clearInterval(this._pvTimer); return; }
+        i += 1;
+        pvText.textContent = pvLine.slice(0, i);
+        if (i >= pvLine.length) clearInterval(this._pvTimer);
+      }, sp.ms);
+    };
+    const pvBtn = $('#pvPlay', this.el.panelBody);
+    if (pvBtn) pvBtn.addEventListener('click', () => { this.audio.sfx('click'); playPreview(); });
+
+    $('#speedSeg', this.el.panelBody).addEventListener('click', (e) => {
+      const b = e.target.closest('[data-speed]');
+      if (!b) return;
+      this.settings.textSpeed = b.dataset.speed;
+      this.saveAPI.saveSettings();
+      this.el.panelBody.querySelectorAll('[data-speed]').forEach(x => x.classList.toggle('on', x === b));
+      this.audio.sfx('click');
+      speedMeta();
+      playPreview();
+    });
+
+    /* ---- 字号：滑块与数字框互相跟随，改完立刻生效 ---- */
+    const setScale = (pct) => {
+      const v = Math.min(160, Math.max(80, Math.round(Number(pct) || 100)));
+      this.settings.dlgScale = v / 100;
+      this.saveAPI.saveSettings();
+      const r = $('#dlgScaleRange', this.el.panelBody);
+      const n = $('#dlgScaleNum', this.el.panelBody);
+      if (r && Number(r.value) !== v) r.value = String(v);
+      if (n && Number(n.value) !== v) n.value = String(v);
+      return v;
+    };
+    const rangeEl = $('#dlgScaleRange', this.el.panelBody);
+    if (rangeEl) rangeEl.addEventListener('input', (e) => setScale(e.target.value));
+    const numEl = $('#dlgScaleNum', this.el.panelBody);
+    if (numEl) {
+      numEl.addEventListener('change', (e) => { e.target.value = String(setScale(e.target.value)); });
+      numEl.addEventListener('blur', (e) => { e.target.value = String(setScale(e.target.value)); });
+    }
+
+    $('#autoSpeed', this.el.panelBody).addEventListener('input', (e) => {
+      this.settings.autoSpeed = Number(e.target.value);
+      $('#autoSpeedVal', this.el.panelBody).textContent = `${this.settings.autoSpeed}x`;
+      this.saveAPI.saveSettings();
+    });
+
+    $('#bgmToggle', this.el.panelBody).addEventListener('click', (e) => {
+      this.settings.bgmOn = !this.settings.bgmOn;
+      e.currentTarget.classList.toggle('on', this.settings.bgmOn);
+      this.saveAPI.saveSettings();
+    });
+
+    $('#bgmVol', this.el.panelBody).addEventListener('input', (e) => {
+      this.settings.bgmVolume = Number(e.target.value);
+      this.saveAPI.saveSettings();
+    });
+
+    $('#sfxVol', this.el.panelBody).addEventListener('input', (e) => {
+      this.settings.sfxVolume = Number(e.target.value);
+      this.saveAPI.saveSettings();
+      this.audio.sfx('click');
+    });
+
+    $('#skipAskToggle', this.el.panelBody).addEventListener('click', (e) => {
+      this.settings.skipUnreadAsk = !this.settings.skipUnreadAsk;
+      e.currentTarget.classList.toggle('on', this.settings.skipUnreadAsk);
+      this.saveAPI.saveSettings();
+    });
+
+    $('#nightToggle', this.el.panelBody).addEventListener('click', (e) => {
+      this.settings.nightMode = !(this.settings.nightMode !== false);
+      e.currentTarget.classList.toggle('on', this.settings.nightMode);
+      this.saveAPI.saveSettings();
+    });
+
+    $('#placeToggle', this.el.panelBody).addEventListener('click', (e) => {
+      this.settings.showPlaceTag = !this.settings.showPlaceTag;
+      e.currentTarget.classList.toggle('on', this.settings.showPlaceTag);
+      this.saveAPI.saveSettings();
+    });
+
+    const motionBtn = $('#motionToggle', this.el.panelBody);
+    if (motionBtn) motionBtn.addEventListener('click', (e) => {
+      const off = this.settings.motion !== 'reduced';
+      this.settings.motion = off ? 'reduced' : 'full';
+      e.currentTarget.classList.toggle('on', off);
+      this.saveAPI.saveSettings();
+      this.audio.sfx('click');
+    });
+
+    // 通透模式（Beta）：只切 class，具体玻璃效果全在样式里
+    const glassBtn = $('#glassToggle', this.el.panelBody);
+    if (glassBtn) glassBtn.addEventListener('click', (e) => {
+      this.settings.glassMode = !this.settings.glassMode;
+      e.currentTarget.classList.toggle('on', this.settings.glassMode);
+      this.saveAPI.saveSettings();
+      this.audio.sfx('click');
+      if (this.settings.glassMode) this.toast('通透模式已开启 · Beta，卡顿就关掉它', 2600);
+    });
+
+    const screenSeg = $('#screenSeg', this.el.panelBody);
+    if (screenSeg) screenSeg.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-screen]');
+      if (!b) return;
+      this.settings.screenMode = b.dataset.screen;
+      this.saveAPI.saveSettings();
+      screenSeg.querySelectorAll('[data-screen]').forEach(x => x.classList.toggle('on', x === b));
+      this.audio.sfx('click');
+      if (typeof this.onScreenModeChange === 'function') this.onScreenModeChange();
+    });
+
+    $('#resetRead', this.el.panelBody).addEventListener('click', () => {
+      this.saveAPI.resetRead();
+      this.toast('已清除已读记录');
+    });
+
+    /* ---- 恢复默认设置：问一次，别让人手滑把调好的设置清掉 ---- */
+    const resetSet = $('#resetSettings', this.el.panelBody);
+    if (resetSet) resetSet.addEventListener('click', () => {
+      this.confirm({
+        title: '恢复默认设置',
+        text: '所有设置项会回到出厂值：字号、速度、音量、黑暗模式、画面方向、AI 接口配置（含 Key）都会清掉。<br>存档、已读记录、剧情进度不受影响。',
+        okLabel: '恢复默认',
+        danger: true,
+        onOk: () => {
+          if (typeof this.saveAPI.resetSettings === 'function') this.saveAPI.resetSettings();
+          // 重画面板，让控件回到默认位置
+          this.openSettings();
+          this.toast('设置已恢复默认');
+        }
+      });
+    });
+
+    /* ---- AI 接口 ---- */
+    const collectAI = () => {
+      ['#aiBase|baseUrl', '#aiModel|model', '#aiKey|apiKey'].forEach(pair => {
+        const [sel, key] = pair.split('|');
+        const el = $(sel, this.el.panelBody);
+        if (el) this.settings.ai = { ...(this.settings.ai || {}), [key]: el.value.trim() };
+      });
+      const sys = $('#aiSystem', this.el.panelBody);
+      if (sys) this.settings.ai = { ...(this.settings.ai || {}), systemPrompt: sys.value.trim() };
+      const temp = $('#aiTemp', this.el.panelBody);
+      if (temp) this.settings.ai = { ...(this.settings.ai || {}), temperature: Number(temp.value) };
+      const mt = $('#aiMaxTokens', this.el.panelBody);
+      if (mt) this.settings.ai = { ...(this.settings.ai || {}), maxTokens: Number(mt.value) };
+      const to = $('#aiTimeout', this.el.panelBody);
+      if (to) this.settings.ai = { ...(this.settings.ai || {}), timeout: Number(to.value) };
+      this.saveAPI.saveSettings();
+    };
+
+    const aiToggle = $('#aiToggle', this.el.panelBody);
+    if (aiToggle) aiToggle.addEventListener('click', (e) => {
+      this.settings.ai = { ...(this.settings.ai || {}), on: !(this.settings.ai && this.settings.ai.on) };
+      e.currentTarget.classList.toggle('on', this.settings.ai.on);
+      this.saveAPI.saveSettings();
+      const fields = $('#aiFields', this.el.panelBody);
+      if (fields) fields.classList.toggle('is-off', !this.settings.ai.on);
+    });
+    const aiFields = $('#aiFields', this.el.panelBody);
+    if (aiFields && !(this.settings.ai && this.settings.ai.on)) aiFields.classList.add('is-off');
+
+    // 预设：一次填好地址与模型名，并闪一下输入框，避免"点了没反应"的错觉
+    const presetBox = $('#aiPresets', this.el.panelBody);
+    if (presetBox) presetBox.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-preset]');
+      if (!b) return;
+      const p = presets.find(x => x.id === b.dataset.preset);
+      if (!p) return;
+      const baseEl = $('#aiBase', this.el.panelBody);
+      const modelEl = $('#aiModel', this.el.panelBody);
+      if (baseEl) { baseEl.value = p.base; baseEl.classList.remove('flash'); void baseEl.offsetWidth; baseEl.classList.add('flash'); }
+      if (modelEl) { modelEl.value = p.model; modelEl.classList.remove('flash'); void modelEl.offsetWidth; modelEl.classList.add('flash'); }
+      this.settings.ai = { ...(this.settings.ai || {}), baseUrl: p.base, model: p.model };
+      this.saveAPI.saveSettings();
+      presetBox.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x === b));
+      const tip = $('#aiTestMsg', this.el.panelBody);
+      if (tip) { tip.textContent = `已填好 ${p.name} 的地址与模型，接着填 API Key 就能测试。`; tip.className = 'ai-msg ok'; }
+      this.audio.sfx('click');
+    });
+
+    const bindAI = (id, key) => {
+      const el = $(id, this.el.panelBody);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        this.settings.ai = { ...(this.settings.ai || {}), [key]: el.value.trim() };
+        this.saveAPI.saveSettings();
+      });
+    };
+    bindAI('#aiBase', 'baseUrl');
+    bindAI('#aiModel', 'model');
+    bindAI('#aiKey', 'apiKey');
+
+    const tempEl = $('#aiTemp', this.el.panelBody);
+    if (tempEl) tempEl.addEventListener('input', () => {
+      const v = Number(tempEl.value);
+      const label = $('#aiTempVal', this.el.panelBody);
+      if (label) label.textContent = v.toFixed(2);
+      this.settings.ai = { ...(this.settings.ai || {}), temperature: v };
+      this.saveAPI.saveSettings();
+    });
+    ['#aiMaxTokens|maxTokens', '#aiTimeout|timeout', '#aiSystem|systemPrompt'].forEach(pair => {
+      const [sel, key] = pair.split('|');
+      const el = $(sel, this.el.panelBody);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        const val = key === 'systemPrompt' ? el.value.trim() : Number(el.value);
+        this.settings.ai = { ...(this.settings.ai || {}), [key]: val };
+        this.saveAPI.saveSettings();
+      });
+    });
+
+    /* ---- 拉取模型列表 ---- */
+    const fetchBtn = $('#aiFetchModels', this.el.panelBody);
+    if (fetchBtn) fetchBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      collectAI();
+
+      const box = $('#aiModelBox', this.el.panelBody);
+      const list = $('#aiModelList', this.el.panelBody);
+      const count = $('#aiModelCount', this.el.panelBody);
+      const tip = $('#aiModelTip', this.el.panelBody);
+      box.hidden = false;
+      list.innerHTML = '';
+      count.textContent = '';
+      tip.textContent = '正在读取模型列表…';
+      tip.className = 'ai-model-tip';
+      fetchBtn.disabled = true;
+
+      const r = await aiListModels({ settings: this.settings });
+      fetchBtn.disabled = false;
+
+      if (!r.ok) {
+        tip.textContent = r.error;
+        tip.className = 'ai-model-tip bad';
+        return;
+      }
+      if (!r.count) {
+        tip.textContent = '接口通了，但这个地址没有返回任何模型。可以直接在输入框里手填模型名。';
+        tip.className = 'ai-model-tip bad';
+        return;
+      }
+
+      const modelInput = $('#aiModel', this.el.panelBody);
+      const cur = (modelInput && modelInput.value) || '';
+      count.textContent = `${r.count} 个`;
+      tip.textContent = '点一个，会自动填进上面的模型输入框。';
+      tip.className = 'ai-model-tip';
+
+      const render = (kw) => {
+        const k = (kw || '').trim().toLowerCase();
+        const items = r.list.filter(m => !k || m.id.toLowerCase().indexOf(k) >= 0);
+        list.innerHTML = items.length
+          ? items.map(m => `<button class="ai-model-item${m.id === cur ? ' on' : ''}" type="button" data-model="${escapeHtml(m.id)}">
+               <span class="amm-id">${escapeHtml(m.id)}</span>
+               ${m.owned ? `<span class="amm-own">${escapeHtml(m.owned)}</span>` : ''}
+             </button>`).join('')
+          : '<p class="ai-model-empty">没有匹配的模型。</p>';
+        count.textContent = k ? `${items.length} / ${r.count}` : `${r.count} 个`;
+      };
+      render('');
+
+      list.onclick = (ev) => {
+        const b = ev.target.closest('[data-model]');
+        if (!b) return;
+        const id = b.dataset.model;
+        const input = $('#aiModel', this.el.panelBody);
+        if (!input) return;
+        // 既改 DOM 也改设置：只改一边的话，切走再回来就会退回旧名字
+        input.value = id;
+        input.classList.remove('flash');
+        void input.offsetWidth;
+        input.classList.add('flash');
+        this.settings.ai = { ...(this.settings.ai || {}), model: id };
+        this.saveAPI.saveSettings();
+        list.querySelectorAll('[data-model]').forEach(x => x.classList.toggle('on', x === b));
+        tip.textContent = `已填入模型 ${id}`;
+        tip.className = 'ai-model-tip ok';
+        this.audio.sfx('click');
+      };
+
+      const filter = $('#aiModelFilter', this.el.panelBody);
+      if (filter) {
+        filter.oninput = () => render(filter.value);
+        filter.onkeydown = (ev) => {
+          if (ev.key !== 'Enter') return;
+          ev.preventDefault();
+          const first = list.querySelector('[data-model]');
+          if (first) first.click();
+        };
+      }
+    });
+
+    const aiTest = $('#aiTest', this.el.panelBody);
+    if (aiTest) aiTest.addEventListener('click', async () => {
+      const msg = $('#aiTestMsg', this.el.panelBody);
+      collectAI();
+      if (msg) { msg.textContent = '正在连接…'; msg.className = 'ai-msg'; }
+      const t0 = Date.now();
+      const out = await aiComplete({
+        settings: { ai: { ...(this.settings.ai || {}), on: true } },
+        system: '你是一个测试助手。只回四个字。',
+        prompt: '请只回复：连接成功',
+        timeout: 15000
+      });
+      const ms = Date.now() - t0;
+      if (msg) {
+        if (out) { msg.textContent = `连接成功 · ${ms}ms · 返回「${out.slice(0, 16)}」`; msg.className = 'ai-msg ok'; }
+        else { msg.textContent = `连接失败（${ms}ms）：检查地址、Key 与网络；浏览器环境还要求接口允许跨域。不填也能正常游玩。`; msg.className = 'ai-msg bad'; }
+      }
+    });
+
+    const aiClear = $('#aiClear', this.el.panelBody);
+    if (aiClear) aiClear.addEventListener('click', () => {
+      this.confirm({
+        title: '清空 AI 配置',
+        text: '接口地址、模型名、API Key 与自定义提示词都会被清掉，AI 开关一并关闭。<br>存档与剧情进度不受影响，之后随时可以再填。',
+        okLabel: '清空',
+        danger: true,
+        onOk: () => {
+          this.settings.ai = JSON.parse(JSON.stringify(CONFIG.defaultSettings.ai || {}));
+          this.saveAPI.saveSettings();
+          this.openSettings();
+          this.toast('AI 配置已清空');
+        }
+      });
+    });
+
+    $('#assetInfo', this.el.panelBody).addEventListener('click', () => this.openAbout());
+  }

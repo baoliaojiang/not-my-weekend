@@ -1,0 +1,170 @@
+  /* ================= AI 助手「薄荷」 =================
+     只有一个入口：一个面板里的聊天窗。
+     没配置接口时不假装能用，直接把「去哪儿填」摆出来；
+     配置好了就以当前模型身份说话，搜索开关的状态一直显示在标题栏。
+     对话留在内存里，关掉面板再打开还是这一段，不会丢。 */
+  openAssistant() {
+    const ai = this.settings.ai || {};
+    const configured = !!(ai.baseUrl && ai.model);
+    if (!this._chat) this._chat = { msgs: [], busy: false };
+
+    const status = configured
+      ? `已接入 ${escapeHtml(ai.model)}${ai.apiKey ? '' : '（没有 Key，多数接口会拒绝）'}`
+      : '还没有配置接口';
+
+    const body = configured
+      ? `
+        <div class="ai-chat">
+          <div class="ai-chat-head">
+            <span class="ai-avatar">${AI_STAR_SVG}</span>
+            <div class="ac-h-main">
+              <b>薄荷</b>
+              <i id="acStatus">${status} · 搜索模式${ai.searchMode ? '开' : '关'}</i>
+            </div>
+            <button class="ac-search ${ai.searchMode ? 'on' : ''}" id="acSearch" type="button">搜索</button>
+          </div>
+          <div class="ai-log" id="aiLog"></div>
+          <div class="ai-compose">
+            <textarea id="aiInput" rows="1" placeholder="和薄荷说点什么…（Enter 发送，Shift+Enter 换行）"></textarea>
+            <button class="btn btn-primary" id="aiSend" type="button">发送</button>
+          </div>
+          <p class="ai-compose-tip" id="aiComposeTip">
+            薄荷是本作为 AI 助手起的名字，与本作虚构的「薄荷中学」无关，也不指向任何现实中的人、组织或产品。回复由 AI 生成，不代表本作立场；涉及事实的内容，请以官方发布为准。
+          </p>
+        </div>`
+      : `
+        <div class="ai-empty">
+          <b>薄荷还没有接上大脑。</b>
+          <p style="margin-top:6px">这个助手需要你自己提供一个 AI 接口，才能说话。填好之后随时可以回来找它。</p>
+          <ol>
+            <li>打开设置，找到「AI 接口（可选）」。</li>
+            <li>接口地址与模型名可以直接点预设，DeepSeek、Agnes（有免费模型）、智谱、通义都能用。</li>
+            <li>把拿到的 API Key 粘进去，点「测试连接」看到成功，再回来。</li>
+          </ol>
+          <button class="btn btn-primary" id="aiToSettings" type="button">去设置里填</button>
+          <p class="ai-compose-tip" style="margin-top:12px">
+            薄荷是本作为 AI 助手起的名字，与本作虚构的「薄荷中学」无关，也不指向任何现实中的人、组织或产品。
+          </p>
+        </div>`;
+
+    this.openPanel({ title: '薄荷 · AI 助手', body, narrow: true });
+
+    const toSet = $('#aiToSettings', this.el.panelBody);
+    if (toSet) toSet.addEventListener('click', () => {
+      this.audio.sfx('click');
+      this.openSettings();
+    });
+
+    if (!configured) return;
+
+    const input = $('#aiInput', this.el.panelBody);
+    const sendBtn = $('#aiSend', this.el.panelBody);
+    if (sendBtn) sendBtn.addEventListener('click', () => this._aiSend());
+    if (input) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || e.shiftKey) return;
+        e.preventDefault();
+        this._aiSend();
+      });
+      input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(120, input.scrollHeight)}px`;
+      });
+      // 桌面端进面板直接把焦点放进输入框；触屏不弹键盘，免得挡住聊天
+      if (!TOUCH) setTimeout(() => input.focus(), 120);
+    }
+
+    const se = $('#acSearch', this.el.panelBody);
+    if (se) se.addEventListener('click', () => {
+      const on = !!(this.settings.ai && this.settings.ai.searchMode);
+      this.settings.ai = { ...(this.settings.ai || {}), searchMode: !on };
+      this.saveAPI.saveSettings();
+      se.classList.toggle('on', !on);
+      const st = $('#acStatus', this.el.panelBody);
+      if (st) st.textContent = `已接入 ${this.settings.ai.model}${this.settings.ai.apiKey ? '' : '（没有 Key）'} · 搜索模式${!on ? '开' : '关'}`;
+      this.audio.sfx('click');
+      const tip = $('#aiComposeTip', this.el.panelBody);
+      if (tip) {
+        tip.textContent = !on
+          ? '搜索模式已开：如果设置里填了搜索接口，会先把查到的资料交给薄荷；没填就只靠模型自己判断。部分接口支持联网，可能额外计费。'
+          : '薄荷是本作为 AI 助手起的名字，与本作虚构的「薄荷中学」无关，也不指向任何现实中的人、组织或产品。回复由 AI 生成，不代表本作立场；涉及事实的内容，请以官方发布为准。';
+      }
+    });
+
+    if (!this._chat.msgs.length) {
+      this._chat.msgs.push({
+        role: 'assistant',
+        content: assistantGreeting({ configured: true, searchMode: !!ai.searchMode })
+      });
+    }
+    this._renderChat(true);
+  }
+
+  /** 重绘消息区；keepInputFocus 用于发送后把光标放回输入框 */
+  _renderChat(scrollBottom) {
+    const log = $('#aiLog', this.el.panelBody);
+    if (!log) return;
+    const chat = this._chat || { msgs: [], busy: false };
+    const rows = chat.msgs.map((m) => {
+      const me = m.role === 'user';
+      const err = !!m.err;
+      const who = me
+        ? ''
+        : `<span class="ai-avatar">${AI_STAR_SVG}</span>`;
+      return `<div class="ai-msg-row${me ? ' me' : ''}">
+        ${who}
+        <div class="ai-bub${err ? ' is-err' : ''}">${escapeHtml(m.content)}</div>
+      </div>`;
+    }).join('');
+    const typing = chat.busy
+      ? `<div class="ai-msg-row"><span class="ai-avatar">${AI_STAR_SVG}</span>
+           <div class="ai-bub"><span class="ai-typing"><i></i><i></i><i></i></span></div></div>`
+      : '';
+    log.innerHTML = rows + typing;
+    if (scrollBottom) log.scrollTop = log.scrollHeight;
+    const input = $('#aiInput', this.el.panelBody);
+    if (input && !TOUCH && document.activeElement !== input && !chat.busy) input.focus();
+  }
+
+  async _aiSend() {
+    const chat = this._chat;
+    if (!chat || chat.busy) return;
+    const input = $('#aiInput', this.el.panelBody);
+    const text = ((input && input.value) || '').trim();
+    if (!text) return;
+    if (text.length > 800) { this.toast('一次说这么多，薄荷记不住，拆开说会好一点', 2000); return; }
+
+    input.value = '';
+    input.style.height = 'auto';
+    chat.msgs.push({ role: 'user', content: text });
+    chat.busy = true;
+    this.audio.sfx('click');
+    this._renderChat(true);
+
+    const searchMode = !!(this.settings.ai && this.settings.ai.searchMode);
+    let searchText = '';
+    if (searchMode) {
+      const r = await webSearch({ settings: this.settings, query: text });
+      if (r.ok) searchText = r.text;
+    }
+
+    const system = buildAssistantSystem({ searchMode, searchUsable: !!searchText });
+    const history = chat.msgs.slice(-20).map(m => ({ role: m.role, content: m.content }));
+    if (searchText) {
+      const last = history[history.length - 1];
+      last.content = `${last.content}\n\n【检索到的资料】\n${searchText}\n\n（以上是检索结果，可能不完整也不一定准确，不确定就直说。）`;
+    }
+
+    const out = await aiChat({ settings: this.settings, system, messages: history });
+    chat.busy = false;
+    if (out.ok) {
+      chat.msgs.push({ role: 'assistant', content: out.text });
+    } else {
+      chat.msgs.push({
+        role: 'assistant',
+        content: `（薄荷这边没接通：${out.error}）\n可以到设置里点一次「测试连接」，看看是地址、Key 还是跨域的问题。`,
+        err: true
+      });
+    }
+    this._renderChat(true);
+  }

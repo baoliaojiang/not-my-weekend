@@ -1,0 +1,19 @@
+# 构建产物（体积大，且能由源码重建）
+build/out/
+build/www/
+build/apk-work/
+build/_font/
+dist/
+
+# 素材生成过程中的中间图
+generated-images/
+preview_*.png
+sprite_sheet.png
+bg_sheet.jpg
+old_sun.png
+
+# 依赖与临时文件
+node_modules/
+*.log
+.tmp-*
+tmp/

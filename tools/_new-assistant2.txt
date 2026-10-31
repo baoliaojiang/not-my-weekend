@@ -1,0 +1,375 @@
+  /* ================= AI 助手「薄荷」 =================
+     两个入口：标题页右下角的悬浮胶囊、游戏内顶栏的圆头像。
+     会话模型照 C 端的习惯做：左边一个列表，能新建、切换、删；
+     对话存在本机，关掉面板、退出游戏再回来都还在。
+     没配置接口时不假装能用，直接把「去哪儿填」摆出来。 */
+  openAssistant() {
+    const ai = this.settings.ai || {};
+    const configured = !!(ai.baseUrl && ai.model);
+    this._aiLoad();
+
+    const status = configured
+      ? `已接入 ${escapeHtml(ai.model)}${ai.apiKey ? '' : ' · 未填 Key'}`
+      : '还没有配置接口';
+
+    const body = configured
+      ? `
+        <div class="ai-chat">
+          <div class="ai-chat-head">
+            <button class="ai-hbtn" id="aiSessBtn" type="button" title="对话列表" aria-label="对话列表">≡</button>
+            <span class="ai-avatar"></span>
+            <div class="ac-h-main">
+              <b id="acTitle">薄荷</b>
+              <i id="acStatus">${status} · 搜索${ai.searchMode ? '开' : '关'}</i>
+            </div>
+            <button class="ai-hbtn" id="aiNewBtn" type="button" title="新建对话" aria-label="新建对话">＋</button>
+          </div>
+          <div class="ai-pane">
+            <div class="ai-log" id="aiLog"></div>
+            <div class="ai-sessions" id="aiSessions" hidden></div>
+          </div>
+          <div class="ai-stickers" id="aiStickers" hidden></div>
+          <div class="ai-compose">
+            <button class="ai-mini" id="aiStickerBtn" type="button" title="表情" aria-label="表情">☺</button>
+            <button class="ai-mini ${ai.searchMode ? 'on' : ''}" id="aiSearchBtn" type="button" title="搜索模式" aria-label="搜索模式">网</button>
+            <textarea id="aiInput" rows="1" placeholder="和薄荷说点什么…（Enter 发送，Shift+Enter 换行）"></textarea>
+            <button class="btn btn-primary" id="aiSend" type="button">发送</button>
+          </div>
+          <p class="ai-compose-tip" id="aiComposeTip">
+            薄荷是本作为 AI 助手起的名字，与本作虚构的「薄荷中学」无关，也不指向任何现实中的人、组织或产品。回复由 AI 生成，不代表本作立场；涉及事实的内容，请以官方发布为准。
+          </p>
+        </div>`
+      : `
+        <div class="ai-empty">
+          <b>薄荷还没有接上大脑。</b>
+          <p style="margin-top:6px">这个助手需要你自己提供一个 AI 接口，才能说话。填好之后随时可以回来找它。</p>
+          <ol>
+            <li>打开设置，找到「AI 接口（可选）」。</li>
+            <li>接口地址与模型名可以直接点预设，DeepSeek、Agnes（有免费模型）、智谱、通义都能用。</li>
+            <li>把拿到的 API Key 粘进去，点「测试连接」看到成功，再回来。</li>
+          </ol>
+          <button class="btn btn-primary" id="aiToSettings" type="button">去设置里填</button>
+          <p class="ai-compose-tip" style="margin-top:12px">
+            薄荷是本作为 AI 助手起的名字，与本作虚构的「薄荷中学」无关，也不指向任何现实中的人、组织或产品。
+          </p>
+        </div>`;
+
+    this.openPanel({ title: '薄荷 · AI 助手', body, narrow: true });
+
+    const toSet = $('#aiToSettings', this.el.panelBody);
+    if (toSet) toSet.addEventListener('click', () => {
+      this.audio.sfx('click');
+      this.openSettings();
+    });
+
+    if (!configured) return;
+
+    /* ---- 顶部：列表 / 新建 ---- */
+    const sessBtn = $('#aiSessBtn', this.el.panelBody);
+    if (sessBtn) sessBtn.addEventListener('click', () => {
+      const box = $('#aiSessions', this.el.panelBody);
+      const open = box.hidden;
+      box.hidden = !open;
+      sessBtn.classList.toggle('on', open);
+      if (open) this._renderSessions();
+      this.audio.sfx('click');
+    });
+    const newBtn = $('#aiNewBtn', this.el.panelBody);
+    if (newBtn) newBtn.addEventListener('click', () => {
+      this._aiNew();
+      this.audio.sfx('select');
+    });
+
+    /* ---- 输入区 ---- */
+    const input = $('#aiInput', this.el.panelBody);
+    const sendBtn = $('#aiSend', this.el.panelBody);
+    if (sendBtn) sendBtn.addEventListener('click', () => this._aiSend());
+    if (input) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || e.shiftKey) return;
+        e.preventDefault();
+        this._aiSend();
+      });
+      input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(120, input.scrollHeight)}px`;
+      });
+      if (!TOUCH) setTimeout(() => input.focus(), 120);
+    }
+
+    const searchBtn = $('#aiSearchBtn', this.el.panelBody);
+    if (searchBtn) searchBtn.addEventListener('click', () => {
+      const on = !!(this.settings.ai && this.settings.ai.searchMode);
+      this.settings.ai = { ...(this.settings.ai || {}), searchMode: !on };
+      this.saveAPI.saveSettings();
+      searchBtn.classList.toggle('on', !on);
+      const st = $('#acStatus', this.el.panelBody);
+      const cur = this.settings.ai;
+      if (st) st.textContent = `已接入 ${cur.model}${cur.apiKey ? '' : ' · 未填 Key'} · 搜索${!on ? '开' : '关'}`;
+      this.audio.sfx('click');
+      const tip = $('#aiComposeTip', this.el.panelBody);
+      if (tip) {
+        tip.textContent = !on
+          ? '搜索模式已开：设置里填了搜索接口的话，会先把查到的资料交给薄荷；没填就只靠模型自己判断。部分接口支持联网，可能额外计费。'
+          : '薄荷是本作为 AI 助手起的名字，与本作虚构的「薄荷中学」无关，也不指向任何现实中的人、组织或产品。回复由 AI 生成，不代表本作立场；涉及事实的内容，请以官方发布为准。';
+      }
+    });
+
+    /* ---- 表情面板 ---- */
+    const stBtn = $('#aiStickerBtn', this.el.panelBody);
+    const stBox = $('#aiStickers', this.el.panelBody);
+    if (stBox) {
+      stBox.innerHTML = AI_STICKERS.map(s =>
+        `<button class="ai-st" type="button" data-st="${s.id}" title="${escapeHtml(s.label)}">
+           <img src="${assetUrl('ai', s.id)}" alt="${escapeHtml(s.label)}" loading="lazy" />
+         </button>`).join('');
+      stBox.addEventListener('click', (ev) => {
+        const b = ev.target.closest('[data-st]');
+        if (!b) return;
+        const s = AI_STICKERS.find(x => x.id === b.dataset.st);
+        if (!s) return;
+        stBox.hidden = true;
+        if (stBtn) stBtn.classList.remove('on');
+        this._aiSendSticker(s);
+      });
+    }
+    if (stBtn && stBox) stBtn.addEventListener('click', () => {
+      stBox.hidden = !stBox.hidden;
+      stBtn.classList.toggle('on', !stBox.hidden);
+      this.audio.sfx('click');
+    });
+
+    this._renderAI();
+  }
+
+  /* ---------------- 会话存取 ---------------- */
+  _aiLoad() {
+    if (this._ai) return;
+    let chats = [];
+    try {
+      const raw = window.localStorage && localStorage.getItem(AI_CHATS_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) chats = arr.filter(c => c && Array.isArray(c.msgs));
+      }
+    } catch (e) { /* 存不了就只在内存里 */ }
+    if (!chats.length) chats = [this._aiBlankChat()];
+    chats.sort((a, b) => (b.at || 0) - (a.at || 0));
+    this._ai = { chats, cur: chats[0].id, busy: false, showSessions: false };
+  }
+
+  _aiBlankChat() {
+    return {
+      id: `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      title: '新的对话',
+      msgs: [],
+      at: Date.now()
+    };
+  }
+
+  _aiSave() {
+    const st = this._ai;
+    if (!st) return;
+    try {
+      // 只留最近 30 段对话、每段 80 条，别把本地存储塞爆
+      const slim = st.chats.slice(0, 30).map(c => ({
+        id: c.id, title: c.title, at: c.at,
+        msgs: c.msgs.slice(-80).map(m => ({ role: m.role, content: m.content, img: m.img || '', err: !!m.err }))
+      }));
+      localStorage.setItem(AI_CHATS_KEY, JSON.stringify(slim));
+    } catch (e) { /* 忽略：存不下不影响当前会话 */ }
+  }
+
+  _aiCur() {
+    const st = this._ai;
+    return st.chats.find(c => c.id === st.cur) || st.chats[0];
+  }
+
+  _aiNew() {
+    const st = this._ai;
+    const fresh = this._aiBlankChat();
+    const ai = this.settings.ai || {};
+    fresh.msgs.push({
+      role: 'assistant',
+      content: assistantGreeting({ configured: true, searchMode: !!ai.searchMode })
+    });
+    st.chats.unshift(fresh);
+    st.cur = fresh.id;
+    this._aiSave();
+    const box = $('#aiSessions', this.el.panelBody);
+    if (box) box.hidden = true;
+    const sb = $('#aiSessBtn', this.el.panelBody);
+    if (sb) sb.classList.remove('on');
+    this._renderAI();
+  }
+
+  _aiSwitch(id) {
+    const st = this._ai;
+    if (!st.chats.some(c => c.id === id)) return;
+    st.cur = id;
+    const box = $('#aiSessions', this.el.panelBody);
+    if (box) box.hidden = true;
+    const sb = $('#aiSessBtn', this.el.panelBody);
+    if (sb) sb.classList.remove('on');
+    this.audio.sfx('click');
+    this._renderAI();
+  }
+
+  _aiDelete(id) {
+    const st = this._ai;
+    const target = st.chats.find(c => c.id === id);
+    if (!target) return;
+    this.confirm({
+      title: '删除这段对话',
+      text: `「${escapeHtml(target.title)}」里的消息会一起删掉，之后找不回来。`,
+      okLabel: '删除',
+      danger: true,
+      onOk: () => {
+        st.chats = st.chats.filter(c => c.id !== id);
+        if (!st.chats.length) st.chats.push(this._aiBlankChat());
+        if (!st.chats.some(c => c.id === st.cur)) st.cur = st.chats[0].id;
+        this._aiSave();
+        this._renderSessions();
+        this._renderAI(true);
+      }
+    });
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  _renderSessions() {
+    const box = $('#aiSessions', this.el.panelBody);
+    if (!box) return;
+    const st = this._ai;
+    const list = st.chats.map(c => {
+      const last = c.msgs[c.msgs.length - 1];
+      const desc = !last ? '还没有消息'
+        : last.img ? '[表情]'
+          : String(last.content || '').replace(/\s+/g, ' ').slice(0, 26);
+      return `<div class="ai-sess ${c.id === st.cur ? 'on' : ''}" data-sid="${c.id}" role="button" tabindex="0">
+        <span class="ai-sess-main">
+          <span class="ai-sess-t">${escapeHtml(c.title)}</span>
+          <span class="ai-sess-d">${escapeHtml(relTime(c.at))} · ${escapeHtml(desc)}</span>
+        </span>
+        <button class="ai-sess-del" data-del="${c.id}" type="button" title="删除">×</button>
+      </div>`;
+    }).join('');
+    box.innerHTML = list || '<p class="ai-sess-empty">还没有对话。</p>';
+    box.onclick = (e) => {
+      const del = e.target.closest('[data-del]');
+      if (del) { e.stopPropagation(); this._aiDelete(del.dataset.del); return; }
+      const row = e.target.closest('[data-sid]');
+      if (row) this._aiSwitch(row.dataset.sid);
+    };
+  }
+
+  _renderAI(keepScroll) {
+    const st = this._ai;
+    if (!st) return;
+    const cur = this._aiCur();
+    const titleEl = $('#acTitle', this.el.panelBody);
+    if (titleEl) titleEl.textContent = '薄荷';
+
+    const log = $('#aiLog', this.el.panelBody);
+    if (log) {
+      if (!cur.msgs.length) {
+        const ai = this.settings.ai || {};
+        cur.msgs.push({
+          role: 'assistant',
+          content: assistantGreeting({ configured: true, searchMode: !!ai.searchMode })
+        });
+      }
+      const rows = cur.msgs.map((m) => {
+        const me = m.role === 'user';
+        const img = m.img ? `<img src="${m.img}" alt="">` : '';
+        const text = m.content ? escapeHtml(m.content) : '';
+        const cls = `ai-bub${m.err ? ' is-err' : ''}${m.img ? ' has-img' : ''}`;
+        return `<div class="ai-msg-row${me ? ' me' : ''}">
+          ${me ? '' : '<span class="ai-avatar"></span>'}
+          <div class="${cls}">${img}${text}</div>
+        </div>`;
+      }).join('');
+      const typing = st.busy
+        ? `<div class="ai-msg-row"><span class="ai-avatar"></span>
+             <div class="ai-bub"><span class="ai-typing"><i></i><i></i><i></i></span></div></div>`
+        : '';
+      log.innerHTML = rows + typing;
+      if (!keepScroll || !this._aiScrollLock) log.scrollTop = log.scrollHeight;
+    }
+
+    if (st.showSessions) this._renderSessions();
+    const input = $('#aiInput', this.el.panelBody);
+    if (input && !TOUCH && document.activeElement !== input && !st.busy) input.focus();
+  }
+
+  /* ---------------- 发送 ---------------- */
+  async _aiSend() {
+    const st = this._ai;
+    if (!st || st.busy) return;
+    const input = $('#aiInput', this.el.panelBody);
+    const text = ((input && input.value) || '').trim();
+    if (!text) return;
+    if (text.length > 800) { this.toast('一次说这么多薄荷记不住，拆开说会好一点', 2000); return; }
+    input.value = '';
+    input.style.height = 'auto';
+    this._aiStickerBtnOff();
+    await this._aiAsk({ role: 'user', content: text });
+  }
+
+  _aiStickerBtnOff() {
+    const box = $('#aiStickers', this.el.panelBody);
+    const btn = $('#aiStickerBtn', this.el.panelBody);
+    if (box) box.hidden = true;
+    if (btn) btn.classList.remove('on');
+  }
+
+  async _aiSendSticker(s) {
+    const st = this._ai;
+    if (!st || st.busy) return;
+    this.audio.sfx('select');
+    await this._aiAsk({ role: 'user', content: `[发了一个表情：${s.label}]`, img: s.path });
+  }
+
+  async _aiAsk(payload) {
+    const st = this._ai;
+    const cur = this._aiCur();
+    cur.msgs.push(payload);
+    if (cur.title === '新的对话' && payload.role === 'user' && !payload.img) {
+      cur.title = payload.content.replace(/\s+/g, ' ').slice(0, 16) || '新的对话';
+    }
+    cur.at = Date.now();
+    st.busy = true;
+    this._aiSave();
+    this._renderAI();
+
+    const searchMode = !!(this.settings.ai && this.settings.ai.searchMode);
+    let searchText = '';
+    if (searchMode && payload.content) {
+      const r = await webSearch({ settings: this.settings, query: payload.content });
+      if (r.ok) searchText = r.text;
+    }
+
+    const system = buildAssistantSystem({ searchMode, searchUsable: !!searchText });
+    const history = cur.msgs
+      .filter(m => m.content)
+      .slice(-20)
+      .map(m => ({ role: m.role, content: m.content }));
+    if (searchText && history.length) {
+      const last = history[history.length - 1];
+      last.content = `${last.content}\n\n【检索到的资料】\n${searchText}\n\n（以上是检索结果，可能不完整也不一定准确，不确定就直说。）`;
+    }
+
+    const out = await aiChat({ settings: this.settings, system, messages: history });
+    st.busy = false;
+    if (out.ok) {
+      cur.msgs.push({ role: 'assistant', content: out.text });
+    } else {
+      cur.msgs.push({
+        role: 'assistant',
+        content: `（薄荷这边没接通：${out.error}）\n可以到设置里点一次「测试连接」，看看是地址、Key 还是跨域的问题。`,
+        err: true
+      });
+    }
+    cur.at = Date.now();
+    this._aiSave();
+    this._renderAI();
+  }

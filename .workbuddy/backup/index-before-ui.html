@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>周日不返校 · 所有人都说这是自愿的</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231e2228'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23f5f2ea' font-family='sans-serif'%3E周%3C/text%3E%3C/svg%3E" />
+<meta name="description" content="一款校园调查视觉小说原型：当所有人都说一件事是自愿的，一个人是否真的拥有说不的自由？" />
+<link rel="stylesheet" href="styles/main.css" />
+</head>
+<body class="is-title">
+
+<!-- ============ 标题界面 ============ -->
+<div id="titleScreen" class="title-screen">
+  <div class="title-bg" aria-hidden="true"></div>
+  <div class="title-inner">
+    <p class="title-eyebrow">校园调查视觉小说 · 序章与第一章原型</p>
+    <h1 class="title-main">周日不返校</h1>
+    <p class="title-sub">所有人都说这是自愿的</p>
+    <div class="title-menu">
+      <button class="tbtn" data-act="new">开始游戏</button>
+      <button class="tbtn tbtn-side" data-act="side">
+        <span class="side-k">支线</span>
+      </button>
+      <button class="tbtn" data-act="continue">继续游戏</button>
+      <button class="tbtn" data-act="load">读取存档</button>
+      <button class="tbtn" data-act="settings">设置</button>
+      <button class="tbtn" data-act="changelog">更新日志</button>
+      <button class="tbtn tbtn-ghost" data-act="about">关于本作</button>
+    </div>
+    <p class="title-note" id="titleSaveNote"></p>
+  </div>
+  <footer class="title-footer">
+    <span>本作学校、人物、组织、地名与事件均为虚构，与现实无关。</span>
+    <span>游戏流程不构成法律意见。</span>
+    <span>Demo 版本 · 部分素材取自《闪亮的你》，仅供个人学习与交流。</span>
+  </footer>
+</div>
+
+<!-- ============ 游戏主界面 ============ -->
+<main id="game" class="game" hidden>
+  <div id="stage" class="stage">
+    <div id="bgA" class="bg-layer"></div>
+    <div id="bgB" class="bg-layer"></div>
+    <div class="bg-shade" aria-hidden="true"></div>
+    <div id="spriteLayer" class="sprite-layer" aria-hidden="true"></div>
+    <div id="placeTag" class="place-tag" hidden></div>
+  </div>
+
+  <header id="hud" class="hud">
+    <div class="hud-left">
+      <span class="hud-chapter" id="hudChapter">序章</span>
+      <span class="hud-day" id="hudDay">九月一日 · 周一</span>
+    </div>
+    <nav class="hud-right" id="hudNav">
+      <button class="hbtn" id="btnPhone" title="手机">手机</button>
+      <button class="hbtn" id="btnGov" title="政务服务平台">政务</button>
+      <button class="hbtn" id="btnMaterials" title="材料">材料</button>
+      <button class="hbtn" id="btnCharacters" title="人物">人物</button>
+      <button class="hbtn" id="btnLog" title="对话历史">历史</button>
+      <button class="hbtn" id="btnAuto" title="自动播放">自动</button>
+      <button class="hbtn" id="btnSkip" title="跳过">跳过</button>
+      <button class="hbtn" id="btnMenu" title="菜单">菜单</button>
+    </nav>
+  </header>
+
+  <div id="apBar" class="ap-bar" hidden>
+    <span class="ap-label">今日行动</span>
+    <span class="ap-dots" id="apDots"></span>
+    <span class="ap-text" id="apText"></span>
+  </div>
+
+  <section id="dialogue" class="dialogue" hidden>
+    <div class="dlg-name" id="dlgName"></div>
+    <div class="dlg-body">
+      <p class="dlg-text" id="dlgText"></p>
+      <span class="dlg-next" id="dlgNext" aria-hidden="true"></span>
+    </div>
+  </section>
+
+  <div id="choiceLayer" class="choice-layer" hidden>
+    <div class="choice-box" id="choiceBox"></div>
+    <div class="choice-tools">
+      <button id="choiceSave" title="随时存档">存档</button>
+      <button id="choiceMenu" title="打开菜单">菜单</button>
+    </div>
+  </div>
+
+  <div id="hubLayer" class="hub-layer" hidden>
+    <div class="hub-panel">
+      <h2 class="hub-title">今天还能做什么</h2>
+      <p class="hub-sub" id="hubSub"></p>
+      <div class="hub-grid" id="hubGrid"></div>
+      <button class="hub-leave" id="hubLeave">结束今天的调查</button>
+    </div>
+  </div>
+
+  <div id="skipPrompt" class="dialog-mask" hidden>
+    <div class="dialog-card">
+      <h3>接下来是未读剧情</h3>
+      <p>继续跳过会跳过你还没有读过的内容。是否继续？</p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" id="skipStop">停止跳过</button>
+        <button class="btn btn-primary" id="skipGo">继续跳过</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ 通用弹层（放在 body 级，标题界面也能用） ============ -->
+<div id="panelLayer" class="panel-layer" hidden>
+  <div class="panel" role="dialog" aria-modal="true">
+    <header class="panel-head">
+      <h2 id="panelTitle">面板</h2>
+      <button class="panel-close" id="panelClose" aria-label="关闭">×</button>
+    </header>
+    <div class="panel-body" id="panelBody"></div>
+    <footer class="panel-foot" id="panelFoot" hidden></footer>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- ============ 免责声明 ============ -->
+<div id="disclaimer" class="panel-layer" hidden>
+  <div class="panel panel-narrow">
+    <header class="panel-head">
+      <h2>免责声明</h2>
+    </header>
+    <div class="panel-body">
+      <p>本作是一部<strong>虚构</strong>的校园题材作品。故事中的学校、师生、家长、组织、地名与事件均为虚构，如有雷同纯属巧合，与现实中的任何个人、机构或事件无关。</p>
+      <p>作品涉及就学安排、家校沟通与程序性表达等情节，仅为叙事与思辨之用，<strong>不构成任何法律意见</strong>，也不构成对任何真实机构的指控或建议。</p>
+      <p>本作为 <strong>Demo 版本</strong>，仅供个人学习与技术交流，<strong>不用于任何商业用途，亦不对外发售</strong>。原型阶段的立绘、背景素材取自《闪亮的你》的本地资源；背景音乐取自《璀璨星途》原声专辑（QQ 音乐同名专辑，曲目见 <code>scripts/config/assets.js</code> 的 MUSIC 表），仅作功能演示与氛围占位。上述素材著作权均归原权利人所有，本作对之不主张任何权利，亦无意侵犯他人著作权。若权利人认为此处使用有所不妥，请与开发者联系，将第一时间删除并替换。UI 音效为程序合成。</p>
+      <p class="disclaimer-mini">背景音乐参考专辑页：<span class="ext-link">y.qq.com/n/ryqq_v2/albumDetail/000x1wLw2Cii1T</span>（游戏内不联网，仅作品内注明出处）。</p>
+      <p>本作不鼓励捏造事实、曝光他人隐私或侵犯个人信息的做法。</p>
+    </div>
+    <footer class="panel-foot">
+      <button class="btn btn-primary" id="disclaimerOk">我已了解，进入游戏</button>
+    </footer>
+  </div>
+</div>
+
+<script type="module" src="scripts/main.js"></script>
+</body>
+</html>

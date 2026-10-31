@@ -1,0 +1,18 @@
+import puppeteer from 'file:///C:/Users/12821/.workbuddy/binaries/node/workspace/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js';
+const b = await puppeteer.launch({ executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:'new', args:['--no-sandbox','--allow-file-access-from-files','--mute-audio'] });
+const p = await b.newPage();
+const errs=[]; p.on('pageerror', e=>errs.push(e.message));
+p.on('console', m=>{ if(m.type()==='error') errs.push('C:'+m.text()); });
+await p.setViewport({width:1280,height:800});
+await p.goto('file:///D:/workbuddy/2026-10-23-16-33-10/build/www/index.html',{waitUntil:'networkidle2'});
+await new Promise(r=>setTimeout(r,700));
+await p.screenshot({path:'build/shot-www-title.png'});
+await p.evaluate(()=>document.querySelector('[data-act="new"]').click());
+await new Promise(r=>setTimeout(r,300));
+await p.evaluate(()=>document.querySelector('#disclaimerOk').click());
+await new Promise(r=>setTimeout(r,1500));
+const st = await p.evaluate(()=>({txt:(document.querySelector('#dlgText')||{}).textContent.slice(0,40), hidden:document.querySelector('#game').hidden, ver:window.__ZBNX&&window.__ZBNX.settings?1:0}));
+await p.screenshot({path:'build/shot-www-game.png'});
+console.log(JSON.stringify(st));
+console.log('errors:', errs.length?errs.slice(0,4):'(none)');
+await b.close();

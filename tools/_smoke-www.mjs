@@ -1,0 +1,27 @@
+import puppeteer from 'file:///C:/Users/12821/.workbuddy/binaries/node/workspace/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js';
+const b = await puppeteer.launch({ executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:'new', args:['--no-sandbox','--allow-file-access-from-files','--mute-audio'] });
+const p = await b.newPage();
+const errs=[]; p.on('pageerror',e=>errs.push(e.message)); p.on('console',m=>{if(m.type()==='error')errs.push('console:'+m.text());});
+await p.setViewport({width:1280,height:820});
+await p.goto('file:///D:/workbuddy/2026-10-23-16-33-10/build/www/index.html',{waitUntil:'networkidle2'});
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+await wait(900);
+const ver = await p.evaluate(()=>{const e=[...document.querySelectorAll('.title-footer span')].map(x=>x.textContent).join(' '); return e;});
+console.log('footer:', ver.slice(0,80));
+await p.evaluate(()=>document.querySelector('[data-act="new"]').click()); await wait(300);
+await p.evaluate(()=>{const c=document.querySelector('[data-cfm="ok"]'); c&&c.click();}); await wait(250);
+await p.evaluate(()=>document.querySelector('#disclaimerOk').click()); await wait(800);
+for(let i=0;i<40;i++){ await p.evaluate(()=>{const s=document.querySelector('#stage'); s&&s.click();}); await wait(55); }
+await p.evaluate(()=>window.__ZBNX.save(0)); await wait(200);
+await p.evaluate(()=>window.__ZBNX.backToTitle()); await wait(500);
+await p.evaluate(()=>document.querySelector('[data-act="continue"]').click()); await wait(450);
+const lv1 = await p.evaluate(()=>document.querySelectorAll('[data-ch]').length);
+await p.evaluate(()=>{const c=document.querySelector('[data-ch]'); c&&c.click();}); await wait(450);
+const lv2 = await p.evaluate(()=>({n:document.querySelectorAll('.tlx-node').length, bar:!!document.querySelector('.tlx-bar')}));
+await p.evaluate(()=>{const c=document.querySelector('#panelClose'); c&&c.click();}); await wait(300);
+await p.evaluate(()=>document.querySelector('[data-act="settings"]').click()); await wait(400);
+const glass = await p.evaluate(()=>!!document.getElementById('glassToggle'));
+await p.evaluate(()=>document.getElementById('glassToggle').click()); await wait(400);
+const cls = await p.evaluate(()=>document.body.className);
+console.log(JSON.stringify({lv1, lv2, glass, cls, errs}));
+await b.close();

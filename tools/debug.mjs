@@ -1,0 +1,14 @@
+import puppeteer from 'file:///C:/Users/12821/.workbuddy/binaries/node/workspace/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js';
+const b = await puppeteer.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:'new', args:['--no-sandbox']});
+const p = await b.newPage();
+p.on('console', m=>console.log('CONSOLE', m.type(), m.text()));
+p.on('pageerror', e=>console.log('PAGEERROR', e.message, e.stack?.split('\n')[1]||''));
+p.on('response', r=>{ if(r.status()>=400) console.log('HTTP', r.status(), r.url()); });
+await p.goto('http://127.0.0.1:5199/index.html',{waitUntil:'networkidle2'});
+await new Promise(r=>setTimeout(r,1200));
+console.log('disclaimer hidden?', await p.evaluate(()=>document.querySelector('#disclaimer').hidden));
+await p.evaluate(()=>document.querySelector('[data-act="new"]').click());
+await new Promise(r=>setTimeout(r,500));
+console.log('after click, disclaimer hidden?', await p.evaluate(()=>document.querySelector('#disclaimer').hidden));
+console.log('body class', await p.evaluate(()=>document.body.className));
+await b.close();

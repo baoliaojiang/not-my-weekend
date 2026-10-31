@@ -1,0 +1,9 @@
+{
+  "name": "zhouri-bufanxiao",
+  "productName": "不属于我的周末",
+  "version": "0.6.1",
+  "description": "不属于我的周末 · 校园调查视觉小说 Demo",
+  "main": "main.js",
+  "private": true,
+  "author": "ZhouRi Demo"
+}
