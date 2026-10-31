@@ -7,6 +7,7 @@
 
 import { CONFIG } from '../config/game.js';
 import { assetUrl, setProtagonist } from '../config/assets.js';
+import { dumpLog } from '../core/log.js';
 import { MATERIALS, MATERIAL_STATUS, getMaterial } from '../data/materials.js';
 import { CHARACTERS, getCharacter } from '../data/characters.js';
 import { THREADS, THREAD_KINDS, threadMessages, threadPreview, threadKind } from '../data/chats.js';
@@ -721,6 +722,9 @@ export class UI {
       if (doneBtn) doneBtn.addEventListener('click', () => this.closePanel());
     }
     const body = this.el.panelBody;
+    /* 老 WebView 不支持 :has()，用它来做面板布局会直接失效，
+       所以这里给面板挂一个显式 class，CSS 两边都写。 */
+    body.classList.add('mos-host');
     body.querySelectorAll('[data-app]').forEach(b => {
       b.addEventListener('click', () => this._phoneApp(b.dataset.app, b.dataset.label));
     });
@@ -747,6 +751,7 @@ export class UI {
     const top = stack[stack.length - 1];
     if (!top) return;
     this.el.panelTitle.textContent = top.title || '手机';
+    this.el.panelBody.classList.add('mos-host');
     this.el.panelBody.innerHTML = `<div class="mos-appview">
       <div class="mos-nav">
         <button class="mos-back" type="button" data-mint-back="1" aria-label="返回">‹</button>
@@ -1280,6 +1285,8 @@ export class UI {
         </div>`;
 
     this.openPanel({ title: '薄荷 · AI 助手', body });
+    // 老内核没有 :has()，用显式 class 撑住「面板不滚、聊天区自己滚」的布局
+    this.el.panelBody.classList.add('ai-host');
 
     const toSet = $('#aiToSettings', this.el.panelBody);
     if (toSet) toSet.addEventListener('click', () => {
@@ -2010,6 +2017,35 @@ ${recentLog}`;
         </div>
       </details>
 
+      <h4 class="set-group-t">存档与设置</h4>
+
+      <div class="setting">
+        <div><div class="setting-label">导出存档 / 设置</div>
+        <div class="setting-hint">导出成一个 <code>.json</code> 文件，可以备份、换设备继续玩。浏览器会存到「下载」文件夹。</div></div>
+        <div class="setting-ctl io-row">
+          <button class="btn btn-sm" id="exportSaves">导出存档</button>
+          <button class="btn btn-sm" id="exportSettings">导出设置</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">导出当前日志</div>
+        <div class="setting-hint">一份纯文本的运行记录：版本、设备、启动流程、报错。遇到问题时导出来，连同截图一起提交，比口头描述准得多。不含任何个人信息。</div></div>
+        <div class="setting-ctl io-row">
+          <button class="btn btn-sm" id="exportLog">导出日志</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">导入存档 / 设置</div>
+        <div class="setting-hint">选择之前导出的文件。导入存档会覆盖同名槽位，导入设置会立即生效。</div></div>
+        <div class="setting-ctl io-row">
+          <button class="btn btn-sm" id="importSaves">导入存档</button>
+          <button class="btn btn-sm" id="importSettings">导入设置</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+      </div>
+
       <div class="setting">
         <div><div class="setting-label">已读剧情</div>
         <div class="setting-hint">清除后，所有剧情都会被视为未读（不影响存档）。</div></div>
@@ -2190,6 +2226,129 @@ ${recentLog}`;
       screenSeg.querySelectorAll('[data-screen]').forEach(x => x.classList.toggle('on', x === b));
       this.audio.sfx('click');
       if (typeof this.onScreenModeChange === 'function') this.onScreenModeChange();
+    });
+
+    /* ---- 存档 / 设置 的导入导出 ----
+       APK 与 EXE 里都是同一套 localStorage，所以直接用"扫一遍键值对"的方式导出，
+       既不用给每个槽位写单独的序列化，也不会漏掉新加的键。
+       网页端没有文件系统，走浏览器下载；客户端同样是下载到系统默认下载目录，
+       再在文件管理器里挪到 Download 就好。 */
+    const IO_PREFIX_SAVE = ['zb_slot', 'zb_side', 'zb_progress', 'zb_read'];
+    const IO_PREFIX_SET = ['zb_settings', 'zb_ai'];
+
+    const dumpKeys = (prefixes) => {
+      const out = {};
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (!k) continue;
+          if (prefixes.some(p => k.startsWith(p))) out[k] = localStorage.getItem(k);
+        }
+      } catch (e) { /* 存不了就导空 */ }
+      return out;
+    };
+
+    /* 导出：文本先交给客户端写「下载」目录，网页端走浏览器下载。
+       APK 里 WebView 没有下载监听器，<a download> 点了没反应——
+       所以客户端那边专门开了一个 saveText 桥。 */
+    const saveText = (text, name, mime) => {
+      // 1 原生桥（APK）
+      try {
+        if (window.ZBApp && typeof window.ZBApp.saveText === 'function') {
+          const where = window.ZBApp.saveText(name, text);
+          if (where) { this.toast('已保存到 ' + where, 3000); return true; }
+        }
+      } catch (e) { /* 落到浏览器下载 */ }
+      // 2 浏览器下载（网页版 / EXE）
+      try {
+        const blob = new Blob([text], { type: mime || 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        this.toast('已导出：' + name, 2600);
+        return true;
+      } catch (e) {
+        this.toast('导出失败：这个环境不允许下载文件', 2800);
+        return false;
+      }
+    };
+    const download = (obj, name) => saveText(JSON.stringify(obj, null, 2), name, 'application/json');
+
+    const stamp = () => {
+      const d = new Date();
+      const p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+    };
+
+    const exportSaves = $('#exportSaves', this.el.panelBody);
+    if (exportSaves) exportSaves.addEventListener('click', () => {
+      audio.sfx('click');
+      download({ v: 1, kind: 'saves', at: Date.now(), keys: dumpKeys(IO_PREFIX_SAVE) },
+        `不属于我的周末-存档-${stamp()}.json`);
+    });
+    const exportSettings = $('#exportSettings', this.el.panelBody);
+    if (exportSettings) exportSettings.addEventListener('click', () => {
+      audio.sfx('click');
+      download({ v: 1, kind: 'settings', at: Date.now(), keys: dumpKeys(IO_PREFIX_SET) },
+        `不属于我的周末-设置-${stamp()}.json`);
+    });
+
+    const exportLogBtn = $('#exportLog', this.el.panelBody);
+    if (exportLogBtn) exportLogBtn.addEventListener('click', () => {
+      audio.sfx('click');
+      const text = dumpLog();
+      saveText(text, `不属于我的周末-日志-${stamp()}.txt`, 'text/plain');
+    });
+
+    const fileInput = $('#importFile', this.el.panelBody);
+    let importKind = 'saves';
+    const pickFile = (kind) => {
+      importKind = kind;
+      if (!fileInput) { this.toast('这个环境不支持选择文件', 2400); return; }
+      fileInput.value = '';
+      fileInput.click();
+    };
+    const importSaves = $('#importSaves', this.el.panelBody);
+    if (importSaves) importSaves.addEventListener('click', () => { audio.sfx('click'); pickFile('saves'); });
+    const importSettings = $('#importSettings', this.el.panelBody);
+    if (importSettings) importSettings.addEventListener('click', () => { audio.sfx('click'); pickFile('settings'); });
+
+    if (fileInput) fileInput.addEventListener('change', () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let data = null;
+        try { data = JSON.parse(String(reader.result)); } catch (e) { data = null; }
+        if (!data || !data.keys || typeof data.keys !== 'object') {
+          this.toast('文件读不出来，可能不是本作导出的存档', 3000);
+          return;
+        }
+        if (data.kind && data.kind !== importKind) {
+          this.toast(`这是「${data.kind === 'settings' ? '设置' : '存档'}」文件，当前要导入的是「${importKind === 'settings' ? '设置' : '存档'}」`, 3200);
+          return;
+        }
+        let n = 0;
+        try {
+          Object.keys(data.keys).forEach(k => {
+            // 只接受本作自己的键，避免把别的东西写进存储
+            if (!/^zb_/.test(k)) return;
+            localStorage.setItem(k, data.keys[k]);
+            n++;
+          });
+        } catch (e) { /* 写不进就报下面那句 */ }
+        if (!n) { this.toast('文件里没有可导入的内容', 2600); return; }
+        audio.sfx('ok');
+        this.toast(`已导入 ${n} 项，正在重新载入…`, 1800);
+        setTimeout(() => location.reload(), 900);
+      };
+      reader.onerror = () => this.toast('读取文件失败', 2400);
+      reader.readAsText(f);
     });
 
     $('#resetRead', this.el.panelBody).addEventListener('click', () => {
@@ -3050,12 +3209,9 @@ ${recentLog}`;
         这只是取了一套现成的图标素材，本作并不绑定任何手机系统，桌面端、网页端与移动端都可以运行。</p>
         <p>本作为 Demo 版本，仅供个人学习与技术交流，不用于任何商业用途，亦不对外发售。本作的学校、人物、组织、地名与事件均为虚构，与现实无关。游戏流程不构成法律意见。</p>
         <p><strong>素材说明</strong><br>
-        原型阶段的立绘与背景素材取自《闪亮的你》的本地资源；背景音乐取自《璀璨星途》原声专辑
-        （QQ 音乐专辑 <code>000x1wLw2Cii1T</code>），仅作功能演示与氛围占位，且已统一做响度与峰值处理，
-        不会出现削波。<br>
-        相关素材著作权均归原权利人所有，本作对之不主张任何权利，亦无意侵犯他人著作权。
-        若权利人认为此处使用有所不妥，请与开发者联系，将第一时间删除并替换。
-        UI 音效为程序合成。</p>
+        全部角色立绘与场景背景为本作<strong>自制生成</strong>，统一了画风与配色；
+        背景音乐与界面音效为<strong>程序合成</strong>的原创段落，已统一做响度与峰值处理，不会出现削波。<br>
+        画面与声音两部分都不使用第三方素材，因此不涉及他人著作权。</p>
         <p><strong>替换方式</strong><br>
         所有素材由 <code>scripts/config/assets.js</code> 统一登记，
         剧情只引用素材 ID。把同名文件放进 assets/ 下对应目录即可替换，无需改动剧情。</p>
@@ -3083,10 +3239,9 @@ ${recentLog}`;
         首页左上角的 12+ 标识是 CADPA 的适龄提示图标，按原样引用、未作修改；
         它只是「本作建议 12 岁以上阅读」的提示，本作并没有取得版号、ISBN 或任何出版审批，
         这个图标不代表任何资质认定。点开那个图标可以看到完整说明。</p>
-        <p><strong>这些不是开源素材</strong><br>
-        HyperOS 4 的图标集属于小米的系统素材，不适用开源许可，这里只是拿来当界面配图；
-        立绘与背景取自《闪亮的你》、背景音乐取自《璀璨星途》原声专辑，著作权都归原权利人。
-        这两类内容本作都不主张任何权利，替换方式见上一节。</p>
+        <p><strong>关于图标</strong><br>
+        界面图标使用 HyperOS 4 的默认图标集，仅作界面配图；立绘、背景与音乐均为本作自制，
+        这部分不依赖任何外部素材。</p>
         <p><strong>关于跳过</strong><br>
         跳过只推进对话与叙事节点；遇到选项、调查、聊天回复时一定会停下，不会替你做选择。</p>
       `

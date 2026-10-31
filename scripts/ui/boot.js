@@ -18,10 +18,11 @@
    ========================================================= */
 
 const AUTHOR = {
-  name: 'ZhouRi',
+  name: '爆料酱',
   // 从 B 站主页链接里取的空间号，这里直接写完整地址
   bilibili: 'https://space.bilibili.com/525298385',
-  github: 'https://github.com/OWNER/REPO'
+  // 由 main.js 在启动时按 CONFIG 覆盖；先留空，没配就整行不显示
+  github: ''
 };
 
 export const BOOT_SCREENS = [
@@ -34,18 +35,52 @@ export const BOOT_SCREENS = [
     key: 'author',
     hold: 1900,
     html: `<div class="boot-author">
-      <span class="boot-rule"></span>
-      <p class="boot-author-n">${AUTHOR.name}</p>
-      <span class="boot-rule"></span>
-      <p class="boot-by">A ONE-PERSON PROJECT</p>
+      <span class="boot-avatar"></span>
+      <p class="boot-author-n">爆料酱</p>
+      <p class="boot-ids">bilibili · 525298385</p>
+      <p class="boot-ids is-dim" id="bootGit"></p>
     </div>`
   },
   {
     key: 'logo',
     hold: 2000,
     html: `<div class="boot-logo">
-      <h1 class="boot-title">不属于我的周末</h1>
-      <span class="boot-rule boot-rule-wide"></span>
+      <svg class="logo-game" viewBox="0 0 660 240" role="img" aria-label="不属于我的周末">
+        <defs>
+          <radialGradient id="gz" cx="50%" cy="40%" r="52%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity=".09"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="330" cy="108" rx="330" ry="104" fill="url(#gz)"/>
+
+        <!-- 主标：粗体 + 极轻微上扬，像印刷体被风带起一点 -->
+        <g transform="rotate(-1.6 330 106)">
+          <text x="330" y="118" class="logo-game-t">不属于我的周末</text>
+        </g>
+
+        <!-- 地平线：一条细线横穿，两端渐隐 -->
+        <path d="M92 148h476" stroke="currentColor" stroke-width=".9" opacity=".34"/>
+
+        <!-- 天际线：几段教学楼轮廓，只有剪影，不画细节 -->
+        <g fill="currentColor" opacity=".2">
+          <rect x="150" y="120" width="62" height="28"/>
+          <rect x="216" y="106" width="34" height="42"/>
+          <rect x="256" y="126" width="76" height="22"/>
+          <rect x="338" y="112" width="44" height="36"/>
+          <rect x="388" y="128" width="92" height="20"/>
+          <rect x="486" y="118" width="30" height="30"/>
+        </g>
+        <!-- 几个亮着的窗 -->
+        <g fill="currentColor" opacity=".5">
+          <rect x="230" y="116" width="5" height="5"/>
+          <rect x="352" y="122" width="5" height="5"/>
+          <rect x="366" y="122" width="5" height="5"/>
+        </g>
+
+        <!-- 英文副标 -->
+        <text x="330" y="180" class="logo-game-sub">THE WEEKEND THAT IS NOT MINE</text>
+      </svg>
       <p class="boot-sub">关于我的学校周末要上课这件事</p>
       <p class="boot-ver" id="bootVer"></p>
     </div>`
@@ -115,8 +150,32 @@ export const BOOT_SCREENS = [
     key: 'update',
     hold: 0,          // 等检查完再走，见 boot.js 的 onEnter
     html: `<div class="boot-upd">
-      <p class="boot-upd-t" id="bootUpdText">正在检查资源更新…</p>
-      <div class="boot-upd-bar"><i id="bootUpdBar"></i></div>
+      <div class="boot-card">
+        <div class="boot-card-top">
+          <span class="boot-card-kicker">RESOURCE CHECK</span>
+          <span class="boot-card-ver" id="bootUpdMeta"></span>
+        </div>
+        <h2 class="boot-card-h">检查更新</h2>
+        <p class="boot-card-t" id="bootUpdText">正在获取版本信息…</p>
+        <div class="boot-upd-bar"><i id="bootUpdBar"></i></div>
+        <p class="boot-card-f">资源更新不会影响你的存档</p>
+      </div>
+    </div>`
+  },
+  {
+    key: 'shader',
+    hold: 0,          // 由 prepareRuntime 决定何时走
+    html: `<div class="boot-upd">
+      <div class="boot-card">
+        <div class="boot-card-top">
+          <span class="boot-card-kicker">PREPARING</span>
+          <span class="boot-card-ver" id="bootShadePct">0%</span>
+        </div>
+        <h2 class="boot-card-h">正在编译着色器</h2>
+        <p class="boot-card-t" id="bootShadeText">正在准备运行环境…</p>
+        <div class="boot-upd-bar"><i id="bootShadeBar"></i></div>
+        <p class="boot-card-f">首次启动会慢一些，之后不用再等</p>
+      </div>
     </div>`
   }
 ];
@@ -129,7 +188,7 @@ export const BOOT_SCREENS = [
  *   checkUpdate 异步函数，返回 { kind, content, shell, shellMin, notes }
  *   onDone      全部结束后回调
  */
-export function runBootSequence({ root, version, checkUpdate, onDone }) {
+export function runBootSequence({ root, version, checkUpdate, applyUpdate, github, onDone }) {
   if (!root) { onDone && onDone(); return; }
   const stage = root.querySelector('#bootStage');
   const skipBtn = root.querySelector('#bootSkip');
@@ -155,35 +214,169 @@ export function runBootSequence({ root, version, checkUpdate, onDone }) {
     }, 620);
   };
 
-  /** 显示第 n 屏；hold=0 的屏由 onEnter 自己决定何时 next */
-  function show(n) {
+  /* 显示第 n 屏。
+     淡入淡出用 Web Animations 显式驱动，不靠 CSS 类切换：
+     类切换依赖浏览器在同一帧里重算样式，实测经常被合并掉，看起来就是硬切。
+     显式写死三段——淡出 700ms、全黑 450ms、淡入 900ms——节奏才稳定。 */
+  async function show(n) {
     if (finished) return;
     if (n >= BOOT_SCREENS.length) { finish(); return; }
     i = n;
     const sc = BOOT_SCREENS[n];
+    clear();
+
+    // 第一屏之前没有内容，直接淡入
+    if (n > 0) {
+      try {
+        await stage.animate(
+          [{ opacity: 1 }, { opacity: 0 }],
+          { duration: 700, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }
+        ).finished;
+      } catch (e) { /* 不支持就跳过 */ }
+      if (finished) return;
+    }
+
     stage.innerHTML = sc.html;
     stage.className = 'boot-stage show-' + sc.key;
     if (bar) bar.style.width = `${((n + 1) / BOOT_SCREENS.length) * 100}%`;
 
-    // 版本号填进去
     const verEl = stage.querySelector('#bootVer');
     if (verEl) verEl.textContent = 'v' + version;
-
+    // 署名页那行 GitHub：没配仓库就留空，不显示 github.com/OWNER 这种占位
+    const gitEl = stage.querySelector('#bootGit');
+    if (gitEl) gitEl.textContent = github || '';
     if (skipBtn) skipBtn.hidden = false;
 
-    if (sc.hold > 0) {
-      clear();
-      timer = setTimeout(() => show(n + 1), sc.hold);
-    }
+    // 全黑停一小会儿，再淡入
+    await new Promise((r) => setTimeout(r, n === 0 ? 0 : 450));
+    if (finished) return;
+    try {
+      const anim = stage.animate(
+        [{ opacity: 0 }, { opacity: 1 }],
+        { duration: 900, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' }
+      );
+      anim.onfinish = () => { stage.style.opacity = '1'; };
+      await anim.finished;
+    } catch (e) { stage.style.opacity = '1'; }
+    if (finished) return;
+
+    if (sc.hold > 0) timer = setTimeout(() => show(n + 1), sc.hold);
     if (sc.key === 'update') onUpdateScreen();
+    if (sc.key === 'shader') onShaderScreen();
   }
 
-  /** 更新检查屏：真正去查，查完给一句结果，停 1.2 秒再进主界面 */
+  /* 编译着色器屏。
+     这一屏不是装饰动画：真做了四件事——等字体、预热首章背景、探 WebGL、探音频。
+     每一步都套了超时，整屏还有 12 秒的总闸——
+     任何一步卡住都只会让这一屏提前结束，绝不会停在那里不动。 */
+  async function onShaderScreen() {
+    const bar = stage.querySelector('#bootShadeBar');
+    const pct = stage.querySelector('#bootShadePct');
+    const text = stage.querySelector('#bootShadeText');
+    let closed = false;
+
+    const tick = (p, msg) => {
+      if (closed) return;
+      if (bar) bar.style.width = Math.max(4, Math.min(100, p)) + '%';
+      if (pct) pct.textContent = Math.round(p) + '%';
+      if (text && msg) text.textContent = msg;
+    };
+
+    /* 单步超时：超时就当它做完，不拖住整屏 */
+    const withTimeout = (fn, ms) => Promise.race([
+      Promise.resolve().then(fn).catch(() => {}),
+      new Promise((r) => setTimeout(r, ms))
+    ]);
+
+    const steps = [
+      [12, '正在载入字体…', () => {
+        if (!document.fonts || !document.fonts.ready) return;
+        return document.fonts.ready;
+      }],
+      [40, '正在预载场景…', () => Promise.all(
+        ['bg_gate', 'bg_classroom', 'bg_corridor'].map((n) => new Promise((res) => {
+          const img = new Image();
+          img.onload = img.onerror = () => res();
+          img.src = `assets/backgrounds/${n}.jpg`;
+        }))
+      )],
+      [68, '正在检测渲染能力…', () => {
+        try {
+          const c = document.createElement('canvas');
+          const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+          if (!gl) document.body.classList.add('no-webgl');
+          // 预热一次 2D 绘制，让第一次真正画画面时不必再初始化上下文
+          const c2 = document.createElement('canvas');
+          c2.width = c2.height = 2;
+          const g2 = c2.getContext('2d');
+          if (g2) { g2.fillRect(0, 0, 1, 1); }
+        } catch (e) { document.body.classList.add('no-webgl'); }
+      }],
+      [90, '正在初始化音频…', () => {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) { document.body.classList.add('no-webaudio'); return; }
+          // 只创建再挂起：不在这时候出声，也不占用音频设备
+          const ctx = new AC();
+          if (ctx.state === 'running') ctx.suspend();
+        } catch (e) { document.body.classList.add('no-webaudio'); }
+      }]
+    ];
+
+    const go = async () => {
+      let done = 0;
+      for (const [p, msg, fn] of steps) {
+        if (closed) return;
+        tick(done === 0 ? 6 : (done / steps.length) * 88 + 4, msg);
+        await withTimeout(fn, 2600);
+        done++;
+      }
+      if (closed) return;
+      tick(100, '准备完成');
+      await new Promise((r) => setTimeout(r, 520));
+      if (closed) return;
+      leave();
+    };
+
+    const leave = () => {
+      if (closed || finished) return;
+      closed = true;
+      clearTimeout(watchdog);
+      clear();
+      show(i + 1);
+    };
+
+    // 总闸：12 秒还没跑完，直接放行
+    const watchdog = setTimeout(() => {
+      if (closed) return;
+      tick(100, '准备完成');
+      setTimeout(leave, 320);
+    }, 12000);
+
+    go().catch(leave);
+  }
+
+  /** 更新检查屏：真正去查，查完给一句结果，停 1.2 秒再进主界面。
+      外面还有一道 9 秒总闸：baseUrl 没配、网络卡住都不能让启动停在这里。 */
   async function onUpdateScreen() {
     const text = stage.querySelector('#bootUpdText');
     const ubar = stage.querySelector('#bootUpdBar');
+    const meta = stage.querySelector('#bootUpdMeta');
+    const orb = stage.querySelector('#bootOrb');
     waiting = true;
+    let done = false;
+    const bail = (msg) => {
+      if (done) return;
+      done = true;
+      if (ubar) ubar.style.width = '100%';
+      if (text) text.textContent = msg;
+      waiting = false;
+      clear();
+      timer = setTimeout(() => show(i + 1), 900);
+    };
+    const guard = setTimeout(() => bail('检查超时，先离线游玩'), 9000);
     if (ubar) ubar.style.width = '30%';
+    if (meta) meta.textContent = '当前版本 v' + version;
     let msg = '资源已是最新';
     try {
       if (typeof checkUpdate === 'function') {
@@ -191,16 +384,37 @@ export function runBootSequence({ root, version, checkUpdate, onDone }) {
         updateResult = await checkUpdate();
         const k = updateResult && updateResult.kind;
         if (k === 'content' || k === 'both') {
-          msg = `发现新版本 v${updateResult.content}，已准备下载`;
+          msg = `发现新版本 v${updateResult.content}，正在热更新…`;
+          if (text) text.textContent = msg;
+          const res = typeof applyUpdate === 'function'
+            ? await applyUpdate(updateResult.remote || {})
+            : { ok: false };
+          msg = (res && res.ok) ? '已更新，正在重新载入…' : '热更新没成功，先用当前版本';
+          if (res && res.ok) {
+            /* 拿到新资源就立刻重载，而不是"下次启动生效"：
+               启动序列本来就该在这一步把游戏变成最新的。
+               sessionStorage 挡一下，避免新版 version.json 没换过来时反复重载。 */
+            try {
+              if (!sessionStorage.getItem('zb_updated_once')) {
+                sessionStorage.setItem('zb_updated_once', String(Date.now()));
+                setTimeout(() => location.reload(), 1400);
+                return;
+              }
+            } catch (e) { /* 隐私模式下没有 sessionStorage，就不重载 */ }
+          }
         } else if (k === 'shell') {
-          msg = '客户端需要更新，进游戏后会提示';
+          msg = '客户端需要更新';
         }
       }
     } catch (e) {
       msg = '网络不通，先离线游玩';
     }
+    clearTimeout(guard);
+    if (done) return;
+    done = true;
     if (ubar) ubar.style.width = '100%';
     if (text) text.textContent = msg;
+    if (orb) orb.classList.add('is-done');
     waiting = false;
     clear();
     timer = setTimeout(() => show(i + 1), 1200);

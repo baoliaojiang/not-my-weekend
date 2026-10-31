@@ -10,19 +10,53 @@ APP="$ROOT/build/android"
 OUT="$ROOT/build/out"
 PROJ="$ROOT/build/apk-work"
 
+PYEXE="C:/Users/12821/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
 PKG="com.zhouri.bufanxiao"
 NAME="不属于我的周末"
-VER_CODE="17"
-VER_NAME="0.6.1"
+VER_CODE="18"
+VER_NAME="0.6.2"
+
+# 变体：标准版（默认，依赖系统 WebView）/ 兼容版（自带 polyfill 与降级样式）
+# 用法：bash build/build-apk.sh compat
+VARIANT="${1:-standard}"
+if [ "$VARIANT" = "compat" ]; then
+  OUT_NAME="不属于我的周末-兼容版.apk"
+else
+  OUT_NAME="不属于我的周末-标准版.apk"
+fi
 
 rm -rf "$PROJ"
 mkdir -p "$PROJ/gen" "$PROJ/classes" "$PROJ/dex" "$OUT"
 
-echo "[1/7] 同步网页资源到 assets/www"
+echo "[1/7] 同步网页资源到 assets/www（变体：$VARIANT）"
 # 产物文件名固定（index.html / bundle.js），直接覆盖即可；
 # 不再 rm -rf 整个 assets 目录——那会一次删 50 个文件，容易触发批量删除保护。
 mkdir -p "$APP/assets/www"
 cp -r "$ROOT/build/www/." "$APP/assets/www/"
+
+# 兼容版：把 polyfill 与降级样式塞进资源，并在 index.html 里引上。
+# 标准版不引——多一个 <script> 就多一次解析，没必要。
+if [ "$VARIANT" != "compat" ]; then
+  # 上一次可能是兼容版，残留的 compat.* 会让 index.html 里还留着引用
+  rm -f "$APP/assets/www/compat.js" "$APP/assets/www/compat.css"
+fi
+if [ "$VARIANT" = "compat" ]; then
+  cp "$ROOT/build/compat/compat.js" "$APP/assets/www/compat.js"
+  cp "$ROOT/build/compat/compat.css" "$APP/assets/www/compat.css"
+  "$PYEXE" - "$APP/assets/www/index.html" <<'PY'
+import io, sys
+p = sys.argv[1]
+s = io.open(p, encoding='utf-8').read()
+if 'compat.js' not in s:
+    tag = ('<link rel="stylesheet" href="compat.css">\n'
+           '<script src="compat.js"></script>\n')
+    s = s.replace('</head>', tag + '</head>', 1)
+    io.open(p, 'w', encoding='utf-8', newline='\n').write(s)
+    print('  已注入兼容层')
+else:
+    print('  兼容层已存在')
+PY
+fi
 
 echo "[2/7] aapt2 编译资源"
 "$BT/aapt2.exe" compile --dir "$APP/res" -o "$PROJ/res.zip"
@@ -88,7 +122,7 @@ if [ ! -f "$KS" ]; then
 fi
 "$BT/apksigner.bat" sign --ks "$KS" --ks-pass pass:zhouri2026 --key-pass pass:zhouri2026 \
   --ks-key-alias zhouri --v1-signing-enabled true --v2-signing-enabled true \
-  --out "$OUT/$NAME.apk" "$PROJ/app-aligned.apk"
+  --out "$OUT/$OUT_NAME" "$PROJ/app-aligned.apk"
 
-"$BT/apksigner.bat" verify --print-certs "$OUT/$NAME.apk" | head -4
-ls -lh "$OUT/$NAME.apk"
+"$BT/apksigner.bat" verify --print-certs "$OUT/$OUT_NAME" | head -4
+ls -lh "$OUT/$OUT_NAME"

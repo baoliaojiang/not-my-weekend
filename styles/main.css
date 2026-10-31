@@ -40,6 +40,97 @@
 .boot-rule:last-of-type{ margin:18px auto 14px; }
 .boot-rule-wide{ width:min(280px,52vw); margin:22px auto 18px; }
 
+/* ---- 两个 logo ----
+   署名：只靠字形（miHoYo 那种处理），紧字距 + 一行小字；
+   游戏标题：上方小 tag、主标实字重、下方星点与英文副标（崩铁那种层次）。 */
+.logo-author{
+  width:min(300px,68vw); height:auto; display:block; margin:0 auto 22px;
+  color:#f6f3ec; overflow:visible;
+}
+.logo-author-t{
+  font-family:var(--sans); font-size:40px; font-weight:600;
+  letter-spacing:.06em; fill:currentColor; text-anchor:middle;
+}
+.logo-author-sub{
+  font-family:var(--sans); font-size:7px; letter-spacing:.34em;
+  fill:currentColor; opacity:.34; text-anchor:middle;
+}
+
+.logo-game{
+  width:min(660px,90vw); height:auto; display:block; margin:0 auto 14px;
+  color:#f6f3ec; overflow:visible;
+}
+.logo-game-tag{
+  font-family:var(--sans); font-size:8px; letter-spacing:.46em;
+  fill:currentColor; opacity:.4; text-anchor:middle;
+}
+.logo-game-t{
+  font-family:var(--serif); font-size:50px; font-weight:600;
+  letter-spacing:.1em; fill:currentColor; text-anchor:middle;
+  animation:logoTextIn 1.5s cubic-bezier(.22,.8,.28,1) both;
+}
+.logo-game-sub{
+  font-family:var(--sans); font-size:8px; letter-spacing:.44em;
+  fill:currentColor; opacity:.36; text-anchor:middle;
+}
+@keyframes logoTextIn{
+  from{ opacity:0; letter-spacing:.4em; filter:blur(8px); }
+  to  { opacity:1; letter-spacing:.1em; filter:blur(0); }
+}
+body.motion-off .logo-game-t{ animation:none; }
+body.is-portrait .logo-game-t{ font-size:34px; letter-spacing:.06em; }
+body.is-portrait .logo-author-t{ font-size:34px; }
+
+/* ---- 检查更新（HyperOS 式卡片） ---- */
+.boot-upd{ display:flex; align-items:center; justify-content:center; }
+.boot-card{
+  width:min(420px,82vw); padding:22px 22px 20px;
+  border-radius:22px; text-align:left;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 18px 60px rgba(0,0,0,.5);
+}
+.boot-card-top{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px;
+}
+.boot-card-ic{
+  display:inline-grid; place-items:center; width:30px; height:30px;
+  border-radius:50%; font-size:14px; color:rgba(233,230,223,.8);
+  background:rgba(255,255,255,.08);
+  animation:orbSpin 1.5s linear infinite;
+}
+.boot-card-ic.is-done{
+  animation:none; color:#9fd4ff; background:rgba(122,196,255,.14);
+}
+@keyframes orbSpin{ to{ transform:rotate(360deg); } }
+body.motion-off .boot-card-ic{ animation:none; }
+.boot-card-ver{
+  font-size:.66rem; letter-spacing:.1em; color:rgba(233,230,223,.34);
+  font-variant-numeric:tabular-nums;
+}
+.boot-card-h{
+  margin:0 0 6px; font-size:1.08rem; font-weight:500;
+  letter-spacing:.02em; color:#f4f1ea;
+}
+.boot-card-t{
+  margin:0 0 16px; font-size:.76rem; line-height:1.7; letter-spacing:.02em;
+  color:rgba(233,230,223,.56); min-height:1.7em;
+}
+.boot-card-f{
+  margin:14px 0 0; font-size:.64rem; letter-spacing:.04em;
+  color:rgba(233,230,223,.26);
+}
+.boot-upd-bar{
+  width:100%; height:4px; border-radius:4px;
+  background:rgba(255,255,255,.09); overflow:hidden;
+}
+.boot-upd-bar i{
+  display:block; height:100%; width:8%; border-radius:4px;
+  background:linear-gradient(90deg, rgba(233,230,223,.5), rgba(233,230,223,.95));
+  transition:width .55s cubic-bezier(.3,.8,.3,1);
+}
+
 /* 2 作者 */
 .boot-by{
   font-size:.6rem; letter-spacing:.38em; text-indent:.38em;
@@ -49,7 +140,14 @@
   font-family:var(--serif); font-size:clamp(1.6rem,4.6vw,2.4rem);
   letter-spacing:.34em; text-indent:.34em; margin:0 0 18px;
   color:#f6f3ec; font-weight:400;
+  animation:logoIn 1.5s cubic-bezier(.22,.8,.28,1) both;
 }
+@keyframes authorIn{
+  from{ letter-spacing:.6em; text-indent:.6em; opacity:0; }
+  to  { letter-spacing:.34em; text-indent:.34em; opacity:1; }
+}
+.boot-author-n{ animation-name:authorIn; }
+body.motion-off .boot-author-n{ animation:none; }
 .boot-links{
   margin:16px 0 0; font-size:.72rem; letter-spacing:.1em;
   color:rgba(233,230,223,.4);
@@ -60,7 +158,14 @@
   font-family:var(--serif); font-size:clamp(2rem,6.2vw,3.1rem);
   letter-spacing:.16em; text-indent:.16em; margin:0; line-height:1.2;
   color:#f6f3ec;
+  /* 字距由松收拢：比单纯淡入更有"落定"的感觉 */
+  animation:logoIn 1.35s cubic-bezier(.22,.8,.28,1) both;
 }
+@keyframes logoIn{
+  from{ letter-spacing:.42em; text-indent:.42em; opacity:0; filter:blur(6px); }
+  to  { letter-spacing:.16em; text-indent:.16em; opacity:1; filter:blur(0); }
+}
+body.motion-off .boot-title{ animation:none; }
 .boot-sub{
   margin:14px 0 0; font-size:.78rem; letter-spacing:.26em; text-indent:.26em;
   color:rgba(233,230,223,.5);
@@ -104,15 +209,22 @@
 .boot-notice-t b{ color:#f6f3ec; }
 body.is-portrait .boot-notice-t{ font-size:.78rem; line-height:1.85; }
 
-/* 7 检查更新 */
-.boot-upd-t{ margin:0 0 16px; font-size:.82rem; letter-spacing:.1em; color:rgba(233,230,223,.72); }
+/* 7 检查更新
+   版式参考澎湃 OS 与 Windows 11 的更新页：上方一个居中的环形指示，
+   下面是标题 + 一行状态文字 + 细进度条 + 版本号。信息只有四层，不堆东西。 */
+.boot-upd{ display:flex; flex-direction:column; align-items:center; }
+/* 转动的弧：只在检查中跑，出结果就停 */
+@keyframes orbSpin{ to{ transform:rotate(360deg); } }
+/* 关掉界面动画时不要让弧一直转 */
+body.motion-off 
 .boot-upd-bar{
-  width:min(320px,70vw); height:2px; margin:0 auto;
-  background:rgba(255,255,255,.12); overflow:hidden;
+  width:min(280px,62vw); height:2px;
+  background:rgba(255,255,255,.10); overflow:hidden; border-radius:2px;
 }
 .boot-upd-bar i{
-  display:block; height:100%; width:8%; background:rgba(233,230,223,.72);
-  transition:width .5s ease;
+  display:block; height:100%; width:8%; border-radius:2px;
+  background:linear-gradient(90deg, rgba(233,230,223,.4), rgba(233,230,223,.9));
+  transition:width .55s cubic-bezier(.3,.8,.3,1);
 }
 
 /* 跳过与进度条 */
@@ -416,7 +528,7 @@ h1,h2,h3{margin:0; font-weight:600;}
   padding:0 8vw;
   background:#000;
   cursor:pointer;
-  opacity:0; transition:opacity .62s ease;
+  opacity:0; transition:opacity 1.05s cubic-bezier(.4,0,.5,1);
 }
 .curtain.on{opacity:1;}
 .curtain-text{
@@ -667,6 +779,7 @@ body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
   position:fixed; inset:0; z-index:68; display:flex; align-items:center; justify-content:center;
   padding:clamp(10px,3vw,32px); background:rgba(6,8,11,.72);
 }
+.ai-layer .panel-ai{width:min(600px,96vw); max-height:calc(100vh - 20px);}
 .ai-layer .panel-ai{width:min(600px,96vw); max-height:calc(100dvh - 20px);}
 .ai-layer .panel-head{gap:10px;}
 
@@ -681,16 +794,20 @@ body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
 body.kb-open .ai-layer{ align-items:flex-end; padding-bottom:calc(8px + var(--kb,0px)); }
 body.kb-open .ai-layer .panel-ai{
   width:min(600px,96vw);
+  max-height:calc(100vh - var(--kb,0px) - 16px);
   max-height:calc(100dvh - var(--kb,0px) - 16px);
 }
 body.kb-open .panel-layer{ align-items:flex-end; padding-bottom:calc(8px + var(--kb,0px)); }
+body.kb-open .panel-layer .panel{ max-height:calc(100vh - var(--kb,0px) - 16px); }
 body.kb-open .panel-layer .panel{ max-height:calc(100dvh - var(--kb,0px) - 16px); }
 body.kb-open .hub-layer{ align-items:flex-end; padding-bottom:calc(8px + var(--kb,0px)); }
+body.kb-open .hub-layer .hub-panel{ max-height:calc(100vh - var(--kb,0px) - 16px); }
 body.kb-open .hub-layer .hub-panel{ max-height:calc(100dvh - var(--kb,0px) - 16px); }
 body.kb-open .ai-compose{ padding-bottom:calc(6px + env(safe-area-inset-bottom,0px)); }
 body.kb-open .toast{ bottom:calc(var(--kb,0px) + 16px); }
 /* 聊天记录区让位：横屏本来就没多少高度，键盘再占一半，
    记录区必须能压到很小，只留输入区和一两行历史。 */
+body.kb-open .ai-log{ min-height:0; max-height:calc(100vh - var(--kb,0px) - 230px); }
 body.kb-open .ai-log{ min-height:0; max-height:calc(100dvh - var(--kb,0px) - 230px); }
 body.kb-open .ai-compose-tip{ display:none; }
 .ai-mode{
@@ -1289,6 +1406,7 @@ input[type=range]::-webkit-slider-thumb{
   .choice-tools button{font-size:.66rem; padding:5px 8px;}
 
   .hub-layer{padding:8px;}
+  .hub-panel{max-height:calc(100vh - 16px); padding:14px 16px;}
   .hub-panel{max-height:calc(100dvh - 16px); padding:14px 16px;}
   .hub-title{font-size:1rem;}
   .hub-sub{font-size:.72rem; margin-top:5px;}
@@ -1299,6 +1417,7 @@ input[type=range]::-webkit-slider-thumb{
   .hub-leave{margin-top:10px; padding:9px 16px; font-size:.78rem;}
 
   .panel-layer{padding:8px;}
+  .panel{max-height:calc(100vh - 16px);}
   .panel{max-height:calc(100dvh - 16px);}
   .setting{padding:9px 0; gap:10px;}
   .setting-label{font-size:.8rem;}
@@ -1307,6 +1426,7 @@ input[type=range]::-webkit-slider-thumb{
   .panel-head{padding:10px 14px;}
   .panel-body{padding:14px; line-height:1.75;}
   .panel-foot{padding:9px 14px;}
+  .phone{height:min(560px,calc(100vh - 110px));}
   .phone{height:min(560px,calc(100dvh - 110px));}
   .toast{bottom:16vh; padding:7px 14px; font-size:.72rem;}
 
@@ -1484,6 +1604,7 @@ input[type=range]::-webkit-slider-thumb{
 
   .hub-layer{ padding:10px; }
   .hub-panel{
+    max-height:calc(100vh - 20px); padding:16px 16px 18px; overflow-y:auto;
     max-height:calc(100dvh - 20px); padding:16px 16px 18px; overflow-y:auto;
     -webkit-overflow-scrolling:touch;
   }
@@ -1494,9 +1615,11 @@ input[type=range]::-webkit-slider-thumb{
   .hub-leave{ min-height:40px; font-size:.88rem; }
 
   .panel-layer{ padding:10px; }
+  .panel{ max-height:calc(100vh - 20px); }
   .panel{ max-height:calc(100dvh - 20px); }
   .panel-body{ padding:18px; line-height:1.88; }
   .panel-foot .btn{ min-height:40px; }
+  .phone{ height:min(600px, 76vh); }
   .phone{ height:min(600px, 76dvh); }
   .choice-box{ width:min(640px, 94vw); gap:9px; }
   .choice-item{ padding:14px 16px; font-size:.98rem; }
@@ -1530,6 +1653,7 @@ input[type=range]::-webkit-slider-thumb{
   .dlg-name{ font-size:.8rem; padding:4px 12px; }
   .dlg-body{
     padding:11px 18px 13px; min-height:0;
+    max-height:48vh; overflow-y:auto;
     max-height:48dvh; overflow-y:auto;
   }
   .dlg-text{ line-height:1.8; }
@@ -1537,6 +1661,7 @@ input[type=range]::-webkit-slider-thumb{
   .toast{ top:44px; bottom:auto; font-size:.72rem; padding:6px 12px; }
 
   .hub-layer{ padding:8px; }
+  .hub-panel{ max-height:calc(100vh - 16px); padding:13px 15px 15px; overflow-y:auto; }
   .hub-panel{ max-height:calc(100dvh - 16px); padding:13px 15px 15px; overflow-y:auto; }
   .hub-title{ font-size:1.06rem; }
   .hub-sub{ font-size:.74rem; margin-top:4px; }
@@ -1556,6 +1681,7 @@ input[type=range]::-webkit-slider-thumb{
 @media (max-height:420px) and (orientation:landscape){
   .hub-card .hd{ display:none; }
   .hub-card{ min-height:62px; }
+  .dlg-body{ max-height:54vh; }
   .dlg-body{ max-height:54dvh; }
 }
 
@@ -2278,6 +2404,7 @@ body.is-portrait .hub-layer{ padding:0; align-items:stretch; }
 body.is-portrait .panel,
 body.is-portrait .hub-panel{
   width:100vw; max-width:100vw;
+  height:100vh; max-height:100vh;
   height:100dvh; max-height:100dvh;
   border:none; box-shadow:none;
 }
@@ -2349,6 +2476,7 @@ body.is-portrait .setting > .btn{ margin-left:auto; }
 body.is-portrait input[type=range]{ width:140px; }
 
 /* ---- 手机 / 材料 / 小测 ---- */
+body.is-portrait .phone{ height:min(78vh, 680px); width:100%; }
 body.is-portrait .phone{ height:min(78dvh, 680px); width:100%; }
 body.is-portrait .mat-grid{ grid-template-columns:1fr; }
 body.is-portrait .mat-detail .quote{ font-size:.92rem; }
@@ -3203,10 +3331,12 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
    浅色拟真界面（跟微信、政务一样），不随游戏黑暗模式变化。
    ========================================================= */
 /* 手机面板本身不滚：桌面（MintOS）和每个应用自己管滚动 */
-.panel-phone .panel-body:has(.mos), .panel-phone .panel-body:has(.mos-appview){
+.panel-phone .panel-body:has(.mos), .panel-phone .panel-body:has(.mos-appview),
+.panel-phone .panel-body.mos-host{
   overflow:hidden; display:flex; flex-direction:column;
 }
-.panel-phone .panel-body:has(.mos) > .mos{ flex:1 1 auto; height:auto; max-height:none; }
+.panel-phone .panel-body:has(.mos) > .mos,
+.panel-phone .panel-body.mos-host > .mos{ flex:1 1 auto; height:auto; max-height:none; }
 .mos-appview{
   display:flex; flex-direction:column; flex:1 1 auto; min-height:0;
   background:#f5f2ea;
@@ -3923,7 +4053,7 @@ body.is-portrait .hbtn-ai .ai-avatar{ width:22px; height:22px; }
 /* ---- 聊天面板 ---- */
 .ai-chat{ display:flex; flex-direction:column; gap:10px; min-height:0; flex:1; }
 /* 薄荷面板：body 不滚，只让消息区 .ai-body 滚，避免双层滚动条 */
-.panel-body:has(.ai-chat){ overflow:hidden; display:flex; flex-direction:column; }
+.panel-body:has(.ai-chat), .panel-body.ai-host{ overflow:hidden; display:flex; flex-direction:column; }
 .ai-chat-head{
   display:flex; align-items:center; gap:10px;
   padding:9px 11px; border-radius:var(--r-2);
@@ -4159,3 +4289,201 @@ body.is-portrait #aiFab{
 }
 body.is-portrait #feedbackFab span,
 body.is-portrait #aiFab .ai-fab-t{ display:none; }
+
+/* =========================================================
+   启动序列 · logo 与检查更新（v0.6.1 追加，覆盖前面同名的旧规则）
+   ---------------------------------------------------------
+   署名页只靠字形（紧字距 + 一行小字），游戏标题做出"tag → 主标 →
+   星点 → 英文副标"的四层，检查更新改成澎湃 OS 那种圆角卡片。
+   ========================================================= */
+.logo-author{
+  width:min(300px,68vw); height:auto; display:block; margin:0 auto 22px;
+  color:#f6f3ec; overflow:visible;
+}
+.logo-author-t{
+  font-family:var(--sans); font-size:40px; font-weight:600;
+  letter-spacing:.06em; fill:currentColor; text-anchor:middle;
+}
+.logo-author-sub{
+  font-family:var(--sans); font-size:7px; letter-spacing:.34em;
+  fill:currentColor; opacity:.34; text-anchor:middle;
+}
+.logo-game{
+  width:min(660px,90vw); height:auto; display:block; margin:0 auto 14px;
+  color:#f6f3ec; overflow:visible;
+}
+.logo-game-tag{
+  font-family:var(--sans); font-size:8px; letter-spacing:.46em;
+  fill:currentColor; opacity:.4; text-anchor:middle;
+}
+.logo-game-t{
+  font-family:var(--serif); font-size:50px; font-weight:600;
+  letter-spacing:.1em; fill:currentColor; text-anchor:middle;
+  animation:logoTextIn 1.5s cubic-bezier(.22,.8,.28,1) both;
+}
+.logo-game-sub{
+  font-family:var(--sans); font-size:8px; letter-spacing:.44em;
+  fill:currentColor; opacity:.36; text-anchor:middle;
+}
+@keyframes logoTextIn{
+  from{ opacity:0; letter-spacing:.4em; filter:blur(8px); }
+  to  { opacity:1; letter-spacing:.1em; filter:blur(0); }
+}
+body.motion-off .logo-game-t{ animation:none; }
+body.is-portrait .logo-game-t{ font-size:34px; letter-spacing:.06em; }
+body.is-portrait .logo-author-t{ font-size:33px; }
+
+/* 检查更新：圆角卡片（澎湃 OS 更新页的那种排布） */
+.boot-upd{ display:flex; align-items:center; justify-content:center; }
+.boot-card{
+  width:min(420px,82vw); padding:22px 22px 20px;
+  border-radius:22px; text-align:left;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 18px 60px rgba(0,0,0,.5);
+}
+.boot-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.boot-card-ic{
+  display:inline-grid; place-items:center; width:30px; height:30px;
+  border-radius:50%; font-size:14px; color:rgba(233,230,223,.8);
+  background:rgba(255,255,255,.08); animation:orbSpin 1.5s linear infinite;
+}
+.boot-card-ic.is-done{ animation:none; color:#9fd4ff; background:rgba(122,196,255,.14); }
+@keyframes orbSpin{ to{ transform:rotate(360deg); } }
+body.motion-off .boot-card-ic{ animation:none; }
+.boot-card-ver{
+  font-size:.66rem; letter-spacing:.1em; color:rgba(233,230,223,.34);
+  font-variant-numeric:tabular-nums;
+}
+.boot-card-h{ margin:0 0 6px; font-size:1.08rem; font-weight:500; letter-spacing:.02em; color:#f4f1ea; }
+.boot-card-t{
+  margin:0 0 16px; font-size:.76rem; line-height:1.7; letter-spacing:.02em;
+  color:rgba(233,230,223,.56); min-height:1.7em;
+}
+.boot-card-f{ margin:14px 0 0; font-size:.64rem; letter-spacing:.04em; color:rgba(233,230,223,.26); }
+.boot-upd-bar{
+  width:100%; height:4px; border-radius:4px;
+  background:rgba(255,255,255,.09); overflow:hidden;
+}
+.boot-upd-bar i{
+  display:block; height:100%; width:8%; border-radius:4px;
+  background:linear-gradient(90deg, rgba(233,230,223,.5), rgba(233,230,223,.95));
+  transition:width .55s cubic-bezier(.3,.8,.3,1);
+}
+
+/* =========================================================
+   启动序列 · logo 与检查更新（v0.6.1 追加，覆盖前面同名的旧规则）
+   ---------------------------------------------------------
+   署名页只靠字形（紧字距 + 一行小字），游戏标题做出"tag → 主标 →
+   星点 → 英文副标"的四层，检查更新改成澎湃 OS 那种圆角卡片。
+   ========================================================= */
+.logo-author{
+  width:min(300px,68vw); height:auto; display:block; margin:0 auto 22px;
+  color:#f6f3ec; overflow:visible;
+}
+.logo-author-t{
+  font-family:var(--sans); font-size:40px; font-weight:600;
+  letter-spacing:.06em; fill:currentColor; text-anchor:middle;
+}
+.logo-author-sub{
+  font-family:var(--sans); font-size:7px; letter-spacing:.34em;
+  fill:currentColor; opacity:.34; text-anchor:middle;
+}
+.logo-game{
+  width:min(660px,90vw); height:auto; display:block; margin:0 auto 14px;
+  color:#f6f3ec; overflow:visible;
+}
+.logo-game-tag{
+  font-family:var(--sans); font-size:8px; letter-spacing:.46em;
+  fill:currentColor; opacity:.4; text-anchor:middle;
+}
+.logo-game-t{
+  font-family:var(--serif); font-size:50px; font-weight:600;
+  letter-spacing:.1em; fill:currentColor; text-anchor:middle;
+  animation:logoTextIn 1.5s cubic-bezier(.22,.8,.28,1) both;
+}
+.logo-game-sub{
+  font-family:var(--sans); font-size:8px; letter-spacing:.44em;
+  fill:currentColor; opacity:.36; text-anchor:middle;
+}
+@keyframes logoTextIn{
+  from{ opacity:0; letter-spacing:.4em; filter:blur(8px); }
+  to  { opacity:1; letter-spacing:.1em; filter:blur(0); }
+}
+body.motion-off .logo-game-t{ animation:none; }
+body.is-portrait .logo-game-t{ font-size:34px; letter-spacing:.06em; }
+body.is-portrait .logo-author-t{ font-size:33px; }
+
+/* 检查更新：圆角卡片（澎湃 OS 更新页的那种排布） */
+.boot-upd{ display:flex; align-items:center; justify-content:center; }
+.boot-card{
+  width:min(420px,82vw); padding:22px 22px 20px;
+  border-radius:22px; text-align:left;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 18px 60px rgba(0,0,0,.5);
+}
+.boot-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.boot-card-ic{
+  display:inline-grid; place-items:center; width:30px; height:30px;
+  border-radius:50%; font-size:14px; color:rgba(233,230,223,.8);
+  background:rgba(255,255,255,.08); animation:orbSpin 1.5s linear infinite;
+}
+.boot-card-ic.is-done{ animation:none; color:#9fd4ff; background:rgba(122,196,255,.14); }
+@keyframes orbSpin{ to{ transform:rotate(360deg); } }
+body.motion-off .boot-card-ic{ animation:none; }
+.boot-card-ver{
+  font-size:.66rem; letter-spacing:.1em; color:rgba(233,230,223,.34);
+  font-variant-numeric:tabular-nums;
+}
+.boot-card-h{ margin:0 0 6px; font-size:1.08rem; font-weight:500; letter-spacing:.02em; color:#f4f1ea; }
+.boot-card-t{
+  margin:0 0 16px; font-size:.76rem; line-height:1.7; letter-spacing:.02em;
+  color:rgba(233,230,223,.56); min-height:1.7em;
+}
+.boot-card-f{ margin:14px 0 0; font-size:.64rem; letter-spacing:.04em; color:rgba(233,230,223,.26); }
+.boot-upd-bar{
+  width:100%; height:4px; border-radius:4px;
+  background:rgba(255,255,255,.09); overflow:hidden;
+}
+.boot-upd-bar i{
+  display:block; height:100%; width:8%; border-radius:4px;
+  background:linear-gradient(90deg, rgba(233,230,223,.5), rgba(233,230,223,.95));
+  transition:width .55s cubic-bezier(.3,.8,.3,1);
+}
+
+/* 启动卡片顶部的小标签 */
+.boot-card-kicker{
+  font-size:.6rem; letter-spacing:.34em; text-indent:.34em;
+  color:rgba(233,230,223,.3);
+}
+/* 设置页的导入导出按钮行 */
+.io-row{ display:flex; gap:8px; flex-wrap:wrap; }
+/* 支线未解锁的说明块 */
+.side-lock{
+  margin:14px 0; padding:12px 14px; border-radius:12px;
+  background:var(--paper-2); border:1px solid var(--line);
+  font-size:.8rem; line-height:1.9;
+}
+.side-lock ol{ margin:8px 0 0; padding-left:1.2em; }
+.side-lock-tip{ font-size:.74rem; color:var(--ink-3); line-height:1.8; }
+
+/* 署名页：圆形头像 + 账号（参考 miHoYo 的极简署名） */
+.boot-avatar{
+  display:block; width:84px; height:84px; margin:0 auto 20px;
+  border-radius:50%; background:center/cover no-repeat url('assets/ui/author.png');
+  border:1px solid rgba(233,230,223,.18);
+  box-shadow:0 10px 40px rgba(0,0,0,.55);
+  animation:avatarIn 1.2s cubic-bezier(.22,.8,.28,1) both;
+}
+@keyframes avatarIn{ from{ opacity:0; transform:scale(.86); } to{ opacity:1; transform:scale(1); } }
+body.motion-off .boot-avatar{ animation:none; }
+.boot-author-n{
+  font-family:var(--sans); font-size:30px; font-weight:600;
+  letter-spacing:.06em; margin:0 0 10px; color:#f6f3ec;
+}
+.boot-ids{
+  margin:0 0 6px; font-size:.72rem; letter-spacing:.16em;
+  color:rgba(233,230,223,.52);
+}
+.boot-ids.is-dim{ color:rgba(233,230,223,.3); letter-spacing:.12em; }

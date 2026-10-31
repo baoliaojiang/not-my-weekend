@@ -1173,12 +1173,6 @@
   }
 
   // scripts/ui/boot.js
-  var AUTHOR = {
-    name: "ZhouRi",
-    // 从 B 站主页链接里取的空间号，这里直接写完整地址
-    bilibili: "https://space.bilibili.com/525298385",
-    github: "https://github.com/OWNER/REPO"
-  };
   var BOOT_SCREENS = [
     {
       key: "blank",
@@ -1189,9 +1183,12 @@
       key: "author",
       hold: 1900,
       html: `<div class="boot-author">
-      <span class="boot-rule"></span>
-      <p class="boot-author-n">${AUTHOR.name}</p>
-      <span class="boot-rule"></span>
+      <svg class="logo-author" viewBox="0 0 300 92" role="img" aria-label="ZhouRi">
+        <!-- 主字标：大小写混排（ZhouRi），圆润字重，靠字形本身立住 -->
+        <text x="150" y="50" class="logo-author-t">ZhouRi</text>
+        <!-- 一行细字压底，字距拉开 -->
+        <text x="150" y="76" class="logo-author-sub">ONE PERSON · ONE WEEKEND</text>
+      </svg>
       <p class="boot-by">A ONE-PERSON PROJECT</p>
     </div>`
     },
@@ -1199,8 +1196,42 @@
       key: "logo",
       hold: 2e3,
       html: `<div class="boot-logo">
-      <h1 class="boot-title">不属于我的周末</h1>
-      <span class="boot-rule boot-rule-wide"></span>
+      <svg class="logo-game" viewBox="0 0 660 240" role="img" aria-label="不属于我的周末">
+        <defs>
+          <radialGradient id="gz" cx="50%" cy="40%" r="52%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity=".09"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="330" cy="108" rx="330" ry="104" fill="url(#gz)"/>
+
+        <!-- 主标：粗体 + 极轻微上扬，像印刷体被风带起一点 -->
+        <g transform="rotate(-1.6 330 106)">
+          <text x="330" y="118" class="logo-game-t">不属于我的周末</text>
+        </g>
+
+        <!-- 地平线：一条细线横穿，两端渐隐 -->
+        <path d="M92 148h476" stroke="currentColor" stroke-width=".9" opacity=".34"/>
+
+        <!-- 天际线：几段教学楼轮廓，只有剪影，不画细节 -->
+        <g fill="currentColor" opacity=".2">
+          <rect x="150" y="120" width="62" height="28"/>
+          <rect x="216" y="106" width="34" height="42"/>
+          <rect x="256" y="126" width="76" height="22"/>
+          <rect x="338" y="112" width="44" height="36"/>
+          <rect x="388" y="128" width="92" height="20"/>
+          <rect x="486" y="118" width="30" height="30"/>
+        </g>
+        <!-- 几个亮着的窗 -->
+        <g fill="currentColor" opacity=".5">
+          <rect x="230" y="116" width="5" height="5"/>
+          <rect x="352" y="122" width="5" height="5"/>
+          <rect x="366" y="122" width="5" height="5"/>
+        </g>
+
+        <!-- 英文副标 -->
+        <text x="330" y="180" class="logo-game-sub">THE WEEKEND THAT IS NOT MINE</text>
+      </svg>
       <p class="boot-sub">关于我的学校周末要上课这件事</p>
       <p class="boot-ver" id="bootVer"></p>
     </div>`
@@ -1267,12 +1298,37 @@
     </div>`
     },
     {
+      key: "shader",
+      hold: 0,
+      // 由 prepareRuntime 决定何时走
+      html: `<div class="boot-upd">
+      <div class="boot-card">
+        <div class="boot-card-top">
+          <span class="boot-card-kicker">PREPARING</span>
+          <span class="boot-card-ver" id="bootShadePct">0%</span>
+        </div>
+        <h2 class="boot-card-h">正在编译着色器</h2>
+        <p class="boot-card-t" id="bootShadeText">正在准备运行环境…</p>
+        <div class="boot-upd-bar"><i id="bootShadeBar"></i></div>
+        <p class="boot-card-f">首次启动会慢一些，之后不用再等</p>
+      </div>
+    </div>`
+    },
+    {
       key: "update",
       hold: 0,
       // 等检查完再走，见 boot.js 的 onEnter
       html: `<div class="boot-upd">
-      <p class="boot-upd-t" id="bootUpdText">正在检查资源更新…</p>
-      <div class="boot-upd-bar"><i id="bootUpdBar"></i></div>
+      <div class="boot-card">
+        <div class="boot-card-top">
+          <span class="boot-card-kicker">RESOURCE CHECK</span>
+          <span class="boot-card-ver" id="bootUpdMeta"></span>
+        </div>
+        <h2 class="boot-card-h">检查更新</h2>
+        <p class="boot-card-t" id="bootUpdText">正在获取版本信息…</p>
+        <div class="boot-upd-bar"><i id="bootUpdBar"></i></div>
+        <p class="boot-card-f">资源更新不会影响你的存档</p>
+      </div>
     </div>`
     }
   ];
@@ -1314,23 +1370,34 @@
       }
       i = n;
       const sc = BOOT_SCREENS[n];
-      stage2.innerHTML = sc.html;
-      stage2.className = "boot-stage show-" + sc.key;
-      if (bar) bar.style.width = `${(n + 1) / BOOT_SCREENS.length * 100}%`;
-      const verEl = stage2.querySelector("#bootVer");
-      if (verEl) verEl.textContent = "v" + version;
-      if (skipBtn) skipBtn.hidden = false;
-      if (sc.hold > 0) {
-        clear();
-        timer = setTimeout(() => show(n + 1), sc.hold);
+      clear();
+      const paint = () => {
+        if (finished) return;
+        stage2.innerHTML = sc.html;
+        stage2.className = "boot-stage show-" + sc.key;
+        if (bar) bar.style.width = `${(n + 1) / BOOT_SCREENS.length * 100}%`;
+        const verEl = stage2.querySelector("#bootVer");
+        if (verEl) verEl.textContent = "v" + version;
+        if (skipBtn) skipBtn.hidden = false;
+        if (sc.hold > 0) timer = setTimeout(() => show(n + 1), sc.hold);
+        if (sc.key === "update") onUpdateScreen();
+        if (sc.key === "shader") onShaderScreen();
+      };
+      if (n === 0) {
+        paint();
+        return;
       }
-      if (sc.key === "update") onUpdateScreen();
+      stage2.className = "boot-stage";
+      timer = setTimeout(paint, 880);
     }
     async function onUpdateScreen() {
       const text = stage2.querySelector("#bootUpdText");
       const ubar = stage2.querySelector("#bootUpdBar");
+      const meta = stage2.querySelector("#bootUpdMeta");
+      const orb = stage2.querySelector("#bootOrb");
       waiting = true;
       if (ubar) ubar.style.width = "30%";
+      if (meta) meta.textContent = "当前版本 v" + version;
       let msg = "资源已是最新";
       try {
         if (typeof checkUpdate2 === "function") {
@@ -1348,6 +1415,7 @@
       }
       if (ubar) ubar.style.width = "100%";
       if (text) text.textContent = msg;
+      if (orb) orb.classList.add("is-done");
       waiting = false;
       clear();
       timer = setTimeout(() => show(i + 1), 1200);
@@ -5028,11 +5096,11 @@ ${custom}`);
   var $ = (sel, root2 = document) => root2.querySelector(sel);
   var TOUCH = typeof navigator !== "undefined" && navigator.maxTouchPoints > 0 || typeof window !== "undefined" && window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
   var UI = class {
-    constructor({ root: root2, state: state2, settings: settings2, audio: audio2, saveAPI: saveAPI2 }) {
+    constructor({ root: root2, state: state2, settings: settings2, audio: audio3, saveAPI: saveAPI2 }) {
       this.root = root2;
       this.state = state2;
       this.settings = settings2;
-      this.audio = audio2;
+      this.audio = audio3;
       this.saveAPI = saveAPI2;
       this.engine = null;
       this.el = {
@@ -6964,6 +7032,27 @@ ${searchText}
         </div>
       </details>
 
+      <h4 class="set-group-t">存档与设置</h4>
+
+      <div class="setting">
+        <div><div class="setting-label">导出存档 / 设置</div>
+        <div class="setting-hint">导出成一个 <code>.json</code> 文件，可以备份、换设备继续玩。浏览器会存到「下载」文件夹。</div></div>
+        <div class="setting-ctl io-row">
+          <button class="btn btn-sm" id="exportSaves">导出存档</button>
+          <button class="btn btn-sm" id="exportSettings">导出设置</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">导入存档 / 设置</div>
+        <div class="setting-hint">选择之前导出的文件。导入存档会覆盖同名槽位，导入设置会立即生效。</div></div>
+        <div class="setting-ctl io-row">
+          <button class="btn btn-sm" id="importSaves">导入存档</button>
+          <button class="btn btn-sm" id="importSettings">导入设置</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+      </div>
+
       <div class="setting">
         <div><div class="setting-label">已读剧情</div>
         <div class="setting-hint">清除后，所有剧情都会被视为未读（不影响存档）。</div></div>
@@ -7136,6 +7225,118 @@ ${searchText}
         screenSeg.querySelectorAll("[data-screen]").forEach((x) => x.classList.toggle("on", x === b));
         this.audio.sfx("click");
         if (typeof this.onScreenModeChange === "function") this.onScreenModeChange();
+      });
+      const IO_PREFIX_SAVE = ["zb_slot", "zb_side", "zb_progress", "zb_read"];
+      const IO_PREFIX_SET = ["zb_settings", "zb_ai"];
+      const dumpKeys = (prefixes) => {
+        const out = {};
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k) continue;
+            if (prefixes.some((p) => k.startsWith(p))) out[k] = localStorage.getItem(k);
+          }
+        } catch (e) {
+        }
+        return out;
+      };
+      const download = (obj, name) => {
+        try {
+          const text = JSON.stringify(obj, null, 2);
+          const blob = new Blob([text], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 4e3);
+          this.toast("已导出：" + name, 2600);
+        } catch (e) {
+          this.toast("导出失败，可能是浏览器限制了下载", 2600);
+        }
+      };
+      const stamp = () => {
+        const d = /* @__PURE__ */ new Date();
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+      };
+      const exportSaves = $("#exportSaves", this.el.panelBody);
+      if (exportSaves) exportSaves.addEventListener("click", () => {
+        audio.sfx("click");
+        download(
+          { v: 1, kind: "saves", at: Date.now(), keys: dumpKeys(IO_PREFIX_SAVE) },
+          `不属于我的周末-存档-${stamp()}.json`
+        );
+      });
+      const exportSettings = $("#exportSettings", this.el.panelBody);
+      if (exportSettings) exportSettings.addEventListener("click", () => {
+        audio.sfx("click");
+        download(
+          { v: 1, kind: "settings", at: Date.now(), keys: dumpKeys(IO_PREFIX_SET) },
+          `不属于我的周末-设置-${stamp()}.json`
+        );
+      });
+      const fileInput = $("#importFile", this.el.panelBody);
+      let importKind = "saves";
+      const pickFile = (kind) => {
+        importKind = kind;
+        if (!fileInput) {
+          this.toast("这个环境不支持选择文件", 2400);
+          return;
+        }
+        fileInput.value = "";
+        fileInput.click();
+      };
+      const importSaves = $("#importSaves", this.el.panelBody);
+      if (importSaves) importSaves.addEventListener("click", () => {
+        audio.sfx("click");
+        pickFile("saves");
+      });
+      const importSettings = $("#importSettings", this.el.panelBody);
+      if (importSettings) importSettings.addEventListener("click", () => {
+        audio.sfx("click");
+        pickFile("settings");
+      });
+      if (fileInput) fileInput.addEventListener("change", () => {
+        const f = fileInput.files && fileInput.files[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          let data = null;
+          try {
+            data = JSON.parse(String(reader.result));
+          } catch (e) {
+            data = null;
+          }
+          if (!data || !data.keys || typeof data.keys !== "object") {
+            this.toast("文件读不出来，可能不是本作导出的存档", 3e3);
+            return;
+          }
+          if (data.kind && data.kind !== importKind) {
+            this.toast(`这是「${data.kind === "settings" ? "设置" : "存档"}」文件，当前要导入的是「${importKind === "settings" ? "设置" : "存档"}」`, 3200);
+            return;
+          }
+          let n = 0;
+          try {
+            Object.keys(data.keys).forEach((k) => {
+              if (!/^zb_/.test(k)) return;
+              localStorage.setItem(k, data.keys[k]);
+              n++;
+            });
+          } catch (e) {
+          }
+          if (!n) {
+            this.toast("文件里没有可导入的内容", 2600);
+            return;
+          }
+          audio.sfx("ok");
+          this.toast(`已导入 ${n} 项，正在重新载入…`, 1800);
+          setTimeout(() => location.reload(), 900);
+        };
+        reader.onerror = () => this.toast("读取文件失败", 2400);
+        reader.readAsText(f);
       });
       $("#resetRead", this.el.panelBody).addEventListener("click", () => {
         this.saveAPI.resetRead();
@@ -7961,12 +8162,9 @@ ${searchText}
         这只是取了一套现成的图标素材，本作并不绑定任何手机系统，桌面端、网页端与移动端都可以运行。</p>
         <p>本作为 Demo 版本，仅供个人学习与技术交流，不用于任何商业用途，亦不对外发售。本作的学校、人物、组织、地名与事件均为虚构，与现实无关。游戏流程不构成法律意见。</p>
         <p><strong>素材说明</strong><br>
-        原型阶段的立绘与背景素材取自《闪亮的你》的本地资源；背景音乐取自《璀璨星途》原声专辑
-        （QQ 音乐专辑 <code>000x1wLw2Cii1T</code>），仅作功能演示与氛围占位，且已统一做响度与峰值处理，
-        不会出现削波。<br>
-        相关素材著作权均归原权利人所有，本作对之不主张任何权利，亦无意侵犯他人著作权。
-        若权利人认为此处使用有所不妥，请与开发者联系，将第一时间删除并替换。
-        UI 音效为程序合成。</p>
+        全部角色立绘与场景背景为本作<strong>自制生成</strong>，统一了画风与配色；
+        背景音乐与界面音效为<strong>程序合成</strong>的原创段落，已统一做响度与峰值处理，不会出现削波。<br>
+        画面与声音两部分都不使用第三方素材，因此不涉及他人著作权。</p>
         <p><strong>替换方式</strong><br>
         所有素材由 <code>scripts/config/assets.js</code> 统一登记，
         剧情只引用素材 ID。把同名文件放进 assets/ 下对应目录即可替换，无需改动剧情。</p>
@@ -7994,10 +8192,9 @@ ${searchText}
         首页左上角的 12+ 标识是 CADPA 的适龄提示图标，按原样引用、未作修改；
         它只是「本作建议 12 岁以上阅读」的提示，本作并没有取得版号、ISBN 或任何出版审批，
         这个图标不代表任何资质认定。点开那个图标可以看到完整说明。</p>
-        <p><strong>这些不是开源素材</strong><br>
-        HyperOS 4 的图标集属于小米的系统素材，不适用开源许可，这里只是拿来当界面配图；
-        立绘与背景取自《闪亮的你》、背景音乐取自《璀璨星途》原声专辑，著作权都归原权利人。
-        这两类内容本作都不主张任何权利，替换方式见上一节。</p>
+        <p><strong>关于图标</strong><br>
+        界面图标使用 HyperOS 4 的默认图标集，仅作界面配图；立绘、背景与音乐均为本作自制，
+        这部分不依赖任何外部素材。</p>
         <p><strong>关于跳过</strong><br>
         跳过只推进对话与叙事节点；遇到选项、调查、聊天回复时一定会停下，不会替你做选择。</p>
       `
@@ -8322,7 +8519,7 @@ ${searchText}
       this.execNode(node, f, key);
     }
     execNode(node, f, key) {
-      const { stage: stage2, audio: audio2, ui: ui2, state: state2 } = this.ctx;
+      const { stage: stage2, audio: audio3, ui: ui2, state: state2 } = this.ctx;
       switch (node.t) {
         /* ---------- 场景 ---------- */
         case "bg":
@@ -8331,11 +8528,11 @@ ${searchText}
           markRead(key);
           return this.next();
         case "music":
-          audio2.play(node.id);
+          audio3.play(node.id);
           markRead(key);
           return this.next();
         case "sfx":
-          audio2.sfx(node.id);
+          audio3.sfx(node.id);
           markRead(key);
           return this.next();
         case "show": {
@@ -8388,7 +8585,7 @@ ${searchText}
             return this.next();
           }
           const mat = ui2.getMaterial(node.id);
-          audio2.sfx("notify");
+          audio3.sfx("notify");
           markRead(key);
           if (!mat) return this.next();
           this.stopAllModes();
@@ -8433,7 +8630,7 @@ ${searchText}
               day: state2.dayLabel
             };
             state2.chats.push(msg);
-            audio2.sfx("notify");
+            audio3.sfx("notify");
             if (!ui2.isPhoneOpen()) {
               this.stopAllModes("收到消息，已停止跳过与自动播放");
               this.blocked = true;
@@ -8796,14 +8993,25 @@ ${searchText}
       const dlg = ui2.root.querySelector("#dialogue");
       if (dlg) dlg.hidden = true;
       this._cardSeq = (this._cardSeq || 0) + 1;
+      const seq = this._cardSeq;
       this._cardOpen = true;
-      if (txt) txt.textContent = node.text || "";
-      el.hidden = false;
-      void el.offsetWidth;
-      el.classList.add("on");
-      this.waiting = true;
-      this.typing = false;
-      if (this.skipActive || this.autoActive) this.scheduleNext();
+      const paint = () => {
+        if (seq !== this._cardSeq) return;
+        if (txt) txt.textContent = node.text || "";
+        el.hidden = false;
+        void el.offsetWidth;
+        el.classList.add("on");
+        this.waiting = true;
+        this.typing = false;
+        if (this.skipActive || this.autoActive) this.scheduleNext();
+      };
+      if (!el.hidden && el.classList.contains("on")) {
+        el.classList.remove("on");
+        this.waiting = true;
+        setTimeout(paint, 720);
+      } else {
+        paint();
+      }
     }
     closeCard() {
       const el = this.ctx.ui.root.querySelector("#curtain");
@@ -8818,7 +9026,7 @@ ${searchText}
       }, 640);
     }
     showText(node, key) {
-      const { ui: ui2, stage: stage2, audio: audio2, state: state2 } = this.ctx;
+      const { ui: ui2, stage: stage2, audio: audio3, state: state2 } = this.ctx;
       if (ui2.isPhoneOpen && ui2.isPhoneOpen()) ui2.closePanel();
       const dlg = ui2.root.querySelector("#dialogue");
       const nameEl = ui2.root.querySelector("#dlgName");
@@ -24017,7 +24225,7 @@ ${searchText}
     }
   }
   setProtagonist(settings.protagonist);
-  var audio = new AudioManager(settings);
+  var audio2 = new AudioManager(settings);
   var stage = new Stage(root, settings);
   var engine = null;
   var ui = null;
@@ -24062,7 +24270,7 @@ ${searchText}
         // 表现就是"读档和继续游戏先黑屏一下，甚至一直黑着"。
         scene: {
           ...stage.snapshotScene ? stage.snapshotScene() : {},
-          music: audio.currentId || null
+          music: audio2.currentId || null
         },
         state: serialize(state)
       };
@@ -24087,7 +24295,7 @@ ${searchText}
       showGame();
       if (data.scene && stage.restoreScene) {
         stage.restoreScene(data.scene);
-        if (data.scene.music) audio.play(data.scene.music);
+        if (data.scene.music) audio2.play(data.scene.music);
       } else if (stage.restoreScene) {
         let bgId = null;
         for (let i = Math.min(data.index || 0, ch.nodes.length - 1); i >= 0; i--) {
@@ -24109,7 +24317,7 @@ ${searchText}
     },
     saveSettings() {
       saveSettings(settings);
-      audio.setSettings(settings);
+      audio2.setSettings(settings);
       applyNightMode();
       applyGlassMode();
       applyReading();
@@ -24122,7 +24330,7 @@ ${searchText}
       });
       Object.assign(settings, JSON.parse(JSON.stringify(defaults)));
       saveSettings(settings);
-      audio.setSettings(settings);
+      audio2.setSettings(settings);
       applyNightMode();
       applyGlassMode();
       applyReading();
@@ -24147,12 +24355,12 @@ ${searchText}
       showTitle();
     }
   };
-  ui = new UI({ root, state, settings, audio, saveAPI });
+  ui = new UI({ root, state, settings, audio: audio2, saveAPI });
   ui.stage = stage;
   engine = new Engine({
     state,
     stage,
-    audio,
+    audio: audio2,
     ui,
     settings,
     onChapterEnd: handleChapterEnd
@@ -24296,7 +24504,7 @@ ${searchText}
     root.hidden = true;
     refreshTitleNote();
     if (_booting) return;
-    audio.play("title");
+    audio2.play("title");
     playTitleIntro();
   }
   function playTitleIntro() {
@@ -24340,6 +24548,32 @@ ${searchText}
   function openSideHub() {
     const progress = loadProgress();
     const unlocked = sideHubUnlocked(progress);
+    if (!unlocked) {
+      ui.openPanel({
+        title: "支线 · 尚未解锁",
+        narrow: true,
+        body: `
+        <p>支线讲的是主线之外另一些人遇到的事。它们不是一开始就能看的——
+        得先走完<b>序章</b>，才有足够的处境和关系支撑这些故事。</p>
+        <div class="side-lock">
+          <b>怎么解锁</b>
+          <ol>
+            <li>从标题页选「开始游戏」，把<b>序章 · 九月一日</b>走完。</li>
+            <li>序章结束时会出现提示，支线入口同时开启。</li>
+            <li>之后回标题页点「支线」，就能看到《一元口罩》《直饮水》等条目。</li>
+          </ol>
+        </div>
+        <p class="side-lock-tip">支线各自独立存档，不会影响主线进度；也可以先把主线打完再回来。</p>
+      `,
+        foot: '<button class="btn btn-primary" id="sideLockOk">知道了</button>'
+      });
+      const ok = document.querySelector("#sideLockOk");
+      if (ok) ok.addEventListener("click", () => {
+        audio2.sfx("click");
+        ui.closePanel();
+      });
+      return;
+    }
     ui.openSideHub({
       unlocked,
       progress,
@@ -24574,8 +24808,8 @@ ${searchText}
   titleScreen.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-act]");
     if (!btn) return;
-    audio.unlock();
-    audio.sfx("click");
+    audio2.unlock();
+    audio2.sfx("click");
     const act = btn.dataset.act;
     if (act === "new") {
       requestNewGame();
@@ -24601,15 +24835,15 @@ ${searchText}
   });
   var aiFab = document.querySelector("#aiFab");
   if (aiFab) aiFab.addEventListener("click", () => {
-    audio.unlock();
-    audio.sfx("click");
+    audio2.unlock();
+    audio2.sfx("click");
     ui.openAssistant();
   });
   var FEEDBACK_URL = "https://wj.qq.com/s2/28441084/m5z9";
   var feedbackFab = document.querySelector("#feedbackFab");
   if (feedbackFab) feedbackFab.addEventListener("click", () => {
-    audio.unlock();
-    audio.sfx("click");
+    audio2.unlock();
+    audio2.sfx("click");
     ui.openPanel({
       title: "反馈问题",
       narrow: true,
@@ -24658,8 +24892,8 @@ ${searchText}
       hint.textContent = window.ZBApp && typeof window.ZBApp.openUrl === "function" ? "会用系统自带浏览器打开（方便上传截图）。" : "将在新标签页打开。";
     }
     if (goBtn) goBtn.addEventListener("click", () => {
-      audio.unlock();
-      audio.sfx("click");
+      audio2.unlock();
+      audio2.sfx("click");
       const bridge = window.ZBApp;
       if (bridge && typeof bridge.openUrl === "function") {
         try {
@@ -24673,8 +24907,8 @@ ${searchText}
   });
   var ageBadge = document.querySelector("#ageBadge");
   if (ageBadge) ageBadge.addEventListener("click", () => {
-    audio.unlock();
-    audio.sfx("click");
+    audio2.unlock();
+    audio2.sfx("click");
     ui.openPanel({
       title: "🎮 游戏适龄提示",
       narrow: true,
@@ -24747,7 +24981,7 @@ ${searchText}
     });
     const box = ui.el.panelBody;
     box.querySelectorAll("[data-pick]").forEach((b) => b.addEventListener("click", () => {
-      audio.sfx("click");
+      audio2.sfx("click");
       settings.protagonist = b.dataset.pick;
       setProtagonist(settings.protagonist);
       saveSettings(settings);
@@ -24755,7 +24989,7 @@ ${searchText}
     }));
     const go = box.querySelector("#heroGo");
     if (go) go.addEventListener("click", () => {
-      audio.sfx("select");
+      audio2.sfx("select");
       ui.closePanel();
       then();
     });
@@ -24773,7 +25007,7 @@ ${searchText}
       checkUpdate,
       onDone: () => {
         _booting = false;
-        audio.play("title");
+        audio2.play("title");
         playTitleIntro();
         setTimeout(maybeCheckUpdate, 1200);
       }
@@ -24812,12 +25046,12 @@ ${searchText}
     const pfoot = ui.el.panelFoot;
     const later = pfoot.querySelector("#upLater");
     if (later) later.addEventListener("click", () => {
-      audio.sfx("click");
+      audio2.sfx("click");
       ui.closePanel();
     });
     const now = pfoot.querySelector("#upNow");
     if (now) now.addEventListener("click", async () => {
-      audio.sfx("click");
+      audio2.sfx("click");
       now.disabled = true;
       now.textContent = "正在下载…";
       const res = await applyContentUpdate(remote);
@@ -24859,7 +25093,7 @@ ${searchText}
     ui.openPhone("home", null);
   });
   root.querySelector("#btnAI").addEventListener("click", () => {
-    audio.sfx("click");
+    audio2.sfx("click");
     engine.pause();
     ui.openAssistant();
   });
@@ -24867,17 +25101,17 @@ ${searchText}
   root.querySelector("#btnCharacters").addEventListener("click", () => ui.openCharacters());
   root.querySelector("#btnMenu").addEventListener("click", () => ui.toggleMenu());
   root.querySelector("#btnGov").addEventListener("click", () => {
-    audio.sfx("click");
+    audio2.sfx("click");
     ui.openGovHome();
   });
   root.querySelector("#choiceSave").addEventListener("click", (e) => {
     e.stopPropagation();
-    audio.sfx("click");
+    audio2.sfx("click");
     ui.openSaves("save", saveAPI.current());
   });
   root.querySelector("#choiceMenu").addEventListener("click", (e) => {
     e.stopPropagation();
-    audio.sfx("click");
+    audio2.sfx("click");
     ui.toggleMenu();
   });
   setInterval(() => {
@@ -24885,11 +25119,11 @@ ${searchText}
   }, 3e4);
   function enterBackground() {
     if (engine && engine.chapter) saveAPI.save(0);
-    audio.suspendAll();
+    audio2.suspendAll();
     flushRead();
   }
   function leaveBackground() {
-    audio.resumeAll();
+    audio2.resumeAll();
     flushRead();
   }
   document.addEventListener("visibilitychange", () => {
@@ -24925,7 +25159,7 @@ ${searchText}
       return settings;
     },
     get audio() {
-      return audio;
+      return audio2;
     },
     get stage() {
       return stage;

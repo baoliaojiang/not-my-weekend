@@ -9,6 +9,7 @@ import * as store from './core/store.js';
 import { AudioManager } from './core/audio.js';
 import { Stage } from './core/stage.js';
 import { checkUpdate, applyContentUpdate, shouldAutoCheck, markChecked } from './core/update.js';
+import { log, dumpLog } from './core/log.js';
 import { runBootSequence } from './ui/boot.js';
 import { UI } from './ui/screens.js';
 import { Engine } from './core/vn.js';
@@ -485,6 +486,30 @@ function refreshTitleSide() {
 function openSideHub() {
   const progress = store.loadProgress();
   const unlocked = sideHubUnlocked(progress);
+  // 没解锁就不要假装有内容：直接说清"为什么没有"和"怎么拿到"
+  if (!unlocked) {
+    ui.openPanel({
+      title: '支线 · 尚未解锁',
+      narrow: true,
+      body: `
+        <p>支线讲的是主线之外另一些人遇到的事。它们不是一开始就能看的——
+        得先走完<b>序章</b>，才有足够的处境和关系支撑这些故事。</p>
+        <div class="side-lock">
+          <b>怎么解锁</b>
+          <ol>
+            <li>从标题页选「开始游戏」，把<b>序章 · 九月一日</b>走完。</li>
+            <li>序章结束时会出现提示，支线入口同时开启。</li>
+            <li>之后回标题页点「支线」，就能看到《一元口罩》《直饮水》等条目。</li>
+          </ol>
+        </div>
+        <p class="side-lock-tip">支线各自独立存档，不会影响主线进度；也可以先把主线打完再回来。</p>
+      `,
+      foot: '<button class="btn btn-primary" id="sideLockOk">知道了</button>'
+    });
+    const ok = document.querySelector('#sideLockOk');
+    if (ok) ok.addEventListener('click', () => { audio.sfx('click'); ui.closePanel(); });
+    return;
+  }
   ui.openSideHub({
     unlocked,
     progress,
@@ -533,7 +558,8 @@ function resetSideState(sideId = 'side1') {
 
 function startChapter(id, { autoSave = true } = {}) {
   const ch = CHAPTERS[id];
-  if (!ch) { showTitle(); return; }
+  if (!ch) { log.warn('章节不存在：' + id); showTitle(); return; }
+  log.mark(`进入章节 ${id}${ch.title ? ' · ' + ch.title : ''}`);
   wipeGuard = false;   // 真的开了一局，写档恢复正常
   const isSide = SIDE_IDS.has(id);
   if (isSide) resetSideState(id);
@@ -979,7 +1005,10 @@ function startBootSequence() {
     root,
     version: CONFIG.version,
     checkUpdate,
+    applyUpdate: applyContentUpdate,
+    github: (CONFIG.update && CONFIG.update.repo) ? 'github · ' + CONFIG.update.repo : '',
     onDone: () => {
+      log.mark('启动序列完成 · 版本 v' + CONFIG.version);
       _booting = false;
       audio.play('title');
       playTitleIntro();
@@ -1002,6 +1031,9 @@ function maybeCheckUpdate() {
   _updateTask = (async () => {
     const r = await checkUpdate();
     markChecked();
+    log.info('检查更新', r.ok
+      ? { kind: r.kind, cur: r.curContent, remote: r.content, shell: r.curShell }
+      : { failed: r.reason || 'unknown' });
     if (!r.ok || r.kind === 'none') return;
     showUpdateNotice(r);
   })().catch(() => { /* 网络问题一律静默 */ });
@@ -1040,6 +1072,15 @@ function showUpdateNotice(r) {
   const now = pfoot.querySelector('#upNow');
   if (now) now.addEventListener('click', async () => {
     audio.sfx('click');
+    // 改了客户端程序：热更装不了，直接开浏览器去发布页
+    if (needShell) {
+      const url = (CONFIG.update && CONFIG.update.releaseUrl) || '';
+      if (window.ZBApp && typeof window.ZBApp.openUrl === 'function' && url) {
+        try { window.ZBApp.openUrl(url); return; } catch (e) { /* 退回新标签页 */ }
+      }
+      if (url) window.open(url, '_blank', 'noopener');
+      return;
+    }
     now.disabled = true;
     now.textContent = '正在下载…';
     const res = await applyContentUpdate(remote);

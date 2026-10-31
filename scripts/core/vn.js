@@ -763,15 +763,29 @@ export class Engine {
     if (dlg) dlg.hidden = true;
 
     this._cardSeq = (this._cardSeq || 0) + 1;
+    const seq = this._cardSeq;
     this._cardOpen = true;
-    if (txt) txt.textContent = node.text || '';
-    el.hidden = false;
-    void el.offsetWidth;          // 强制重排，保证每次都能重新淡入
-    el.classList.add('on');
 
-    this.waiting = true;
-    this.typing = false;
-    if (this.skipActive || this.autoActive) this.scheduleNext();
+    const paint = () => {
+      if (seq !== this._cardSeq) return;
+      if (txt) txt.textContent = node.text || '';
+      el.hidden = false;
+      void el.offsetWidth;
+      el.classList.add('on');
+      this.waiting = true;
+      this.typing = false;
+      if (this.skipActive || this.autoActive) this.scheduleNext();
+    };
+
+    /* 连续几张开场卡板时，先让上一张褪到全黑，停一下再出下一张。 */
+    if (!el.hidden && el.classList.contains('on')) {
+      el.classList.remove('on');
+      this.waiting = true;
+      this.typing = false;
+      setTimeout(paint, 780);
+    } else {
+      paint();
+    }
   }
 
   closeCard() {

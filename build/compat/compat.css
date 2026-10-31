@@ -1,0 +1,42 @@
+/* =========================================================
+   兼容版样式降级（只打进「兼容版 APK」）
+   ---------------------------------------------------------
+   老内核缺这几样，全部降成"能看、能点"的最朴素形态：
+     · backdrop-filter（模糊）→ 去掉模糊，用实色底
+     · :has() → 已经在主样式里补了等价的 class 规则
+     · dvh → 主样式里已经写成 vh + dvh 双声明
+     · gap 在 flex 里不生效 → 给常用列表补 margin
+   宁可少一点质感，也不能让界面错位到点不到按钮。
+   ========================================================= */
+
+/* 1. 去掉毛玻璃：老内核上模糊会让整块变成一团糊 */
+.is-compat .panel,
+.is-compat .hub-panel,
+.is-compat .phone,
+.is-compat .ai-fab,
+.is-compat .feedback-fab,
+.is-compat .toast,
+.is-compat .dlg,
+.is-compat .mos,
+.is-compat .setting {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background-color: #1b1d22 !important;
+}
+
+/* 2. 面板右上角的装饰描边在实色底上会显得脏，收细一点 */
+.is-compat .panel { box-shadow: 0 8px 28px rgba(0, 0, 0, .5) !important; }
+
+/* 3. flex 的 gap 不支持时，用 margin 兜底（只兜容易被挤到一起的地方） */
+.is-compat .io-row > .btn + .btn { margin-left: 8px; }
+.is-compat .title-tools > * + * { margin-left: 10px; }
+.is-compat .hero-pick > .hero-card + .hero-card { margin-left: 10px; }
+.is-compat .mos-grid > .mos-app { margin: 4px; }
+
+/* 4. 立绘：老设备上大面积透明叠层容易掉帧，去掉过渡只留不透明切换 */
+.is-compat .sprite { transition: opacity .25s linear !important; }
+.is-compat .bg-layer.on { animation: none !important; transform: scale(1.015) !important; }
+
+/* 5. 文字阴影少一层，省一点合成开销 */
+.is-compat .dlg-text,
+.is-compat .boot-title { text-shadow: none !important; }

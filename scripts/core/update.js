@@ -46,11 +46,25 @@ export function compareVersion(a, b) {
   return 0;
 }
 
-function baseUrl() {
-  const u = (CONFIG.update && CONFIG.update.baseUrl) || '';
-  if (!u) return './';
-  return u.endsWith('/') ? u : u + '/';
+/* 下载源列表。
+   为什么不只写一个：raw.githubusercontent.com 在国内经常连不上，
+   GitHub Pages 也有被墙的时段。所以按"国内可达优先"排三个源，
+   逐个试，谁先回来用谁——玩家不需要知道背后发生了什么。
+     1 jsDelivr   走 CDN，国内多数网络能开
+     2 Pages      GitHub 自己的静态托管
+     3 raw       最后兜底（海外直连最稳）
+   配置里写 baseUrls 数组就用它；只写 baseUrl 就退化成单源。 */
+function baseUrls() {
+  const u = (CONFIG.update || {});
+  if (Array.isArray(u.baseUrls) && u.baseUrls.length) {
+    return u.baseUrls.map((x) => (String(x).endsWith('/') ? x : x + '/'));
+  }
+  if (!u.baseUrl) return ['./'];
+  return [String(u.baseUrl).endsWith('/') ? u.baseUrl : u.baseUrl + '/'];
 }
+
+/** 兼容旧调用：取第一个源 */
+function baseUrl() { return baseUrls()[0]; }
 
 /** 当前客户端外壳版本：Android / Electron 会注入，网页版当作同版本 */
 function shellVersion() {
@@ -89,9 +103,17 @@ async function fetchJson(url, timeoutMs) {
  */
 export async function checkUpdate() {
   if (!CONFIG.update || CONFIG.update.enabled === false) return { ok: false, kind: 'none' };
-  const url = baseUrl() + 'version.json';
-  const data = await fetchJson(url, CONFIG.update.timeoutMs || 8000);
-  if (!data || !data.content) return { ok: false, kind: 'none' };
+
+  /* 依次试各个源。第一个能解析出版本信息的就用它。
+     全部失败就是"查不到"，不是"出错"——游戏照常进，不弹窗。 */
+  const bases = baseUrls();
+  let data = null;
+  let usedBase = bases[0];
+  for (const base of bases) {
+    const got = await fetchJson(base + 'version.json', CONFIG.update.timeoutMs || 6000);
+    if (got && got.content) { data = got; usedBase = base; break; }
+  }
+  if (!data) return { ok: false, kind: 'none' };
 
   const curContent = CONFIG.version;
   const curShell = shellVersion();
@@ -109,8 +131,9 @@ export async function checkUpdate() {
      Pages 部署时这样没问题，但 APK/EXE 的页面在 file:// 下，
      相对路径会指向本地不存在的文件。这里统一解析成绝对地址。 */
   let absWww = data.www || '';
-  try { absWww = new URL(data.www, baseUrl()).href; } catch (e) { /* 保留原值 */ }
+  try { absWww = new URL(data.www, usedBase).href; } catch (e) { /* 保留原值 */ }
   data.www = absWww;
+  data._base = usedBase;
 
   return {
     ok: true,

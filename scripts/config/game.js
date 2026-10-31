@@ -3,7 +3,7 @@
    ========================================================= */
 
 export const CONFIG = {
-  version: '0.6.1',
+  version: '0.6.2',
 
   // 存储键（改这里不会影响旧存档兼容性，但会各存一份）
   keys: {
@@ -102,10 +102,21 @@ export const CONFIG = {
      */
   update: {
     enabled: true,
-    // GitHub 仓库的 raw 地址；换成你自己的用户名/仓库名即可
-    baseUrl: 'https://raw.githubusercontent.com/OWNER/REPO/main/dist/',
-    // 检查超时与重试
-    timeoutMs: 8000,
+    // 仓库全名，用于署名页与发布页跳转
+    repo: 'baoliaojiang/not-my-weekend',
+    /* 三个下载源按顺序试，谁先回来用谁：
+       1 jsDelivr 走公共 CDN，国内多数网络能通
+       2 GitHub Pages 是官方静态托管
+       3 raw.githubusercontent.com 海外直连最稳，国内可能连不上
+       任何一个源都只用来取 version.json 和 www-x.y.z.zip。 */
+    baseUrls: [
+      'https://cdn.jsdelivr.net/gh/baoliaojiang/not-my-weekend@main/dist/',
+      'https://baoliaojiang.github.io/not-my-weekend/dist/',
+      'https://raw.githubusercontent.com/baoliaojiang/not-my-weekend/main/dist/'
+    ],
+    // 包体更新时按钮跳转的地址（Release 页面）
+    releaseUrl: 'https://github.com/baoliaojiang/not-my-weekend/releases/latest',
+    timeoutMs: 6000,
     retries: 2
   },
 

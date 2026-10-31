@@ -1,21 +1,62 @@
-MIT License
+著作权所有 © 2026 爆料酱（baoliaojiang）
 
-Copyright (c) 2026 ZhouRi
+《不属于我的周末》（英文名：THE WEEKEND THAT IS NOT MINE）
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+────────────────────────────────────────
+这份许可分成两部分：引擎可以学、可以改；故事和素材不能拿走。
+────────────────────────────────────────
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+一、引擎代码：允许学习、修改与非商业使用
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+适用范围：
+  · scripts/ 下的引擎与界面代码（core、ui、config 等目录）
+  · build/ 下的构建脚本、Android 壳、Electron 外壳
+  · tools/ 下的素材与发布工具
+
+在上述范围内，任何人都可以：
+  · 阅读、学习、研究这份代码；
+  · 修改代码，并在自己的非商业作品中复用其中的技术做法；
+  · 复制、分发修改后的引擎代码。
+
+条件是：
+  · 保留本许可文件与原始仓库地址；
+  · 在衍生作品的说明中注明「引擎部分基于《不属于我的周末》」；
+  · 不得将修改后的版本冒充为原作或其官方续作；
+  · 不得将引擎代码用于商业用途（包括付费售卖、内购、广告变现）。
+
+二、故事与素材：保留所有权利，不得使用
+
+适用范围（以下统称「作品内容」）：
+  · scripts/data/ 下的全部剧情文本、对白、旁白、角色设定与章节数据
+  · assets/ 下的全部图像（角色立绘、场景背景、界面图标、logo、头像）
+  · assets/music/ 与 assets/sfx/ 下的全部音频
+  · 《不属于我的周末》《THE WEEKEND THAT IS NOT MINE》名称、副标题与标识
+  · 作品中出现的学校、人物、组织等虚构设定
+
+未经著作权人书面许可，任何人不得：
+  · 复制、转载、摘编、翻译、改编上述内容；
+  · 将上述内容用于其他作品、视频、出版物或任何形式的二次创作；
+  · 将上述内容用于任何商业用途；
+  · 使用本作名称或标识作为自己作品的名称、标识或宣传卖点。
+
+三、关于素材来源
+
+本作全部角色立绘与场景背景由 AI 生成，全部背景音乐与界面音效由程序合成，
+均为本项目自制，不包含任何第三方素材。上述内容同样适用第二条，
+不因「由 AI 生成」而进入公有领域。
+
+四、免责
+
+本作品按「现状」提供，不附带任何明示或默示的担保。
+作者不对使用本作品或其代码所造成的任何后果承担责任。
+故事内容纯属虚构，不构成任何法律、政策或教育方面的意见。
+
+五、许可变更
+
+作者保留在未来版本中调整本许可条款的权利。
+已发布的旧版本仍适用其发布时的许可。
+
+────────────────────────────────────────
+如需授权（例如做同人作品、搬运到视频平台），
+请通过 B 站私信联系：space.bilibili.com/525298385
+────────────────────────────────────────

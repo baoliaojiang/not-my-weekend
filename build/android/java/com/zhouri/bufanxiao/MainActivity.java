@@ -470,6 +470,50 @@ public class MainActivity extends Activity {
     /** 给网页用的键值存储（写入 SharedPreferences） */
     /** 应用级接口：退出 + 屏幕方向 */
     private class AppBridge {
+
+        /* 把一段文本写到系统的「下载」目录。
+           为什么不用网页的 <a download>：WebView 没有注册 DownloadListener，
+           点了不会有任何反应——存档导出在 APK 里等于废的。
+           为什么走 MediaStore：Android 10 起应用不能直接写公共下载目录，
+           MediaStore.Downloads 是官方给的正路；更老的系统退回应用外部目录
+           （不需要任何权限，路径会回传给网页并显示给用户）。 */
+        @android.webkit.JavascriptInterface
+        public String saveText(String name, String content) {
+            try {
+                if (name == null || name.length() == 0) name = "zb-export.txt";
+                byte[] bytes = content == null ? new byte[0] : content.getBytes("UTF-8");
+
+                if (android.os.Build.VERSION.SDK_INT >= 29) {
+                    android.content.ContentValues cv = new android.content.ContentValues();
+                    cv.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name);
+                    cv.put(android.provider.MediaStore.MediaColumns.MIME_TYPE,
+                            name.endsWith(".json") ? "application/json" : "text/plain");
+                    cv.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH,
+                            android.os.Environment.DIRECTORY_DOWNLOADS);
+                    android.net.Uri uri = getContentResolver().insert(
+                            android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
+                    if (uri == null) return "";
+                    java.io.OutputStream os = getContentResolver().openOutputStream(uri);
+                    if (os == null) return "";
+                    os.write(bytes);
+                    os.flush();
+                    os.close();
+                    return "下载/" + name;
+                }
+
+                java.io.File dir = getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS);
+                if (dir == null) dir = getFilesDir();
+                if (!dir.exists()) dir.mkdirs();
+                java.io.File f = new java.io.File(dir, name);
+                java.io.FileOutputStream fo = new java.io.FileOutputStream(f);
+                fo.write(bytes);
+                fo.close();
+                return f.getAbsolutePath();
+            } catch (Throwable t) {
+                return "";
+            }
+        }
+
         @android.webkit.JavascriptInterface
         public void exit() {
             runOnUiThread(new Runnable() {

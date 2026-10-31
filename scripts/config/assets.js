@@ -8,12 +8,11 @@
       音乐静默并在设置里提示。
 
    素材来源声明：
-   立绘（characters）、背景（backgrounds）、音乐（music）均为本地占位素材，
-   取自项目《闪亮的你》。正式发布前请自行完成授权核查或替换。
-   sfx 为程序合成音效，可自由使用。
+   立绘、背景均为本项目自制生成，背景音乐与音效为程序合成，
+   不依赖任何第三方素材，因此不存在授权问题。
    ========================================================= */
 
-export const ASSET_SOURCE = '《闪亮的你》';
+export const ASSET_SOURCE = '自制生成';
 
 /* 全部场景背景为 AI 生成（日式动画背景美术）；同场景的黄昏/夜里/清晨
    由 tools/bg_tone.py 从底图调色而来，保证构图完全一致。 */
@@ -57,7 +56,7 @@ export const BACKGROUNDS = {
    剧本里统一写 who: 'lin'，由 assetUrl('sprite','lin') 按当前设置
    解析成 linM / linF —— 这样所有剧情节点、手机头像、人物档案都不用改。 */
 /* 全部立绘为本作 AI 生成（统一画风：青年向日系动画、细长眼型、
-   硬边赛璐璐上色、淡蓝紫冷调），原《闪亮的你》占位素材已全部替换。 */
+   硬边赛璐璐上色、淡蓝紫冷调）。 */
 export const SPRITES = {
   lin:     { src: 'assets/characters/lin_zhixu.png',      label: '林知序' },
   linM:    { src: 'assets/characters/lin_male.png',       label: '林知序' },
