@@ -7,7 +7,7 @@
 - 作者：爆料酱 · [B 站主页](https://space.bilibili.com/525298385)
 - 类型：文字冒险 / 校园日常 / 剧情解谜
 - 适龄：建议 12 周岁以上
-- 当前版本：**v0.6.1**
+- 当前版本：**v0.6.2.3**（最后更新：2026-10-31）
 
 ---
 
@@ -31,7 +31,7 @@
 | --- | --- |
 | 网页版 | 见仓库 GitHub Pages 地址（免安装） |
 | Windows | Release 里的便携版压缩包，解压后运行 `不属于我的周末.exe` |
-| Android | Release 里的 `不属于我的周末.apk`（minSdk 21 / targetSdk 34，横屏全屏） |
+| Android | Release 里的 `不属于我的周末-标准版.apk` / `-兼容版.apk`（minSdk 21 / targetSdk 34，横屏全屏） |
 
 存档保存在本地（网页版在浏览器 localStorage，客户端在应用数据目录），覆盖安装不会丢。
 
@@ -40,9 +40,11 @@
 | 包 | 适用 | 差异 |
 |---|---|---|
 | `不属于我的周末-标准版.apk` | 绝大多数设备 | 用系统 WebView，体积小、启动快 |
-| `不属于我的周末-兼容版.apk` | 安卓 7/8/9 且长期没更新过 WebView 的老机器 | 内置 polyfill 与降级样式：补上 `closest`/`replaceAll`/`Element.animate` 等缺失 API，关掉毛玻璃与背景推镜，布局不依赖 `:has()` |
+| `不属于我的周末-兼容版.apk` | 系统 WebView 内核较旧（Chrome 60–80 区间）的设备 | 内置 polyfill 与降级样式：补上 `closest`/`replaceAll`/`Element.animate` 等缺失 API，关掉毛玻璃与背景推镜，布局不依赖 `:has()` |
 
 先装标准版；如果出现版式错乱、动画不动、面板点不开，再换兼容版。两者存档互通。
+
+**关于"兼容版"要先说清楚**：它**没有内嵌任何浏览器内核**。Android 的 WebView 是系统组件，无法随安装包分发（强行塞进去也不会被加载）。兼容版只解决"布局错乱 / API 缺失"这一层问题。如果设备内核真的老到跑不动（启动时会自动检测到），游戏会弹出提示，并提供「用系统浏览器打开网页版」的入口——网页版由你已安装的 Chrome/Edge 渲染，往往比系统 WebView 还新，能救回一批老机器。真救不了的，提示里会建议你去更新「Android System WebView」或「Chrome」。
 
 ## 资源是加密的
 
@@ -136,12 +138,6 @@ python tools/bg_tone.py 底图.jpg 输出.jpg dusk                   # 场景调
 - **shell**（客户端程序：Java 壳、Electron 运行时）→ 必须重新安装
 
 `version.json` 同时给出 `content` / `shell` / `shellMin`。客户端读到 `shell < shellMin` 时会明确提示去下载新安装包，不会假装能热更。
-
-**更新前会先问你。** 启动时如果查到新的网页资源，「检查更新」那一屏会列出本次改了哪几条、包有多大，然后给两个按钮：「立即更新」和「下次再说」。不点就一直停在这一屏，不会偷偷下载、也不会自己重载。
-
-下载源按 jsDelivr → GitHub Pages → raw.githubusercontent 的顺序试，哪个先回来用哪个（国内访问 raw 经常不通，所以不把它放在第一位）。
-
-发布页：[Releases](https://github.com/baoliaojiang/not-my-weekend/releases/latest)
 
 **更新前会先问你。** 启动时如果查到新的网页资源，「检查更新」那一屏会列出本次改了哪几条、包有多大，然后给两个按钮：「立即更新」和「下次再说」。不点就一直停在这一屏，不会偷偷下载、也不会自己重载。
 

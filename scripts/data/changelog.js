@@ -24,6 +24,13 @@ export const CHANGELOG = [
           { type: 'fix', text: '「检查更新」与「编译着色器」两屏不再允许跳过——跳过会导致带着旧资源或未准备的环境进游戏。' },
           { type: 'opt', text: '查到新资源时以浮层弹窗列出本次改动与包体积，由你决定是否更新。' }
         ]
+      },
+      {
+        title: '三、老设备兜底',
+        items: [
+          { type: 'new', text: '启动时若检测到系统 WebView 内核过旧（< 70），不再只是盖一层关不掉的提示，而是弹出原生对话框：可「用浏览器打开网页版」（由已装的 Chrome / Edge 渲染），或选择「仍要继续」。' },
+          { type: 'note', text: '兼容版不内嵌任何浏览器内核——Android 的 WebView 是系统组件，无法随安装包分发。它只解决布局与 API 缺失；真救不了的，请更新「Android System WebView」或「Chrome」后重开。' }
+        ]
       }
     ]
   },

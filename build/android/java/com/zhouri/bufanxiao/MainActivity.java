@@ -1,6 +1,7 @@
 package com.zhouri.bufanxiao;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,6 +37,8 @@ public class MainActivity extends Activity {
     private WebView web;
     private FrameLayout rootView;
     private long lastBackTime = 0L;
+    // 玩家在内核过旧对话框里点了「仍要继续」后，跳过二次拦截
+    private boolean forceStart = false;
 
     @Override
     @SuppressWarnings("deprecation")
@@ -201,16 +204,21 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** 内核太旧时在原生层给一条明确的出路 */
-    private void warnOldWebView(final FrameLayout root) {
+    /** 网页版地址：内核过旧时调起系统浏览器从这里进（由已装 Chrome/Edge 渲染） */
+    private static final String WEB_URL =
+            "https://baoliaojiang.github.io/not-my-weekend/dist/";
+
+    /** 内核太旧：弹出原生对话框，二选一，不主动启动游戏（方案 1） */
+    private void showOldKernelDialog(final FrameLayout root) {
         final int major = webViewMajor();
-        if (major == 0 || major >= 70) return;
 
         final android.widget.LinearLayout box = new android.widget.LinearLayout(this);
         box.setOrientation(android.widget.LinearLayout.VERTICAL);
         box.setGravity(android.view.Gravity.CENTER);
         box.setPadding(48, 48, 48, 48);
         box.setBackgroundColor(Color.BLACK);
+        box.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
         android.widget.TextView t = new android.widget.TextView(this);
         t.setText("系统浏览器内核过旧");
@@ -219,45 +227,60 @@ public class MainActivity extends Activity {
         t.setGravity(android.view.Gravity.CENTER);
 
         android.widget.TextView d = new android.widget.TextView(this);
-        d.setText("当前内核版本 " + major + "，界面可能显示异常。\n"
+        d.setText("当前内核版本 " + major + "，直接进游戏界面可能显示异常、点不动。\n"
                 + "游戏没有内嵌渲染内核——Android 的 WebView 是系统组件，无法随安装包分发。\n"
-                + "请更新「Android System WebView」或「Chrome」后重开游戏。");
+                + "你可以用已安装的 Chrome / Edge 打开网页版（往往内核更新），或先去更新系统 WebView。");
         d.setTextColor(Color.parseColor("#8A8F98"));
         d.setTextSize(12f);
         d.setGravity(android.view.Gravity.CENTER);
         d.setPadding(0, 20, 0, 28);
 
-        android.widget.Button b = new android.widget.Button(this);
-        b.setText("去更新 WebView");
-        b.setOnClickListener(new View.OnClickListener() {
+        android.widget.Button webBtn = new android.widget.Button(this);
+        webBtn.setText("用浏览器打开网页版");
+        webBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
-                    Intent i = new Intent(Intent.ACTION_VIEW,
-                            android.net.Uri.parse("market://details?id=" + webViewPackageName()));
+                    Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(WEB_URL));
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(i);
-                } catch (Throwable e) {
-                    try {
-                        Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(
-                                "https://play.google.com/store/apps/details?id=" + webViewPackageName()));
-                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(i);
-                    } catch (Throwable ignored) { }
-                }
+                } catch (Throwable ignored) { }
+                finish();   // 让玩家在浏览器里玩，不再占用本 App
             }
         });
 
+        android.widget.Button contBtn = new android.widget.Button(this);
+        contBtn.setText("仍要继续");
+        contBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                forceStart = true;
+                root.removeView(box);
+                bootLoad(root);   // 重新进入启动流程，此时 forceStart 已为真
+            }
+        });
+
+        android.widget.LinearLayout row = new android.widget.LinearLayout(this);
+        row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER);
+        row.addView(webBtn);
+        row.addView(contBtn);
+
         box.addView(t);
         box.addView(d);
-        box.addView(b);
+        box.addView(row);
         root.addView(box);
     }
 
     /** 首次启动：先铺一张原生启动页，后台解包，好了再 loadUrl */
     private void bootLoad(final FrameLayout root) {
-        // 只提示，不阻断：内核版本查不到或本来就够新时什么都不做
-        try { warnOldWebView(root); } catch (Throwable ignored) { }
+        // 方案 1：内核 < 70 时弹原生对话框二选一，不主动启动游戏；
+        // 玩家点「仍要继续」会把 forceStart 置真，再次进来就跳过拦截。
+        final int major = webViewMajor();
+        if (!forceStart && major != 0 && major < 70) {
+            showOldKernelDialog(root);
+            return;
+        }
         if (!needUnpack()) {
             web.loadUrl(resolveStartUrl());
             return;
