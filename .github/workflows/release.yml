@@ -105,7 +105,7 @@ jobs:
           ## 下载（见本发布下方附件）
 
           - Android 标准版 / 兼容版：`NotMyWeekend-${{ steps.ver.outputs.v }}-standard.apk` / `NotMyWeekend-${{ steps.ver.outputs.v }}-compat.apk`（存档互通）
-          - Windows 便携版：因超过 GitHub 单文件 100MB，拆成多段 + `合并.bat`；下载后运行 `合并.bat` 得到 zip 再解压
+          - Windows 便携版：因超过 GitHub 单文件 100MB，拆成多段 + `merge.bat`；把分卷与 `merge.bat` 放在同一目录，双击 `merge.bat` 得到 zip 再解压
           - 网页版（免安装）：https://baoliaojiang.github.io/not-my-weekend/
 
           存档保存在本地，覆盖安装不会丢。反馈：提 Issue，或游戏主界面右下角「反馈问题」填问卷。
