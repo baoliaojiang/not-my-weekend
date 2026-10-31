@@ -31,7 +31,12 @@ jobs:
       - name: 读取版本号
         id: ver
         run: |
-          V=$(node -e "const s=require('fs').readFileSync('scripts/config/game.js','utf8');console.log(s.match(/version:////s*'([\\d.]+)'/)[1])")
+          # 以前这里用 node 内联正则，YAML 转义把 "/\s*" 吃成了 "////s*"，
+          # 于是这一步直接语法错误、整个 workflow 从第一步就挂掉（Release 一直发不出来）。
+          # 改成和 build-apk.sh / build-exe.sh 一样的 grep，写法统一也不会被转义坑。
+          V=$(grep -oE "version: *'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'" scripts/config/game.js | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
+          echo "读到版本：$V"
+          test -n "$V"
           echo "v=$V" >> $GITHUB_OUTPUT
 
       - name: 暂存 APK 与 Windows 分卷
