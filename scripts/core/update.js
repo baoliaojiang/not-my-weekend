@@ -92,6 +92,38 @@ async function fetchJson(url, timeoutMs) {
   }
 }
 
+/* 三个源同时发，谁先回来用谁。
+   ---------------------------------------------------------
+   以前是串行 for 循环：每个源等满 timeoutMs 才轮到下一个，
+   离线或被墙时 6s × 3 = 18s 全压在「检查更新」这一屏上，
+   玩家看到的就是「检查更新一直超时」。
+   并发之后总等待 ≈ 一个源的超时时间，最坏也有个硬闸兜底。 */
+function raceVersion(bases, timeoutMs) {
+  if (!bases.length) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    let settled = false;
+    let pending = bases.length;
+    const done = (val) => { if (!settled) { settled = true; resolve(val); } };
+    // 硬闸：任何一路都没回、或者 deffered 卡在 DNS 上，也别拖过这个点
+    const hard = setTimeout(() => done(null), timeoutMs + 500);
+    for (const base of bases) {
+      fetchJson(base + 'version.json', timeoutMs).then((got) => {
+        pending--;
+        if (settled) return;
+        if (got && got.content) {
+          clearTimeout(hard);
+          done({ data: got, base });
+          return;
+        }
+        if (pending === 0) { clearTimeout(hard); done(null); }
+      }).catch(() => {
+        pending--;
+        if (!settled && pending === 0) { clearTimeout(hard); done(null); }
+      });
+    }
+  });
+}
+
 /**
  * 检查更新。返回：
  *   { ok, kind: 'none'|'content'|'shell'|'both', remote, content, shell, shellMin, notes }
@@ -104,16 +136,17 @@ async function fetchJson(url, timeoutMs) {
 export async function checkUpdate() {
   if (!CONFIG.update || CONFIG.update.enabled === false) return { ok: false, kind: 'none' };
 
-  /* 依次试各个源。第一个能解析出版本信息的就用它。
+  /* 并发试各个源。第一个能解析出版本信息的就用它。
      全部失败就是"查不到"，不是"出错"——游戏照常进，不弹窗。 */
   const bases = baseUrls();
-  let data = null;
-  let usedBase = bases[0];
-  for (const base of bases) {
-    const got = await fetchJson(base + 'version.json', CONFIG.update.timeoutMs || 6000);
-    if (got && got.content) { data = got; usedBase = base; break; }
+  const picked = await raceVersion(bases, CONFIG.update.timeoutMs || 4000);
+  if (!picked) {
+    // 记一次时间戳：接下来 6 小时不再反复等，免得每次都卡在这一屏
+    markChecked();
+    return { ok: false, kind: 'none' };
   }
-  if (!data) return { ok: false, kind: 'none' };
+  const data = picked.data;
+  const usedBase = picked.base;
 
   const curContent = CONFIG.version;
   const curShell = shellVersion();
@@ -173,7 +206,18 @@ export async function applyContentUpdate(remote) {
   if (window.zbUpdate && typeof window.zbUpdate.download === 'function') {
     try { return await window.zbUpdate.download(remote); } catch (e) { return { ok: false }; }
   }
-  return { ok: false, reason: 'no-shell' };
+  /* 网页版没有外壳可换，但它同样能"热更"：
+     资源是静态文件，带上时间戳强刷一次就等于拿到了新版本。
+     以前这里直接返回失败，网页玩家点「立即更新」只会看到一句
+     "刷新页面即可"，等于让他自己动手——现在替他刷。 */
+  try {
+    const u = new URL(location.href);
+    u.searchParams.set('v', String(Date.now()));
+    setTimeout(() => location.replace(u.href), 240);
+    return { ok: true, reason: 'web-reload' };
+  } catch (e) {
+    return { ok: false, reason: 'no-shell' };
+  }
 }
 
 /** 必须在用户第一次点击之后才弹，否则 WebAudio 与 focus 都会被挡 */

@@ -1,0 +1,30 @@
+import puppeteer from 'file:///C:/Users/12821/.workbuddy/binaries/node/workspace/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js';
+import path from 'node:path'; import fs from 'node:fs';
+const ROOT = process.cwd();
+const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const b = await puppeteer.launch({ executablePath: EDGE, headless: 'new', args: ['--no-sandbox', '--allow-file-access-from-files', '--mute-audio'] });
+const p = await b.newPage();
+await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
+await p.goto('file:///' + path.join(ROOT, 'index.html').replace(/\\/g, '/'), { waitUntil: 'networkidle2' });
+await p.waitForFunction('!!window.__ZBNX');
+await p.evaluate(() => {
+  ['bootSeq','boot'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  document.querySelectorAll('.boot-screen,#bootScreen').forEach(el => el.style.display = 'none');
+  window.__ZBNX.go('ch0');
+});
+await wait(900);
+await p.evaluate(() => { window.__ZBNX.ui.closeAll(); window.__ZBNX.ui.openPhone('home', null); });
+await wait(500);
+await p.evaluate(() => document.querySelector('[data-app="store"]').click());
+await wait(400);
+await p.evaluate(() => document.querySelector('[data-st-tab="installed"]').click());
+await wait(300);
+await p.screenshot({ path: path.join(ROOT,'build','_store-zoom.png'), clip: { x: 250, y: 150, width: 143, height: 300 }, captureBeyondViewport: false });
+const r = await p.evaluate(() => {
+  const q = s => document.querySelector(s).getBoundingClientRect();
+  const row = q('.st-row'), card = q('.mapp-card'), btn = q('.st-btn'), app = q('.mapp'), sc = document.querySelector('.mapp-scroll') ? q('.mapp-scroll') : null;
+  return { row: [row.left, row.right, row.width], card: [card.left, card.right, card.width], btn: [btn.left, btn.right], app: [app.left, app.right], scroll: sc ? [sc.left, sc.right, sc.width] : null, vw: innerWidth };
+});
+console.log(JSON.stringify(r, null, 1));
+await b.close();

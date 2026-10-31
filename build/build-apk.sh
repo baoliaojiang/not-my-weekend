@@ -13,8 +13,10 @@ PROJ="$ROOT/build/apk-work"
 PYEXE="C:/Users/12821/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
 PKG="com.zhouri.bufanxiao"
 NAME="不属于我的周末"
-VER_CODE="21"
-VER_NAME="0.6.2.3"
+# 版本号不再手写：直接从 scripts/config/game.js 里读，免得和游戏内版本对不上
+VER_CODE="22"
+VER_NAME="$(grep -oE "version: *'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'" "$ROOT/scripts/config/game.js" | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")"
+[ -n "$VER_NAME" ] || VER_NAME="0.0.0.0"
 
 # 变体：标准版（默认，依赖系统 WebView）/ 兼容版（自带 polyfill 与降级样式）
 # 用法：bash build/build-apk.sh compat

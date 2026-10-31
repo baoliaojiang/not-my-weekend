@@ -18,6 +18,14 @@ import {
 import { CHARACTERS } from '../data/characters.js';
 import { aiComplete, buildGovPrompt, toParagraphs, aiConfigured, AI_SYSTEM } from './ai.js';
 
+/* 跳过时会停下来的节点：这些地方必须由玩家本人来做，
+   引擎不替他选、不替他答、不替他打电话。 */
+const SKIP_STOP = new Set([
+  'choice', 'chatreply', 'hub', 'quiz',
+  'govform', 'hotline', 'govprogress',
+  'phone', 'ask', 'end'
+]);
+
 export class Engine {
   constructor(ctx) {
     this.ctx = ctx;              // { state, stage, audio, ui, settings, onChapterEnd }
@@ -317,6 +325,24 @@ export class Engine {
       case 'card': {
         markRead(key);
         return this.showCard(node);
+      }
+
+      /* ---------- 需要玩家先做一次设定 ----------
+         目前只有「选主角性别」用得上。
+         之所以放在序章里、而不是点「开始游戏」那一瞬间，
+         是因为刚进游戏就问「你是哪一位」很突兀——玩家还没看到任何东西；
+         等开场那几段旁白讲完、切到九月一日之前再问，才对得上剧情。 */
+      case 'ask': {
+        markRead(key);
+        const hook = this.ctx.onAsk;
+        if (typeof hook !== 'function') return this.next();
+        this.waiting = true;
+        hook(node.what, () => {
+          this.waiting = false;
+          // 面板关闭与引擎恢复不在同一帧，稍等一下再往下走
+          setTimeout(() => this.next(), 60);
+        });
+        return;
       }
 
       /* ---------- 选项 ---------- */
@@ -831,18 +857,11 @@ export class Engine {
     state.log.push({ who: isNarr ? '' : (node.name || ''), text: node.text });
     if (state.log.length > 240) state.log.splice(0, state.log.length - 240);
 
-    const wasRead = isRead(key);
     markRead(key);
     const speed = this.speedMs();
     const instant = this.shouldInstantStep() || speed === 0;
 
     this.waiting = false;
-
-    // 跳过模式遇到未读剧情：停下来询问（除非玩家已选择"跳过全部"）
-    if (this.skipActive && !this.skipAll && !wasRead) {
-      this.askSkipUnread(() => this.renderText(node, textEl, true));
-      return;
-    }
 
     this.renderText(node, textEl, instant);
   }
@@ -975,12 +994,168 @@ export class Engine {
     return this.pendingKey ? isRead(this.pendingKey) : false;
   }
 
+  /* ================= 跳过 =================
+     以前按「跳过」只弹一句"接下来是未读剧情"，玩家根本不知道
+     自己要跳过什么；而且它只是把后面每一句瞬间刷过去，
+     真正要停的地方（材料、手机、小测）一个接一个弹出来，
+     永远走不到本节的选择处。
+
+     现在换成：先摊开这一节讲了什么、谁在场，确认之后
+     直接把进度挪到"下一个需要你决定的地方"——
+     选项 / 聊天回复 / 调查 / 小测 / 打电话 / 本节结束。
+     沿途去过的场景、听过的音乐、拿过的材料、发来的消息都照旧生效，
+     只是不再一句一句演给玩家看。 */
   toggleSkip() {
     if (this.skipActive) { this.setSkip(false); return; }
-    this.setAuto(false);
-    this.setSkip(true);
-    if (this.typing) this.finishTyping();
-    else if (this.waiting) this.scheduleNext();
+    if (this.skipAsking) return;
+    if (this.autoActive) this.setAuto(false);
+
+    // 已经站在需要玩家操作的地方：没有"这一节"可跳
+    if (this.current && SKIP_STOP.has(this.current.t)) {
+      this.ctx.ui.toast('这里要你来做，跳不过去', 1800);
+      return;
+    }
+
+    const go = () => this.jumpToStop();
+    if (this.ctx.settings && this.ctx.settings.skipUnreadAsk === false) { go(); return; }
+
+    this.skipAsking = true;
+    this.paused = true;
+    this.ctx.ui.askSkipConfirm(this.skipInfo(),
+      () => { this.skipAsking = false; this.paused = false; go(); },
+      () => { this.skipAsking = false; this.paused = false; });
+  }
+
+  /** 这一节的摘要与出场人物（给跳过确认卡用） */
+  skipInfo() {
+    const ch = this.chapter || {};
+    const sm = ch.summary || {};
+    const cast = [];
+    const seen = new Set();
+    (ch.nodes || []).forEach(n => {
+      if (n.t !== 'say' && n.t !== 'show') return;
+      const id = n.sprite || n.who || n.id;
+      if (!id || seen.has(id) || !CHARACTERS[id]) return;
+      seen.add(id);
+      cast.push({ id, name: CHARACTERS[id].name || id });
+    });
+    return {
+      chapter: [ch.title, ch.name].filter(Boolean).join(' · '),
+      sub: sm.subtitle || '',
+      points: (sm.known || []).slice(0, 3),
+      cast: cast.slice(0, 8)
+    };
+  }
+
+  /** 把进度挪到本节的下一个停点，沿途副作用照做 */
+  jumpToStop() {
+    const f = this.frame();
+    if (!f) return;
+    // 正停在开场卡板上：先把幕布收掉，否则跳完之后它盖在选项上面
+    if (this._cardOpen) this.closeCard();
+    const nodes = f.nodes || [];
+    const state = this.ctx.state;
+    let collected = 0;
+    let i = f.i;
+    let guard = 0;
+
+    while (i < nodes.length && guard++ < 4000) {
+      const n = nodes[i];
+      if (!n) break;
+      if (SKIP_STOP.has(n.t)) break;
+
+      switch (n.t) {
+        case 'goto': {
+          const t = this.findLabel(n.label);
+          if (t === undefined) break;
+          i = t; continue;
+        }
+        case 'if': {
+          let ok = false;
+          try { ok = !!(n.cond && n.cond(state, this)); } catch (e) { /* 判不出来就当不成立 */ }
+          const name = ok ? n.then : n.else;
+          if (!name) break;
+          const t = this.findLabel(name);
+          if (t === undefined) break;
+          i = t; continue;
+        }
+        case 'branch': {
+          let name = null;
+          try {
+            name = typeof n.decide === 'function' ? n.decide(state, this) : (n.to || null);
+          } catch (e) { /* 同上 */ }
+          if (!name) break;
+          const t = this.findLabel((n.prefix || '') + name);
+          if (t === undefined) break;
+          i = t; continue;
+        }
+        case 'bg':
+          this.ctx.stage.setBackground(n.id);
+          if (n.place !== false) this.ctx.stage.setPlace(n.place || null);
+          break;
+        case 'music': this.ctx.audio.play(n.id); break;
+        case 'show': {
+          const c = CHARACTERS[n.id];
+          if (c && c.metFlag && !state.flags[c.metFlag]) setFlag(state, c.metFlag);
+          this.ctx.stage.showSprite(n.id, n.pos || 'center');
+          if (!this._explicitSprites) this._explicitSprites = new Set();
+          this._explicitSprites.add(n.id);
+          break;
+        }
+        case 'hide':
+          if (n.all) {
+            this.ctx.stage.hideAllSprites();
+            if (this._explicitSprites) this._explicitSprites.clear();
+          } else {
+            this.ctx.stage.hideSprite(n.id);
+            if (this._explicitSprites) this._explicitSprites.delete(n.id);
+          }
+          break;
+        case 'flag': setFlag(state, n.key, n.value === undefined ? true : n.value); break;
+        case 'stat': addStat(state, n.who, { trust: n.trust, pressure: n.pressure, stance: n.stance }); break;
+        case 'note': if (n.text && !state.notes.includes(n.text)) state.notes.push(n.text); break;
+        case 'mat': if (addMaterial(state, n.id)) collected++; break;
+        case 'chatmsg':
+          // 跳过期间消息照样落到存档里，但不再把手机翻出来
+          if (n.thread && n.text) {
+            state.chats.push({
+              thread: n.thread, from: n.from || '', text: n.text, me: !!n.me, day: state.dayLabel
+            });
+          }
+          break;
+        case 'unlock':
+          if (n.id && !state.chaptersDone.includes(n.id)) state.chaptersDone.push(n.id);
+          break;
+        case 'ending':
+          state.ending = n.id || null;
+          state.flags[`ending_${n.id}`] = true;
+          break;
+        default:
+          // sfx / wait / card / label / say / narr … 不演出、不记日志
+          break;
+      }
+
+      markRead(this.nodeKey(f, i));
+      i++;
+    }
+
+    f.i = Math.min(i, nodes.length);
+    this.blocked = false;
+    this.waiting = false;
+    this.typing = false;
+    flushRead();
+
+    if (collected) this.ctx.ui.toast(`已跳到本节的选择处 · 期间收入 ${collected} 份材料`, 2200);
+    else this.ctx.ui.toast('已跳到本节的选择处', 1600);
+
+    // 落在选项上时，上一句的对话框还挂着就是"过期台词"，收掉
+    const landing = nodes[f.i];
+    if (landing && landing.t === 'choice') {
+      const dlg = this.ctx.ui.root.querySelector('#dialogue');
+      if (dlg) dlg.hidden = true;
+    }
+
+    this.run();
   }
 
   setSkip(on, all = false) {
@@ -1000,10 +1175,12 @@ export class Engine {
   }
 
   setAuto(on) {
+    const same = this.autoActive === on;
     this.autoActive = on;
     const btn = this.ctx.ui.root.querySelector('#btnAuto');
     if (btn) btn.classList.toggle('active', on);
-    this.ctx.ui.toast(on ? '自动播放' : '已停止自动播放', 1200);
+    // 本来就没在自动播放，别为了"关掉"弹一条提示去盖住按钮
+    if (!same) this.ctx.ui.toast(on ? '自动播放' : '已停止自动播放', 1200);
     if (!on) clearTimeout(this.stepTimer);
   }
 
@@ -1014,17 +1191,6 @@ export class Engine {
     if (this.skipActive) { this.skipActive = false; this.skipAll = false; const b = this.ctx.ui.root.querySelector('#btnSkip'); if (b) b.classList.remove('active'); }
     if (this.autoActive) { this.autoActive = false; const b = this.ctx.ui.root.querySelector('#btnAuto'); if (b) b.classList.remove('active'); }
     if (msg && wasActive) this.ctx.ui.toast(msg, 1800);
-  }
-
-  /** 跳过时遇到未读文本的询问 */
-  askSkipUnread(onContinue) {
-    const { ui, settings } = this.ctx;
-    if (!settings.skipUnreadAsk) { this.skipAll = true; onContinue(); return; }
-    this.paused = true;
-    ui.askSkipUnread(
-      () => { this.paused = false; this.skipAll = true; onContinue(); },
-      () => { this.paused = false; this.setSkip(false); }
-    );
   }
 
   /* ================= 选项 ================= */

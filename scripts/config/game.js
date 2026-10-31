@@ -3,7 +3,7 @@
    ========================================================= */
 
 export const CONFIG = {
-  version: '0.6.2.3',
+  version: '0.6.4.0',
 
   // 存储键（改这里不会影响旧存档兼容性，但会各存一份）
   keys: {
@@ -116,8 +116,9 @@ export const CONFIG = {
     ],
     // 包体更新时按钮跳转的地址（Release 页面）
     releaseUrl: 'https://github.com/baoliaojiang/not-my-weekend/releases/latest',
-    timeoutMs: 6000,
-    retries: 2
+    timeoutMs: 3500,
+    // 三个源现在是并发竞速，retries 只在下载资源包时用，检查版本不再重试
+    retries: 1
   },
 
   chapterOrder: ['ch0', 'ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6']

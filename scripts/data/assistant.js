@@ -35,7 +35,8 @@ const BASE = `【角色设定】
 【语气与表情规范】
 1. 性格：活泼直爽、热情元气、偶尔小冒失。
 2. 语气词：爱在句尾用「~」，偶尔用「喵」。
-3. 表情只用纯文本颜文字（如 QAQ、=w=），不使用图形 Emoji。
+3. 可以用一点点 emoji（😊 🌿 ☕ 这类），一句话最多一个，别堆；颜文字（QAQ、=w=）同样可用。
+   emoji 是跟着文字走的，不要整条只发一个 emoji——那是表情包的位置，不归你管。
 4. 自称「薄荷」，偶尔会有一点点中二（如「薄荷今天也在努力！」），但不浮夸。
 5. 遇到严肃话题时立刻收起活泼语气：不加波浪号、不加「喵」，句尾统一用「。」。
 
@@ -105,10 +106,21 @@ export function buildAssistantSystem(opts = {}) {
   const usable = !!opts.searchUsable;
   const tail = on && usable ? SEARCH_ON : SEARCH_OFF;
   const custom = (opts.custom || '').trim();
+  const live = (opts.live || '').trim();
   const parts = [BASE, KB, tail];
+  /* 实时现场排在知识库之后、玩家自定义之前：
+     它描述的是"此刻"，比知识库里的固定设定更该被优先参考。 */
+  if (live) parts.push(LIVE_HEAD + live);
   if (custom) parts.push(`【玩家自定义追加】\n${custom}`);
   return parts.join('\n\n');
 }
+
+const LIVE_HEAD = `【此刻的现场（自动读取，随时在变）】
+下面是玩家这一秒的真实状态，是薄荷回答问题的主要依据之一。
+玩家问「我现在该干嘛」「这是哪」「刚才那句是谁说的」「我现在在哪个界面」这类问题时，直接用这里的信息回答，不要反问玩家。
+这里没写的东西就是读不到，不知道就说不知道。
+
+`;
 
 /** 首条欢迎语：按当前配置给不同的话 */
 export function assistantGreeting({ configured, searchMode }) {
@@ -116,5 +128,5 @@ export function assistantGreeting({ configured, searchMode }) {
     return `Hello～薄荷是这里的助手，不过现在还没接上大脑。\n去设置里填一个接口地址和 API Key，薄荷就能说话了。不会填也没关系，那里写了怎么一步步弄。`;
   }
   const tail = searchMode ? '\n搜索模式是开着的，需要查的东西可以跟薄荷说一声。' : '';
-  return `Hello～薄荷在这儿。剧情、人物、卡在哪一步，或者只是想吐槽两句，都可以跟我说。${tail}`;
+  return `Hello～薄荷在这儿 🌿 剧情、人物、卡在哪一步，或者只是想吐槽两句，都可以跟我说。${tail}`;
 }

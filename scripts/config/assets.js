@@ -95,7 +95,17 @@ export const MUSIC = {
   sunset:  { src: 'assets/music/sunset.mp3',       label: '黄昏' },
   night_street: { src: 'assets/music/night_street.mp3', label: '夜街' },
   hope:    { src: 'assets/music/hope.mp3',         label: '往上走' },
-  tense:   { src: 'assets/music/tense.mp3',        label: '绷紧' }
+  tense:   { src: 'assets/music/tense.mp3',        label: '绷紧' },
+  // —— 第三批：按场景补到 23 首，剧情里靠 bg 自动选曲
+  classroom:{ src: 'assets/music/classroom.mp3',   label: '教室' },
+  morning: { src: 'assets/music/morning.mp3',      label: '清晨' },
+  canteen: { src: 'assets/music/canteen.mp3',      label: '食堂' },
+  playground:{ src: 'assets/music/playground.mp3', label: '操场' },
+  exam:    { src: 'assets/music/exam.mp3',         label: '考试' },
+  broadcast:{ src: 'assets/music/broadcast.mp3',   label: '广播' },
+  goodbye: { src: 'assets/music/goodbye.mp3',      label: '告别' },
+  memory:  { src: 'assets/music/memory.mp3',       label: '回忆' },
+  home:    { src: 'assets/music/home.mp3',         label: '家' }
 };
 
 export const SFX = {
@@ -130,6 +140,13 @@ export function assetUrl(kind, id) {
   }
   const item = group[id];
   return item ? item.src : null;
+}
+
+/** 头像图：把立绘路径里的 characters 换成 faces
+    （tools/make-faces.py 从每张立绘上裁出来的正脸方图） */
+export function faceUrl(id) {
+  const src = assetUrl('sprite', id);
+  return src ? src.replace('/characters/', '/faces/') : null;
 }
 
 export function assetLabel(kind, id) {

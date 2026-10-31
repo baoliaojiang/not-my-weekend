@@ -6,6 +6,9 @@ ROOT="D:/workbuddy/2026-10-23-16-33-10"
 ELECTRON="C:/Users/12821/.workbuddy/binaries/node/workspace/node_modules/electron/dist"
 OUT="$ROOT/build/out/exe"
 NAME="不属于我的周末"
+# 版本号从配置读，避免和游戏内版本对不上
+VER="$(grep -oE "version: *'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'" "$ROOT/scripts/config/game.js" | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")"
+[ -n "${VER:-}" ] || VER="0.0.0.0"
 APP="$OUT/$NAME"
 
 echo "[1/4] 准备 Electron 运行时（已存在则复用，不做整目录删除）"
@@ -48,8 +51,8 @@ for i in 1 2 3 4 5; do
       --set-version-string CompanyName "爆料酱" \
       --set-version-string LegalCopyright "Demo 版本，仅供个人学习与交流" \
       --set-version-string OriginalFilename "$NAME.exe" \
-      --set-file-version "0.6.2.3.0" \
-      --set-product-version "0.6.2.3.0"; then
+      --set-file-version "$VER.0" \
+      --set-product-version "$VER.0"; then
     ok=1; break
   fi
   echo "  写入失败，第 $i 次重试…"

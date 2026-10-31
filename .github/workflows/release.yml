@@ -28,6 +28,12 @@ jobs:
 
       # make-dist 会重建 dist（把旧的改名成 dist-old），
       # 所以先把已提交进仓库的 APK 与 Windows 分卷挪到临时目录，最后再放回来附到 Release。
+      - name: 读取版本号
+        id: ver
+        run: |
+          V=$(node -e "const s=require('fs').readFileSync('scripts/config/game.js','utf8');console.log(s.match(/version:////s*'([\\d.]+)'/)[1])")
+          echo "v=$V" >> $GITHUB_OUTPUT
+
       - name: 暂存 APK 与 Windows 分卷
         run: |
           mkdir -p /tmp/rel/apk /tmp/rel/win
@@ -63,8 +69,8 @@ jobs:
           cp /tmp/rel/win/* dist/win/ 2>/dev/null || true
           # GitHub 会把非 ASCII 文件名压成同一串（两个中文 APK 都会变成 -0.6.2.3-.apk），
           # 第二个就会撞名被当成「更新已存在附件」而 404。所以附件改用 ASCII 文件名。
-          cp /tmp/rel/apk/*标准版*.apk dist/rel/NotMyWeekend-0.6.2.3-standard.apk 2>/dev/null || true
-          cp /tmp/rel/apk/*兼容版*.apk dist/rel/NotMyWeekend-0.6.2.3-compat.apk 2>/dev/null || true
+          cp /tmp/rel/apk/*标准版*.apk dist/rel/NotMyWeekend-${{ steps.ver.outputs.v }}-standard.apk 2>/dev/null || true
+          cp /tmp/rel/apk/*兼容版*.apk dist/rel/NotMyWeekend-${{ steps.ver.outputs.v }}-compat.apk 2>/dev/null || true
           ls -lh dist/rel dist/win
 
       - name: 清理旧附件（避免同名「更新附件」404）
@@ -91,11 +97,13 @@ jobs:
 
             ## 本版更新
 
-            - 更换应用图标：夜里亮着灯的教室窗前，一个背着书包、低头看手里那叠纸的学生剪影。
-            - 设置 / 关于页移除「素材说明」「关于图标」两段，统一放在 README。
-            - 「检查更新」与「编译着色器」两屏不再允许跳过（避免带着旧资源进游戏）。
-            - 查到新资源时以浮层弹窗列出改动与体积，由你决定是否更新。
-            - 老设备兜底：启动时若检测到系统 WebView 内核过旧（< 70），弹出原生对话框，可「用浏览器打开网页版」或「仍要继续」。
+            - 手机桌面图标全部换成澎湃 OS 4 的默认图标；校园通红点去掉。
+            - 「政务」换成「浏览器」：地址栏 + 政务平台 / 校园通 / 市教育局三个快捷入口；外部网址会明说打不开（这台终端只连校内网）。
+            - 桌面时间跟着设备时间走，不再写死 7:40。
+            - 人物页头像改成裁好的正脸图，整张脸都在框里；新增跟着章节变化的「此刻」一行，观察条目按进度解锁。
+            - 薄荷聊天窗重排：输入框与按钮对齐、消息区撑满、免责声明收成一行。
+            - 立绘：两人同场不再叠在一起；四人以上按人数均分一排；横屏「退出游戏」不再压住菜单。
+            - BGM 换成真实采样音源重编，收掉 60Hz 以下的轰鸣；每首统一 60 秒、首尾无缝循环。
 
             ## 关于「兼容版」
 
@@ -103,7 +111,7 @@ jobs:
 
             ## 下载（见本发布下方附件）
 
-            - Android 标准版 / 兼容版：`NotMyWeekend-0.6.2.3-standard.apk` / `NotMyWeekend-0.6.2.3-compat.apk`（存档互通）
+            - Android 标准版 / 兼容版：`NotMyWeekend-${{ steps.ver.outputs.v }}-standard.apk` / `NotMyWeekend-${{ steps.ver.outputs.v }}-compat.apk`（存档互通）
             - Windows 便携版：因超过 GitHub 单文件 100MB，拆 3 段 + `合并.bat`；下载后运行 `合并.bat` 得到 zip 再解压
             - 网页版（免安装）：https://baoliaojiang.github.io/not-my-weekend/
 

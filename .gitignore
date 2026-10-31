@@ -29,3 +29,8 @@ build/android/assets/www.pkg
 build/keystore.jks
 .deploy/
 build/_trash/
+
+# 自查截图与一次性中间产物
+build/_*/
+build/_*.png
+_sprite_test.html

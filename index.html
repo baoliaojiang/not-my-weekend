@@ -4,7 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>不属于我的周末 · 关于我的学校周末要上课这件事</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231e2228'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23f5f2ea' font-family='sans-serif'%3E周%3C/text%3E%3C/svg%3E" />
+<link rel="icon" type="image/png" href="assets/ui/app-icon.png" />
+<link rel="apple-touch-icon" href="assets/ui/app-icon.png" />
 <meta name="description" content="一款校园调查视觉小说原型：当所有人都说一件事是自愿的，一个人是否真的拥有说不的自由？" />
 <link rel="stylesheet" href="styles/main.css" />
 </head>
@@ -90,14 +91,20 @@
     </div>
     <p class="title-note" id="titleSaveNote"></p>
     <div class="title-tools">
-  <button id="feedbackFab" class="feedback-fab" type="button" aria-label="反馈问题">
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12zM7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z" fill="currentColor"/></svg>
-    <span>反馈问题</span>
-  </button>
-  <button id="aiFab" class="ai-fab" type="button" aria-label="AI 助手 薄荷">
-    <span class="ai-avatar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c.42 0 .78.28.9.68l1.55 4.9a4.2 4.2 0 0 0 2.68 2.68l4.9 1.55c.4.12.68.48.68.9s-.28.78-.68.9l-4.9 1.55a4.2 4.2 0 0 0-2.68 2.68l-1.55 4.9a.94.94 0 0 1-1.8 0l-1.55-4.9a4.2 4.2 0 0 0-2.68-2.68l-4.9-1.55a.94.94 0 0 1 0-1.8l4.9-1.55A4.2 4.2 0 0 0 9.55 7.8l1.55-4.9c.12-.4.48-.68.9-.68Z" fill="#fff"/></svg></span>
-    <span class="ai-fab-t">问薄荷</span>
-  </button>
+      <button id="phoneFab" class="phone-fab" type="button" aria-label="手机">
+        <span class="pf-ico" aria-hidden="true"><img src="assets/icons/hyperos/phone.png" alt="" /></span>
+        <span class="phone-fab-t">手机</span>
+      </button>
+      <button id="aiFab" class="ai-fab" type="button" aria-label="AI 助手 薄荷">
+        <span class="ai-avatar"></span>
+        <span class="ai-fab-t">问薄荷</span>
+      </button>
+      <button id="feedbackFab" class="feedback-fab" type="button" aria-label="反馈问题">
+        <span class="fb-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="15" height="15"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12zM7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z" fill="currentColor"/></svg>
+        </span>
+        <span class="feedback-fab-t">反馈问题</span>
+      </button>
     </div>
   </div>
   <footer class="title-footer">
@@ -122,23 +129,22 @@
     <p class="curtain-text" id="curtainText"></p>
   </div>
 
-  <header id="hud" class="hud">
-    <div class="hud-left">
+  <header id="hud" class="hud is-min">
+    <button class="hud-island" id="hudToggle" type="button" aria-expanded="false" aria-controls="hudNav" aria-label="展开顶部菜单">
       <span class="hud-chapter" id="hudChapter">序章</span>
       <span class="hud-day" id="hudDay">九月一日 · 周一</span>
-    </div>
+      <span class="hud-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
     <nav class="hud-right" id="hudNav">
-      <button class="hbtn hbtn-ai" id="btnAI" title="AI 助手 薄荷" aria-label="AI 助手">
-        <span class="ai-avatar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c.42 0 .78.28.9.68l1.55 4.9a4.2 4.2 0 0 0 2.68 2.68l4.9 1.55c.4.12.68.48.68.9s-.28.78-.68.9l-4.9 1.55a4.2 4.2 0 0 0-2.68 2.68l-1.55 4.9a.94.94 0 0 1-1.8 0l-1.55-4.9a4.2 4.2 0 0 0-2.68-2.68l-4.9-1.55a.94.94 0 0 1 0-1.8l4.9-1.55A4.2 4.2 0 0 0 9.55 7.8l1.55-4.9c.12-.4.48-.68.9-.68Z" fill="#fff"/></svg></span>
-      </button>
       <button class="hbtn" id="btnPhone" title="手机">手机</button>
       <button class="hbtn" id="btnGov" title="政务服务平台">政务</button>
       <button class="hbtn" id="btnMaterials" title="材料">材料</button>
       <button class="hbtn" id="btnCharacters" title="人物">人物</button>
       <button class="hbtn" id="btnLog" title="对话历史">历史</button>
       <button class="hbtn" id="btnAuto" title="自动播放">自动</button>
-      <button class="hbtn" id="btnSkip" title="跳过">跳过</button>
+      <button class="hbtn" id="btnSkip" title="跳到本节的选择处">跳过</button>
       <button class="hbtn" id="btnMenu" title="菜单">菜单</button>
+      <button class="hud-close" id="hudCollapse" type="button" aria-label="收起顶部菜单">×</button>
     </nav>
   </header>
 
@@ -173,13 +179,18 @@
     </div>
   </div>
 
-  <div id="skipPrompt" class="dialog-mask" hidden>
-    <div class="dialog-card">
-      <h3>接下来是未读剧情</h3>
-      <p>继续跳过会跳过你还没有读过的内容。是否继续？</p>
+  <div id="skipPrompt" class="dialog-mask is-skip" hidden>
+    <div class="dialog-card skip-card">
+      <p class="skip-eyebrow" id="skipChapter">序章 · 九月一日</p>
+      <h3 id="skipTitle">跳过这一节</h3>
+      <p class="skip-sub" id="skipSub"></p>
+      <ul class="skip-points" id="skipPoints"></ul>
+      <p class="skip-cast-t">本节出场</p>
+      <div class="skip-cast" id="skipCast"></div>
+      <p class="skip-note" id="skipNote">会停在下一个需要你决定的地方，不会替你做选择。</p>
       <div class="dialog-actions">
-        <button class="btn btn-ghost" id="skipStop">停止跳过</button>
-        <button class="btn btn-primary" id="skipGo">继续跳过</button>
+        <button class="btn btn-ghost" id="skipStop">继续看</button>
+        <button class="btn btn-primary" id="skipGo">跳到本节末</button>
       </div>
     </div>
   </div>

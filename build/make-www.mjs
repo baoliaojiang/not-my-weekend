@@ -41,10 +41,16 @@ const copy = (from, to) => {
 copy('styles', 'styles');
 copy('assets', 'assets');
 
-// 应用图标（桌面版窗口图标用）
-const icon = path.join(ROOT, 'build/icon-512.png');
-if (fs.existsSync(icon)) {
-  fs.copyFileSync(icon, path.join(OUT, 'assets/app-icon.png'));
+/* 应用图标（桌面版窗口图标、网页 favicon 都用它）。
+   注意别再用 build/icon-512.png——那是早期的旧图（男主立绘），
+   现在的正式图标是 assets/ui/app-icon.png（夜里的教室窗前）。 */
+const ICON_SRC = ['assets/ui/app-icon.png', 'build/icon-512.png'];
+for (const rel of ICON_SRC) {
+  const icon = path.join(ROOT, rel);
+  if (fs.existsSync(icon)) {
+    fs.copyFileSync(icon, path.join(OUT, 'assets/app-icon.png'));
+    break;
+  }
 }
 
 // 3) 改写 index.html：模块脚本 → 传统脚本

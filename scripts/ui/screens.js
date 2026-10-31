@@ -6,10 +6,10 @@
    ========================================================= */
 
 import { CONFIG } from '../config/game.js';
-import { assetUrl, setProtagonist } from '../config/assets.js';
+import { assetUrl, setProtagonist, faceUrl, MUSIC } from '../config/assets.js';
 import { dumpLog } from '../core/log.js';
 import { MATERIALS, MATERIAL_STATUS, getMaterial } from '../data/materials.js';
-import { CHARACTERS, getCharacter } from '../data/characters.js';
+import { CHARACTERS, getCharacter, charNowLine, charNotes } from '../data/characters.js';
 import { THREADS, THREAD_KINDS, threadMessages, threadPreview, threadKind } from '../data/chats.js';
 import { CHANGELOG } from '../data/changelog.js';
 import { SIDES } from '../data/sides.js';
@@ -20,9 +20,19 @@ import {
   MINT_APPS, campusHTML, campusNoticeHTML, campusNoticeDetail,
   campusServiceHTML, campusConsultHTML, campusReceiptHTML, campusAttendHTML,
   noteHTML, bindNote, galleryHTML, galleryDetailHTML, chainHTML,
-  calcHTML, bindCalc
+  calcHTML, bindCalc, browserHTML, bindBrowser
 } from './mintos.js';
+import {
+  settingsAppHTML, bindSettingsApp, updateAppHTML, bindUpdateApp,
+  aboutAppHTML, contactsAppHTML, contactDetailHTML, backupAppHTML,
+  readingAppHTML, changelogAppHTML, DEVICE,
+  storeAppHTML, bindStore, cameraAppHTML, bindCamera, clockAppHTML, bindClock,
+  weatherAppHTML, musicAppHTML, filesAppHTML, bindFiles
+} from './mintapps.js';
 import { buildAssistantSystem, assistantGreeting } from '../data/assistant.js';
+import { gameCenterHTML, g2048HTML, bind2048, mineHTML, bindMine } from './mintgames.js';
+import { dialAppHTML, bindDial, dialPersonas } from './mintdial.js';
+import { emojiHTML } from './emoji.js';
 import { describeTrust, describePressure, STANCE_TEXT } from '../core/state.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -439,21 +449,25 @@ export class UI {
   openCharacters() {
     const all = Object.values(CHARACTERS);
     const items = all.filter(c => this.state.flags[c.metFlag]);
+    const nowLine = charNowLine(this.state);
     const html = items.map(c => {
       const st = this.state.stats[c.id] || {};
       const tags = [];
       if (c.stateKeys.includes('trust')) tags.push(`<span class="tag plain">${describeTrust(st.trust || 0)}</span>`);
       if (c.stateKeys.includes('pressure')) tags.push(`<span class="tag cross">${describePressure(st.pressure || 0)}</span>`);
       if (c.stateKeys.includes('stance')) tags.push(`<span class="tag ${st.stance === 'resist' ? 'doubt' : ''}">${STANCE_TEXT[st.stance] || '看不出来'}</span>`);
-      const img = c.sprite ? assetUrl('sprite', c.sprite) : null;
+      // 头像用从立绘上裁下来的正脸（assets/faces），不再拿整张立绘放大取上沿
+      const face = c.sprite ? faceUrl(c.sprite) : null;
+      const notes = charNotes(c, this.state);
       return `<div class="char-item">
-        <div class="char-face" style="${img ? `background-image:url('${img}')` : ''}"></div>
+        <div class="char-face" style="${face ? `background-image:url('${face}')` : ''}"></div>
         <div class="char-info">
           <div class="char-name">${c.name}</div>
           <div class="char-role">${c.role}</div>
           <div class="char-desc">${c.intro}</div>
+          <div class="char-now">${nowLine}</div>
           <div class="char-state">${tags.join('')}</div>
-          ${c.notes && c.notes.length ? `<div class="char-desc" style="color:#6b7280;font-size:.78rem;margin-top:6px">${c.notes.map(n => `· ${n}`).join('<br>')}</div>` : ''}
+          ${notes.length ? `<div class="char-notes">${notes.map(n => `<span>· ${n}</span>`).join('')}</div>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -579,7 +593,7 @@ export class UI {
       ? `<span class="wx-av" style="background-image:url('${spr}')"></span>`
       : `<span class="wx-av wx-av-t">${escapeHtml((me ? '我' : m.from || '·').slice(0, 1))}</span>`;
     const th = this._phoneThread ? THREADS[this._phoneThread] : null;
-    const bub = `<div class="wx-bub">${escapeHtml(m.text)}</div>`;
+    const bub = `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
     el.className = 'wx-row' + (me ? ' me' : '');
     el.innerHTML = me
       ? bub + av
@@ -662,6 +676,30 @@ export class UI {
     if (this._chatContinueCb) this._chatContinueCb();
   }
 
+  /* iOS 那套状态栏：左边时间，右边信号 / WiFi / 电池。
+     信号是四根从矮到高的圆角竖条，WiFi 是三条同心弧，
+     电池是描边圆角矩形 + 内部电量块——都不是色块占位。 */
+  _mosStatusBar(hhmm, solid) {
+    return `<div class="mos-bar${solid ? ' mos-bar-solid' : ''}">
+      <span class="mos-time" id="mosTime">${hhmm || ''}</span>
+      <span class="mos-sys">
+        <svg class="mos-sig" viewBox="0 0 18 12" aria-hidden="true">
+          <rect x="0"  y="8" width="3" height="4" rx="1"/>
+          <rect x="5"  y="5.7" width="3" height="6.3" rx="1"/>
+          <rect x="10" y="3.2" width="3" height="8.8" rx="1"/>
+          <rect x="15" y="0.8" width="3" height="11.2" rx="1"/>
+        </svg>
+        <svg class="mos-wifi" viewBox="0 0 16 12" aria-hidden="true">
+          <path d="M1 4.3a10.4 10.4 0 0 1 14 0"/>
+          <path d="M3.6 7.1a6.6 6.6 0 0 1 8.8 0"/>
+          <path d="M6.2 9.8a2.8 2.8 0 0 1 3.6 0"/>
+        </svg>
+        <span class="mos-bat" aria-label="电量"><i></i></span>
+        <button class="mos-exit" type="button" data-mos-exit="1" aria-label="退出手机，回到剧情">×</button>
+      </span>
+    </div>`;
+  }
+
   /* ---------------- 桌面（MintOS 4） ----------------
      仿小米澎湃 OS 的桌面：状态栏 + 大时钟 + 图标网格 + 底部 dock。
      图标用 assets/icons/hyperos 那套（OS 4 的默认图标集），
@@ -683,28 +721,22 @@ export class UI {
         <span class="mos-name">${a.name}</span>
       </button>`).join('');
 
-    /* Dock：最常用的四个，也全部用图标包里的图 */
-    const dockIds = ['chat', 'campus', 'note', 'settings'];
-    const dock = dockIds.map(id => {
-      const a = apps.find(x => x.id === id);
-      return `<button class="mos-app mos-dock-app" type="button" data-app="${a.id}">
-        <span class="mos-ico">${a.badge ? `<i class="mos-badge">${a.badge}</i>` : ''}<img src="${ico(a.icon)}" alt="" loading="lazy" /></span>
-        <span class="mos-name">${a.name}</span>
-      </button>`;
-    }).join('');
+
+    /* 时间不再是写死的 7:40：读系统时间，跟真机一致；
+       日期那行仍然是剧情日期（九月一日 · 周一），
+       两者一个走"这台设备"，一个走"这个故事"。 */
+    const now = new Date();
+    const hhmm = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const storyDay = (this.el.day && this.el.day.textContent.trim()) || '九月一日 · 周一';
 
     const html = `<div class="mos">
-      <div class="mos-bar">
-        <span class="mos-time">7:40</span>
-        <span class="mos-sys"><i class="mos-sig"></i><i class="mos-wifi"></i><i class="mos-bat"></i></span>
-      </div>
+      ${this._mosStatusBar(hhmm)}
       <div class="mos-wall">
-        <p class="mos-clock">7:40</p>
-        <p class="mos-date">九月一日 · 周一</p>
+        <p class="mos-clock" id="mosClock">${hhmm}</p>
+        <p class="mos-date">${storyDay}</p>
       </div>
       <div class="mos-grid">${grid}</div>
-      <div class="mos-dock">${dock}</div>
-      <p class="mos-note">MintOS 4 · 薄荷 680</p>
+      <p class="mos-note">Mint Note 11SE · MintOS 4</p>
     </div>`;
 
     // 从剧情点进来的手机也要能「看完了」收尾：退到桌面不能把续接回调弄丢，
@@ -725,18 +757,41 @@ export class UI {
     /* 老 WebView 不支持 :has()，用它来做面板布局会直接失效，
        所以这里给面板挂一个显式 class，CSS 两边都写。 */
     body.classList.add('mos-host');
+    /* 分钟跳一下，别让桌面上的时间停在打开的那一刻 */
+    clearInterval(this._mosTimer);
+    this._mosTimer = setInterval(() => {
+      const t = document.querySelector('#mosTime');
+      if (!t || !t.isConnected) { clearInterval(this._mosTimer); return; }
+      const d = new Date();
+      const s = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+      t.textContent = s;
+      const c = document.querySelector('#mosClock');
+      if (c) c.textContent = s;
+    }, 20000);
     body.querySelectorAll('[data-app]').forEach(b => {
       b.addEventListener('click', () => this._phoneApp(b.dataset.app, b.dataset.label));
     });
+    /* 手机是个全屏面板、还没有标题栏，不给一个「退出」人就会困在桌面里。
+       桌面状态栏和应用页导航栏各留一个 ×，点了直接回到剧情。 */
+    if (!body._mosExitBound) {
+      body._mosExitBound = true;
+      body.addEventListener('click', (e) => {
+        const hit = e.target.closest && e.target.closest('[data-mos-exit]');
+        if (!hit) return;
+        e.preventDefault();
+        this.audio.sfx('page');
+        this.closePanel();
+      });
+    }
   }
 
   /* ---------------- 手机里的子页面 ----------------
      手机是一个"套娃"结构：桌面 → 应用 → 应用里的二级页。
      每一层都自己画顶栏（左上角返回），返回时回到上一层，
      而不是把整个面板换掉——换了面板手机外壳就没了。 */
-  _mintPush(html, title, onBind) {
+  _mintPush(html, title, onBind, badge) {
     const stack = this._mintStack || (this._mintStack = []);
-    stack.push({ html, title });
+    stack.push({ html, title, badge: badge || '' });
     this._mintRender();
     if (onBind) onBind(this.el.panelBody);
   }
@@ -750,12 +805,16 @@ export class UI {
     const stack = this._mintStack || [];
     const top = stack[stack.length - 1];
     if (!top) return;
-    this.el.panelTitle.textContent = top.title || '手机';
+    this.el.panelTitle.innerHTML = escapeHtml(top.title || '手机')
+      + (top.badge ? `<span class="mos-beta">${escapeHtml(top.badge)}</span>` : '');
     this.el.panelBody.classList.add('mos-host');
+    const d0 = new Date();
+    const nm = `${d0.getHours()}:${String(d0.getMinutes()).padStart(2, '0')}`;
     this.el.panelBody.innerHTML = `<div class="mos-appview">
+      ${this._mosStatusBar(nm, true)}
       <div class="mos-nav">
         <button class="mos-back" type="button" data-mint-back="1" aria-label="返回">‹</button>
-        <span class="mos-nav-t">${top.title || ''}</span>
+        <span class="mos-nav-t">${escapeHtml(top.title || '')}${top.badge ? `<span class="mos-beta">${escapeHtml(top.badge)}</span>` : ''}</span>
       </div>
       <div class="mos-view">${top.html}</div>
     </div>`;
@@ -770,13 +829,23 @@ export class UI {
     this.audio.sfx('click');
     const go = {
       chat: () => this._renderPhone('list', null),
+      ai: () => { this._mintBack(); this.openAssistant(); },
+      browser: () => this._mintPush(browserHTML(this.state), '浏览器', (box) => {
+        bindBrowser(box, (key) => {
+          if (key === 'gov') { this._mintBack(); this.openGovHome(); return; }
+          if (key === 'campus') { this._mintBack(); this._mintPush(campusHTML(this.state), '校园通', (b) => this._bindCampus(b)); return; }
+          this.toast('教育局的网站只有一页目录，和一个打不通的监督电话', 2400);
+        });
+      }),
       gov: () => this.openGovHome(),
-      people: () => this.openCharacters(),
-      save: () => this.openSaves('load', { scope: 'main' }),
-      settings: () => this.openSettings(),
-      changelog: () => this.openChangelog(),
-      about: () => this.openAbout(),
-      timeline: () => this.toast('时间轴在标题页的「继续游戏」里', 2200),
+      /* 下面这几个以前都是"关掉手机、弹游戏自己的面板"，
+         现在全部留在手机里：它们本身就是 App。 */
+      people: () => this._pushApp('contacts'),
+      save: () => this._pushApp('backup'),
+      settings: () => this._pushApp('settings'),
+      changelog: () => this._pushApp('update'),
+      about: () => this._pushApp('about'),
+      timeline: () => this._pushApp('reading'),
       campus: () => this._mintPush(campusHTML(this.state), '校园通', (box) => this._bindCampus(box)),
       note: () => this._mintPush(noteHTML(this.state), '便笺', (box) => {
         bindNote(box, this.state, () => {
@@ -791,10 +860,246 @@ export class UI {
         }));
       }),
       chain: () => this._mintPush(chainHTML(this.state), '家长群接龙'),
-      calc: () => this._mintPush(calcHTML(), '计算器', (box) => bindCalc(box))
+      calc: () => this._mintPush(calcHTML(), '计算器', (box) => bindCalc(box)),
+      dial: () => this._pushApp('dial'),
+      store: () => this._pushApp('store'),
+      games: () => this._pushApp('games'),
+      camera: () => this._pushApp('camera'),
+      clock: () => this._pushApp('clock'),
+      weather: () => this._pushApp('weather'),
+      music: () => this._pushApp('music'),
+      files: () => this._pushApp('files')
     }[id];
     if (go) { go(); return; }
     this.toast(`${label || '这个'}在 Demo 里还没有做`, 1800);
+  }
+
+  /* ---------------- 手机里的独立应用 ----------------
+     每个 App 只有一个 html + 一个 bind，push 进手机自己的页面栈，
+     导航栏、返回、右上角退出都由手机外壳提供。 */
+  _pushApp(id) {
+    const conf = this._appConf(id);
+    if (!conf) { this.toast('这个应用还没装', 1600); return; }
+    this._mintPush(conf.html, conf.title, (box) => {
+      if (conf.bind) conf.bind(box);
+      this._bindAppNav(box);
+    }, conf.badge);
+  }
+
+  _appConf(id) {
+    const ver = (typeof CONFIG !== 'undefined' && CONFIG.version) || '0.6.3.0';
+    const open = (app) => this._pushApp(app);
+
+    if (id === 'settings') {
+      return {
+        title: '设置',
+        html: settingsAppHTML(this.settings, { version: ver }),
+        bind: (box) => bindSettingsApp(
+          box, this.settings,
+          () => this.saveAPI && this.saveAPI.saveSettings && this.saveAPI.saveSettings(),
+          () => { if (typeof this.applySettings === 'function') this.applySettings(); }
+        )
+      };
+    }
+
+    if (id === 'update') {
+      return {
+        title: '软件更新',
+        html: updateAppHTML({ version: ver }),
+        bind: (box) => bindUpdateApp(box, {
+          check: async () => {
+            try {
+              const m = await import('../core/update.js');
+              return await m.checkUpdate();
+            } catch (e) { return null; }
+          }
+        })
+      };
+    }
+
+    if (id === 'log') {
+      return { title: '更新日志', html: changelogAppHTML() };
+    }
+
+    if (id === 'about') {
+      return { title: '关于手机', html: aboutAppHTML({ version: ver }) };
+    }
+
+    if (id === 'contacts') {
+      return {
+        title: '通讯录',
+        html: contactsAppHTML(this.state, CHARACTERS),
+        bind: (box) => {
+          box.querySelectorAll('[data-contact]').forEach(b => b.addEventListener('click', () => {
+            const c = CHARACTERS[b.dataset.contact];
+            if (!c) return;
+            this.audio.sfx('page');
+            this._mintPush(contactDetailHTML(c, this.state), c.name, (b2) => this._bindAppNav(b2));
+          }));
+        }
+      };
+    }
+
+    if (id === 'backup') {
+      const raw = (this.saveAPI && this.saveAPI.list) ? this.saveAPI.list('main') : [];
+      const slots = raw.map(sl => ({
+        index: sl.slot,
+        data: sl.data,
+        time: sl.data ? fmtTime(sl.data.ts) : '',
+        title: sl.data ? sl.data.chapterTitle : '',
+        day: sl.data ? sl.data.dayLabel : ''
+      })).filter(sl => sl.index > 0 || sl.data);
+      return {
+        title: '备份与恢复',
+        html: backupAppHTML(slots),
+        bind: (box) => {
+          box.querySelectorAll('[data-restore]').forEach(b => b.addEventListener('click', () => {
+            const slot = Number(b.dataset.restore);
+            this.closePanel();
+            this.saveAPI.load(slot, 'main');
+          }));
+        }
+      };
+    }
+
+    if (id === 'reading') {
+      const chapters = Array.isArray(this.chapters) ? this.chapters : [];
+      let progress = { chapters: [] };
+      try { progress = this.saveAPI.loadProgress ? this.saveAPI.loadProgress() : progress; } catch (e) { /* 没存档就当空的 */ }
+      return { title: '阅读记录', html: readingAppHTML(chapters, progress) };
+    }
+
+    if (id === 'store') {
+      // 商店里列的是"已安装"：点一下就真的打开那个应用
+      return {
+        title: '应用商店',
+        html: storeAppHTML(MINT_APPS),
+        bind: (box) => {
+          bindStore(box);
+          box.querySelectorAll('[data-open-app]').forEach(b => b.addEventListener('click', () => {
+            this.audio.sfx('click');
+            this._mintBack();
+            this._phoneApp(b.dataset.openApp, '');
+          }));
+        }
+      };
+    }
+
+    if (id === 'games') {
+      return {
+        title: '游戏中心',
+        html: gameCenterHTML(),
+        bind: (box) => {
+          box.querySelectorAll('[data-game]').forEach(b => b.addEventListener('click', () => {
+            this.audio.sfx('click');
+            this._pushApp(b.dataset.game);
+          }));
+        }
+      };
+    }
+
+    if (id === 'g2048') {
+      return { title: '2048', html: g2048HTML(), bind: (box) => bind2048(box) };
+    }
+
+    if (id === 'mine') {
+      return { title: '扫雷', html: mineHTML(), bind: (box) => bindMine(box) };
+    }
+
+    if (id === 'camera') {
+      let bg = null;
+      try {
+        const sc = this.stage && this.stage.snapshotScene ? this.stage.snapshotScene() : null;
+        if (sc && sc.bg) bg = assetUrl('background', sc.bg);
+      } catch (e) { /* 没有场景就用默认取景 */ }
+      return { title: '相机', html: cameraAppHTML(bg), bind: (box) => bindCamera(box) };
+    }
+
+    if (id === 'clock') {
+      return { title: '时钟', html: clockAppHTML(), bind: (box) => bindClock(box) };
+    }
+
+    if (id === 'weather') {
+      return { title: '天气', html: weatherAppHTML() };
+    }
+
+    if (id === 'music') {
+      const tracks = Object.keys(MUSIC).filter(k => k !== 'title').map(k => ({ id: k, label: MUSIC[k].label }));
+      return {
+        title: '音乐',
+        html: musicAppHTML(tracks, this.audio && this.audio.currentId),
+        bind: (box) => this._bindMusic(box, tracks)
+      };
+    }
+
+    if (id === 'files') {
+      return { title: '文件管理', html: filesAppHTML(), bind: (box) => bindFiles(box) };
+    }
+
+    if (id === 'dial') {
+      const personas = dialPersonas(this.state, CHARACTERS);
+      return {
+        title: '电话',
+        badge: 'beta',
+        html: dialAppHTML(personas),
+        bind: (box) => bindDial(box, {
+          personas,
+          ai: this._dialAI(),
+          onExit: () => {}
+        })
+      };
+    }
+
+    if (id === 'saves') { open('backup'); return null; }
+    return null;
+  }
+
+  /* 音乐播放器：真的切 BGM。关掉手机回剧情时，音乐照旧在放。 */
+  _bindMusic(box, tracks) {
+    const title = box.querySelector('#muTitle');
+    const sub = box.querySelector('#muSub');
+    const main = box.querySelector('#muToggle');
+    const paint = () => {
+      const cur = (tracks.find(t => t.id === (this.audio && this.audio.currentId)) || null);
+      if (title) title.textContent = cur ? cur.label : '未在播放';
+      if (sub) sub.textContent = cur ? '正在播放' : '未在播放';
+      if (main) main.textContent = cur ? '❚❚' : '▶';
+      box.querySelectorAll('[data-track]').forEach(r => {
+        r.classList.toggle('is-on', !!cur && r.dataset.track === cur.id);
+      });
+    };
+    const index = () => tracks.findIndex(t => t.id === (this.audio && this.audio.currentId));
+    box.querySelectorAll('[data-track]').forEach(r => r.addEventListener('click', () => {
+      this.audio.sfx('click');
+      this.audio.play(r.dataset.track, { restart: true });
+      paint();
+    }));
+    box.querySelectorAll('[data-mu]').forEach(b => b.addEventListener('click', () => {
+      const act = b.dataset.mu;
+      const i = index();
+      if (act === 'toggle') {
+        if (i >= 0) { this.audio.stop(); paint(); }
+        else { this.audio.play(tracks[0].id, { restart: true }); paint(); }
+      } else if (act === 'next') {
+        const n = tracks[(i + 1 + tracks.length) % tracks.length];
+        this.audio.play(n.id, { restart: true }); paint();
+      } else if (act === 'prev') {
+        const n = tracks[(i - 1 + tracks.length) % tracks.length];
+        this.audio.play(n.id, { restart: true }); paint();
+      }
+    }));
+  }
+
+  /* 设置里的「软件更新 / 关于手机」、更新里的「更新日志」都是往深一层 push */
+  _bindAppNav(box) {
+    box.querySelectorAll('[data-go-app]').forEach(b => {
+      if (b._appNavBound) return;
+      b._appNavBound = true;
+      b.addEventListener('click', () => {
+        this.audio.sfx('page');
+        this._pushApp(b.dataset.goApp);
+      });
+    });
   }
 
   /* 校园通的二级页 */
@@ -931,7 +1236,7 @@ export class UI {
         // 微信里连续同一个人发消息，昵称只在第一条上出现
         const showNick = !me && th && th.group && m.from !== prevFrom;
         prevFrom = me ? '__me__' : m.from;
-        const inner = `<div class="wx-bub">${escapeHtml(m.text)}</div>`;
+        const inner = `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
         const av = me
           ? avatarOf('我', null)
           : avatarOf(m.from, m.spriteOf || null);
@@ -1262,7 +1567,7 @@ export class UI {
           <div class="ai-compose">
             <button class="ai-mini" id="aiStickerBtn" type="button" title="表情" aria-label="表情"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.9" cy="6.6" r=".85" fill="currentColor"/><circle cx="10.1" cy="6.6" r=".85" fill="currentColor"/><path d="M5.4 9.6c.7 1.1 1.6 1.65 2.6 1.65s1.9-.55 2.6-1.65" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
             <button class="ai-mini ${ai.searchMode ? 'on' : ''}" id="aiSearchBtn" type="button" title="搜索模式" aria-label="搜索模式">网</button>
-            <textarea id="aiInput" rows="1" placeholder="和薄荷说点什么…（Enter 发送，Shift+Enter 换行）"></textarea>
+            <textarea id="aiInput" rows="1" placeholder="和薄荷说点什么…"></textarea>
             <button class="btn btn-primary" id="aiSend" type="button">发送</button>
           </div>
           <p class="ai-compose-tip" id="aiComposeTip">
@@ -1324,7 +1629,7 @@ export class UI {
       });
       input.addEventListener('input', () => {
         input.style.height = 'auto';
-        input.style.height = `${Math.min(120, input.scrollHeight)}px`;
+        input.style.height = `${Math.min(104, input.scrollHeight)}px`;
       });
       /* 软键盘弹起后把输入框滚进可视区。
          横屏时可视高度只剩两三百像素，输入框很容易被键盘盖住——
@@ -1345,6 +1650,14 @@ export class UI {
         setTimeout(keep, 620);
       });
       if (!TOUCH) setTimeout(() => input.focus(), 120);
+    }
+
+    /* 免责声明平时收成一行，点开看全文 */
+    const tipEl = $('#aiComposeTip', this.el.panelBody);
+    if (tipEl && !tipEl._bound) {
+      tipEl._bound = true;
+      tipEl.title = tipEl.textContent.trim();
+      tipEl.addEventListener('click', () => tipEl.classList.toggle('open'));
     }
 
     const searchBtn = $('#aiSearchBtn', this.el.panelBody);
@@ -1532,7 +1845,7 @@ export class UI {
         const me = m.role === 'user';
         const img = m.img ? `<img src="${m.img}" alt="">` : '';
         // 发的是表情就只显示图，文字留给模型看，不重复摆在脸上
-        const text = (m.content && !m.img) ? escapeHtml(m.content) : '';
+        const text = (m.content && !m.img) ? emojiHTML(m.content) : '';
         const cls = `ai-bub${m.err ? ' is-err' : ''}${m.img ? ' has-img' : ''}`;
         return `<div class="ai-msg-row${me ? ' me' : ''}">
           ${me ? '' : '<span class="ai-avatar"></span>'}
@@ -1599,24 +1912,14 @@ export class UI {
       if (r.ok) searchText = r.text;
     }
 
-    // 拼游戏进度上下文，让薄荷知道玩家在哪、卡在哪
-    const st2 = this.state || {};
-    const chapterNames = { ch0:'序章·九月一日', ch1:'第一章', ch2:'第二章', ch3:'第三章', ch4:'第四章', ch5:'第五章', ch6:'第六章' };
-    const curChapter = chapterNames[st2.chapterId] || st2.chapterId || '（未知）';
-    const doneList = (st2.chaptersDone || []).map(id => chapterNames[id] || id).join('、') || '（无）';
-    const matCount = (st2.materials || []).length;
-    const recentLog = (st2.log || []).slice(-6).map(m => `${m.who || '旁白'}：${m.text}`).join('\n') || '（无）';
-    const progressCtx = `【玩家当前进度（自动注入，仅供你了解上下文，不要主动提起）】
-当前章节：${curChapter}
-已通关：${doneList}
-持有材料：${matCount} 份
-最近对话记录：
-${recentLog}`;
+    // 现场快照：不只是"进度"，而是玩家这一秒在干什么
+    const liveCtx = this._liveSnapshot();
 
     const system = buildAssistantSystem({
       searchMode,
       searchUsable: !!searchText,
-      custom: progressCtx + '\n\n' + ((this.settings.ai && this.settings.ai.chatPrompt) || '')
+      live: liveCtx,
+      custom: (this.settings.ai && this.settings.ai.chatPrompt) || ''
     });
     const history = cur.msgs
       .filter(m => m.content)
@@ -1793,8 +2096,8 @@ ${recentLog}`;
       </div>
 
       <div class="setting">
-        <div><div class="setting-label">跳过未读剧情时询问</div>
-        <div class="setting-hint">关闭后，跳过将直接越过未读内容。</div></div>
+        <div><div class="setting-label">跳过前先看本节摘要</div>
+        <div class="setting-hint">关闭后，按「跳过」直接跳到本节的选择处，不再弹摘要。</div></div>
         <button class="toggle ${s.skipUnreadAsk ? 'on' : ''}" id="skipAskToggle"></button>
       </div>
 
@@ -3237,10 +3540,187 @@ ${recentLog}`;
     $('#sumNext', this.el.panelFoot).addEventListener('click', () => { this.closePanel(); onNext(); });
   }
 
-  /* ================= 跳过未读询问 ================= */
-  askSkipUnread(onGo, onStop) {
-    this.el.skipPrompt.hidden = false;
-    this._skipCb = (go) => { this._skipCb = null; go ? onGo() : onStop(); };
+  /* ---------------- 电话里的"对面那个人" ----------------
+     配了 Key 就交给模型按人设演；没配就返回空字符串，
+     让 mintdial 内部退回写死的几句，至少不是一段沉默。 */
+  _dialAI() {
+    const cfg = this.settings && this.settings.ai;
+    const configured = !!(cfg && cfg.enabled !== false && cfg.baseUrl && cfg.apiKey);
+    return {
+      configured,
+      ask: async (persona, msgs) => {
+        if (!configured) return '';
+        try {
+          const out = await aiChat({
+            settings: this.settings,
+            system: persona.system,
+            messages: (msgs || []).map(m => ({ role: m.role, content: m.content }))
+          });
+          return out && out.ok ? String(out.text || '').trim() : '';
+        } catch (e) { return ''; }
+      }
+    };
+  }
+
+  /* ================= 给「薄荷」看的现场快照 =================
+     薄荷要能回答"我现在在干嘛""这是哪""刚才谁说那句话"，
+     就得把这一秒的状态原样交给它：章节、场景、在场的立绘、
+     屏幕上那一句、开着的面板/手机应用、材料与人物关系、
+     最近做过的选择。都是只读，不改任何状态。 */
+  _liveSnapshot() {
+    const L = [];
+    const st = this.state || {};
+    const eng = this.engine;
+    const CH = { ch0: '序章·九月一日', ch1: '第一章', ch2: '第二章', ch3: '第三章', ch4: '第四章', ch5: '第五章', ch6: '第六章' };
+    const safe = (fn, d) => { try { return fn(); } catch (e) { return d; } };
+
+    // ---- 版本与存档 ----
+    L.push(`游戏版本：v${CONFIG.version}`);
+    const ch = eng && eng.chapter;
+    const chName = ch ? `${ch.title || ''}${ch.name ? ' · ' + ch.name : ''}` : (CH[st.chapterId] || st.chapterId || '未知');
+    L.push(`当前章节：${chName}（id: ${st.chapterId || '?'}）`);
+    L.push(`剧情内日期：${st.dayLabel || '未知'}`);
+
+    // ---- 剧情进度 ----
+    const f = safe(() => eng.frame(), null);
+    if (f && f.nodes) {
+      const pct = Math.round((f.i / Math.max(1, f.nodes.length)) * 100);
+      L.push(`本章进度：第 ${f.i + 1} / ${f.nodes.length} 个节点（约 ${pct}%）`);
+    }
+    const cur = eng && eng.current;
+    if (cur) {
+      const typeMap = {
+        say: '正在播放一句对白', narr: '正在播放旁白', choice: '停在选项上等玩家选',
+        mat: '正在弹出材料', hub: '正在调查中枢选行动', chatreply: '正在手机上选回复',
+        quiz: '正在做课堂小测', phone: '正在看手机', card: '正在看开场卡板',
+        ask: '正在等玩家做设定', govform: '正在填政务表单', hotline: '正在打 12345'
+      };
+      L.push(`此刻：${typeMap[cur.t] || ('节点类型 ' + cur.t)}`);
+      if (cur.text) L.push(`屏幕上这一句（${cur.t === 'narr' ? '旁白' : (cur.name || cur.who || '某人')}）：${String(cur.text).slice(0, 120)}`);
+    }
+
+    // ---- 场景与立绘 ----
+    const sc = safe(() => (this.stage && this.stage.snapshotScene ? this.stage.snapshotScene() : null), null);
+    if (sc) {
+      if (sc.bg) L.push(`当前场景：${sc.bg}${sc.place ? '（' + sc.place + '）' : ''}`);
+    }
+    const onStage = safe(() => {
+      const out = [];
+      if (this.stage && this.stage.sprites) {
+        this.stage.sprites.forEach((v, k) => {
+          const c = CHARACTERS[k] || CHARACTERS[v && v.id];
+          out.push(c ? c.name : k);
+        });
+      }
+      return out;
+    }, []);
+    if (onStage.length) L.push(`台上立绘：${onStage.join('、')}`);
+
+    // ---- 玩家此刻开着的界面 ----
+    const uiState = [];
+    if (this.isPhoneOpen && this.isPhoneOpen()) {
+      const top = (this._mintStack && this._mintStack.length) ? this._mintStack[this._mintStack.length - 1] : null;
+      const appName = this._phoneApp || (top && top.title) || '桌面';
+      uiState.push(`手机开着（在「${appName}」）`);
+    }
+    if (this._panelOpen) uiState.push('一个游戏面板开着');
+    if (this._hubActive || st.hubActive) uiState.push('在调查中枢');
+    L.push(`界面状态：${uiState.length ? uiState.join('，') : '在剧情画面里'}`);
+
+    // ---- 主角 ----
+    const mc = safe(() => (st.flags && st.flags.mc_gender) || (st.flags && st.flags.gender) || null, null);
+    if (mc) L.push(`主角性别设定：${mc === 'male' ? '男' : mc === 'female' ? '女' : mc}`);
+
+    // ---- 材料 ----
+    const mats = st.materials || [];
+    if (mats.length) {
+      const titles = mats.slice(-5).map(id => {
+        const m = getMaterial(id);
+        return m ? m.title : id;
+      });
+      L.push(`已持有材料 ${mats.length} 份：${titles.join('；')}${mats.length > 5 ? '…' : ''}`);
+    } else {
+      L.push('已持有材料：0 份');
+    }
+
+    // ---- 已通关 ----
+    const done = (st.chaptersDone || []).map(id => CH[id] || id);
+    L.push(`已通关章节：${done.length ? done.join('、') : '（还没通关任何一章）'}`);
+
+    // ---- 人物关系（定性，不给数字） ----
+    const rel = safe(() => {
+      const out = [];
+      Object.keys(st.stats || {}).forEach(k => {
+        const c = CHARACTERS[k];
+        const v = st.stats[k];
+        if (!c) return;
+        const t = v.trust >= 60 ? '比较信任你' : v.trust >= 40 ? '还在观望' : '不太信任你';
+        const p = v.pressure >= 65 ? '压力很大' : v.pressure >= 40 ? '有些压力' : '没什么压力';
+        out.push(`${c.name}（${t}，${p}）`);
+      });
+      return out;
+    }, []);
+    if (rel.length) L.push(`人物关系：${rel.join('；')}`);
+
+    // ---- 最近的选择 ----
+    const chs = (st.choices || []).slice(-4).map(c => `「${c.q}」→ ${c.a}`);
+    if (chs.length) L.push(`最近的选择：${chs.join('；')}`);
+
+    // ---- 小测成绩 ----
+    const qz = Object.keys(st.quizzes || {});
+    if (qz.length) {
+      L.push(`课堂小测：${qz.map(k => `${k} ${st.quizzes[k].right}/${st.quizzes[k].total}`).join('，')}`);
+    }
+
+    // ---- 最近几句台词 ----
+    const recent = (st.log || []).slice(-6).map(m => `${m.who || '旁白'}：${String(m.text).slice(0, 60)}`);
+    if (recent.length) L.push(`最近六句台词：\n${recent.join('\n')}`);
+
+    // ---- 关键旗标（只挑几个可读的） ----
+    const flags = Object.keys(st.flags || {}).filter(k => st.flags[k] === true && !k.startsWith('ending_'));
+    if (flags.length) L.push(`已触发的关键标记（共 ${flags.length} 个）：${flags.slice(0, 12).join('、')}${flags.length > 12 ? '…' : ''}`);
+
+    return L.join('\n');
+  }
+
+  /* ================= 跳过确认 =================
+     跳之前先把这一节摊开：讲到哪里了、要点是什么、谁在场。
+     玩家看着摘要按「跳到本节末」，心里有底。 */
+  askSkipConfirm(info, onGo, onStop) {
+    const c = info || {};
+    const box = this.el.skipPrompt;
+
+    const chEl = box.querySelector('#skipChapter');
+    if (chEl) chEl.textContent = c.chapter || '本节';
+
+    const subEl = box.querySelector('#skipSub');
+    if (subEl) {
+      subEl.textContent = c.sub || '';
+      subEl.hidden = !c.sub;
+    }
+
+    const ptEl = box.querySelector('#skipPoints');
+    if (ptEl) {
+      const pts = Array.isArray(c.points) ? c.points : [];
+      ptEl.innerHTML = pts.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+      ptEl.hidden = !pts.length;
+    }
+
+    const castEl = box.querySelector('#skipCast');
+    if (castEl) {
+      const cast = Array.isArray(c.cast) ? c.cast : [];
+      castEl.innerHTML = cast.map(p => {
+        const src = faceUrl(p.id);
+        const style = src ? ` style="background-image:url('${src}')"` : '';
+        return `<span class="skip-face"><i${style}></i><b>${escapeHtml(p.name || '')}</b></span>`;
+      }).join('');
+      castEl.hidden = !cast.length;
+      const t = box.querySelector('.skip-cast-t');
+      if (t) t.hidden = !cast.length;
+    }
+
+    box.hidden = false;
+    this._skipCb = (go) => { this._skipCb = null; box.hidden = true; go ? onGo() : onStop(); };
   }
 }
 

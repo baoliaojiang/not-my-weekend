@@ -105,6 +105,9 @@ const saveAPI = {
 
   isSide(id) { return SIDE_IDS.has(id); },
 
+  /** 手机「阅读记录」用：读过哪几章 */
+  loadProgress() { return store.loadProgress(); },
+
   list(scope = 'main', sideId = null) {
     if (scope === 'side') return sideId ? store.listSideSlots(sideId) : [];
     return store.listSlots();
@@ -225,9 +228,18 @@ ui = new UI({ root, state, settings, audio, saveAPI });
 ui.stage = stage;   // 设置里换主角立绘、关掉主角显示都要直接动舞台
 engine = new Engine({
   state, stage, audio, ui, settings,
-  onChapterEnd: handleChapterEnd
+  onChapterEnd: handleChapterEnd,
+  /* 剧情里遇到 { t:'ask' } 时回调到这里。
+     序章开场几段旁白之后才问「你是哪一位」，比一进游戏就弹面板自然。 */
+  onAsk: (what, done) => {
+    if (what === 'protagonist') pickProtagonist(done);
+    else done();
+  }
 });
 ui.engine = engine;
+/* 手机里的应用要用：章节表（阅读记录）、改完设置立刻生效 */
+ui.chapters = ['ch0','ch1','ch2','ch3','ch4','ch5','ch6'].map(k => CHAPTERS[k]).filter(Boolean);
+ui.applySettings = () => { applyReading(); applyNightMode(); applyGlassMode(); };
 
 /* ---------------- 画面方向 ----------------
    screenMode: auto 跟随设备 / portrait 强制排版 / landscape 强制排版。
@@ -811,6 +823,14 @@ titleScreen.addEventListener('click', (e) => {
   }
 });
 
+/* 标题页的手机入口：和「问薄荷」同一排，点开就是那台 MintOS */
+const phoneFab = document.querySelector('#phoneFab');
+if (phoneFab) phoneFab.addEventListener('click', () => {
+  audio.unlock();
+  audio.sfx('click');
+  ui.openPhone('home', null);
+});
+
 /* 标题页右下角的助手入口：和菜单分开，随时能点 */
 const aiFab = document.querySelector('#aiFab');
 if (aiFab) aiFab.addEventListener('click', () => {
@@ -939,11 +959,12 @@ function requestNewGame() {
 
 document.querySelector('#disclaimerOk').addEventListener('click', () => {
   disclaimer.hidden = true;
-  pickProtagonist(() => {
-    // 全新开始
-    applyState(createState());
-    startChapter(CONFIG.chapterOrder[0]);
-  });
+  /* 不再一点「开始」就先问性别。
+     序章开头还有三张卡板和几段旁白，先把气氛铺上去，
+     等切到「九月一日」之前，由 ch0 里的 { t:'ask' } 节点来问。
+     这时玩家已经知道"我"是谁、在什么处境里，再选长相才不突兀。 */
+  applyState(createState());
+  startChapter(CONFIG.chapterOrder[0]);
 });
 
 /* 开新档时选一次主角性别。
@@ -1120,12 +1141,34 @@ function showUpdateNotice(r) {
 /* 启动序列里已经查过一次，这里不再额外触发；
    保留节流函数供序列 onDone 之后补查。 */
 
+/* ---------------- HUD 岛：点开 / 收起 ---------------- */
+(() => {
+  const hud = root.querySelector('#hud');
+  const toggle = root.querySelector('#hudToggle');
+  const collapse = root.querySelector('#hudCollapse');
+  if (!hud || !toggle) return;
+  const setMin = (min) => {
+    hud.classList.toggle('is-min', min);
+    toggle.setAttribute('aria-expanded', String(!min));
+  };
+  toggle.addEventListener('click', () => { setMin(!hud.classList.contains('is-min')); audio.sfx('click'); });
+  if (collapse) collapse.addEventListener('click', () => { setMin(true); audio.sfx('click'); });
+  // 选完某个入口（点手机/人物…）之后自动收起，别挡着画面
+  root.querySelectorAll('#hudNav .hbtn').forEach(b => {
+    b.addEventListener('click', () => setMin(true));
+  });
+  if (window.innerWidth < 900) setMin(true);
+})();
+
 /* ---------------- HUD 按钮 ---------------- */
 root.querySelector('#btnPhone').addEventListener('click', () => {
   engine.pause();
   ui.openPhone('home', null);   // 顶栏进来先看桌面，剧情里的 phone 节点仍然直接进会话
 });
-root.querySelector('#btnAI').addEventListener('click', () => {
+/* 薄荷的入口收进手机了（桌面上的「问薄荷」），顶栏不再单独放一个头像。
+   这里保留兼容：老 HTML 里还有 #btnAI 就照旧绑。 */
+const btnAI = root.querySelector('#btnAI');
+if (btnAI) btnAI.addEventListener('click', () => {
   audio.sfx('click');
   engine.pause();
   ui.openAssistant();
@@ -1202,6 +1245,7 @@ window.__ZBNX = {
   save(slot = 0) { return saveAPI.save(slot); },
   load(slot = 0) { return saveAPI.load(slot); },
   backToTitle() { return saveAPI.backToTitle(); },
+  askProtagonist() { pickProtagonist(() => {}); },
   exitApp() { return exitApp(); }
 };
 

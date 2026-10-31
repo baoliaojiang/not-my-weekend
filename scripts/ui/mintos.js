@@ -19,19 +19,28 @@ import { MATERIALS, MATERIAL_STATUS } from '../data/materials.js';
 const ICONS = 'assets/icons/hyperos';
 
 export const MINT_APPS = [
-  { id: 'chat',    name: '薄聊',   icon: 'phone' },
-  { id: 'campus',  name: '校园通', icon: 'campus', badge: 3 },
-  { id: 'note',    name: '便笺',   icon: 'mats' },
-  { id: 'gallery', name: '相册',   icon: 'gallery' },
-  { id: 'chain',   name: '接龙',   icon: 'chain' },
-  { id: 'calc',    name: '计算器', icon: 'calc' },
-  { id: 'gov',     name: '政务',   icon: 'govhub' },
-  { id: 'people',  name: '通讯录', icon: 'people' },
-  { id: 'timeline',name: '进度',   icon: 'timeline' },
-  { id: 'save',    name: '存档',   icon: 'save' },
-  { id: 'settings',name: '设置',   icon: 'settings' },
-  { id: 'changelog',name:'更新',   icon: 'changelog' },
-  { id: 'about',   name: '关于',   icon: 'about' }
+  { id: 'chat',    name: '薄聊',    icon: 'phone' },
+  { id: 'dial',    name: '电话',    icon: 'dial' },
+  { id: 'campus',  name: '校园通',  icon: 'campus' },
+  { id: 'browser', name: '浏览器',  icon: 'browser' },
+  { id: 'ai',      name: '问薄荷',  icon: 'ai' },
+  { id: 'note',    name: '便笺',    icon: 'mats' },
+  { id: 'gallery', name: '相册',    icon: 'gallery' },
+  { id: 'music',   name: '音乐',    icon: 'music' },
+  { id: 'camera',  name: '相机',    icon: 'camera' },
+  { id: 'clock',   name: '时钟',    icon: 'clock' },
+  { id: 'weather', name: '天气',    icon: 'weather' },
+  { id: 'store',   name: '应用商店', icon: 'store' },
+  { id: 'games',   name: '游戏中心', icon: 'play' },
+  { id: 'files',   name: '文件管理', icon: 'files' },
+  { id: 'chain',   name: '接龙',    icon: 'chain' },
+  { id: 'calc',    name: '计算器',  icon: 'calc' },
+  { id: 'people',  name: '通讯录',  icon: 'people' },
+  { id: 'timeline',name: '进度',    icon: 'timeline' },
+  { id: 'save',    name: '存档',    icon: 'save' },
+  { id: 'settings',name: '设置',    icon: 'settings' },
+  { id: 'changelog',name:'更新',    icon: 'changelog' },
+  { id: 'about',   name: '关于',    icon: 'about' }
 ];
 
 export function mintIcon(name) { return `${ICONS}/${name}.png`; }
@@ -425,6 +434,89 @@ export function bindCalc(root) {
     });
   });
   return () => {};
+}
+
+/* =========================================================
+   浏览器
+   ---------------------------------------------------------
+   代替原来那个「政务」图标：故事里这台终端能连的只有校内网和政务平台，
+   所以它有一个真的地址栏、一排快捷入口，以及一个"连不上"页——
+   上网查资料这件事在这里是有限度的，这也正是剧情想说的。
+   ========================================================= */
+export const BROWSER_SITES = [
+  { key: 'gov',    url: 'zwfw.mint.gov.cn',   name: '市政务服务平台', desc: '反映问题、查办理进度', icon: 'govhub' },
+  { key: 'campus', url: 'campus.mint.edu.cn', name: '校园通',         desc: '通知公告 · 服务大厅',   icon: 'campus' },
+  { key: 'edu',    url: 'jyj.mint.gov.cn',    name: '市教育局',       desc: '政策文件 · 监督电话',   icon: 'timeline' }
+];
+
+export function browserHTML(state) {
+  return `<div class="br">
+    <form class="br-bar" id="brForm">
+      <span class="br-lock" aria-hidden="true"></span>
+      <input class="br-input" id="brInput" type="text" inputmode="url"
+             placeholder="输入网址，或点下面的快捷入口" autocomplete="off" />
+      <button class="br-go" type="submit">前往</button>
+    </form>
+    <div class="br-body" id="brBody">${browserHome(state)}</div>
+  </div>`;
+}
+
+function browserHome(state) {
+  const hasGov = !!(state && state.gov);
+  const sites = BROWSER_SITES.map(s => `
+    <button class="br-site" type="button" data-br-go="${s.key}">
+      <img class="br-site-ico" src="assets/icons/hyperos/${s.icon}.png" alt="" />
+      <span class="br-site-t">${s.name}</span>
+      <span class="br-site-d">${s.url}</span>
+    </button>`).join('');
+
+  const recent = hasGov
+    ? `<div class="br-recent">
+         <span class="br-recent-t">最近</span>
+         <button class="br-link" type="button" data-br-go="gov">zwfw.mint.gov.cn · 我的反映</button>
+       </div>`
+    : '';
+
+  return `<p class="br-h">快捷前往</p>
+    <div class="br-sites">${sites}</div>
+    ${recent}
+    <p class="br-tip">这台终端只开了校内网和政务平台的访问权限，别的网址打不开。</p>`;
+}
+
+/** 地址栏逻辑。open(key) 由面板层提供，用来跳到对应的真实页面 */
+export function bindBrowser(root, open) {
+  const form = root.querySelector('#brForm');
+  const input = root.querySelector('#brInput');
+  const body = root.querySelector('#brBody');
+  if (!form || !input || !body) return;
+
+  const home = () => {
+    body.innerHTML = browserHome();
+    bindSiteButtons();
+  };
+  const bindSiteButtons = () => {
+    body.querySelectorAll('[data-br-go]').forEach(b => {
+      b.addEventListener('click', () => open(b.dataset.brGo));
+    });
+    const back = body.querySelector('#brBackHome');
+    if (back) back.addEventListener('click', home);
+  };
+  bindSiteButtons();
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const raw = (input.value || '').trim();
+    if (!raw) return;
+    const host = raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+    const hit = BROWSER_SITES.find(s => host === s.url || host === s.url.replace('www.', ''));
+    if (hit) { open(hit.key); return; }
+    body.innerHTML = `<div class="br-off">
+      <b>无法访问 ${escape(raw)}</b>
+      <p>这台终端没有连外网。除了校内网和政务平台，其他地址一律打不开。</p>
+      <button class="btn btn-primary" type="button" id="brBackHome">回到快捷入口</button>
+    </div>`;
+    bindSiteButtons();
+  });
 }
 
 /* =========================================================

@@ -17,6 +17,8 @@
    每屏本身只做淡入淡出，不做位移动画——开场要稳，不要花。
    ========================================================= */
 
+import { CONFIG } from '../config/game.js';
+
 const AUTHOR = {
   name: '爆料酱',
   // 从 B 站主页链接里取的空间号，这里直接写完整地址
@@ -209,11 +211,16 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
     finished = true;
     clear();
     root.classList.add('is-out');
+    /* 标题页要在黑屏还半透明的时候就接上。
+       以前是等 is-out 的 580ms 走完才 onDone：那时黑屏已经透明，
+       标题页却还停在"未入场"状态，于是玩家先看到一帧空背景，
+       紧接着 logo 与按钮才重新播一遍入场——观感就是「进主界面先闪一下」。
+       现在让标题页在黑屏渐隐到一半时开始入场，两边交叉过渡。 */
+    setTimeout(() => { onDone && onDone(); }, 240);
     setTimeout(() => {
       root.hidden = true;
       root.classList.remove('is-out');
-      onDone && onDone();
-    }, 620);
+    }, 640);
   };
 
   /* 显示第 n 屏。
@@ -377,7 +384,10 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
       clear();
       timer = setTimeout(() => show(i + 1), 900);
     };
-    const guard = setTimeout(() => bail('检查超时，先离线游玩'), 9000);
+    /* 三个源现在是并发竞速（单源 3.5s），正常最多 4 秒就有结果，
+       这里留 6 秒兜底；以前是 9 秒，加上串行 18 秒的等待，
+       离线玩家每次启动都要在这一屏干等，看着就像"一直超时"。 */
+    const guard = setTimeout(() => bail('没联网，先离线游玩'), 6000);
     if (ubar) ubar.style.width = '30%';
     if (meta) meta.textContent = '当前版本 v' + version;
     let msg = '资源已是最新';
@@ -387,15 +397,24 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
         updateResult = await checkUpdate();
         const k = updateResult && updateResult.kind;
         if (k === 'content') {
-          /* 只更新网页资源：先把这次改了什么摆出来，让玩家自己决定。
-             以前是查到就默默下载、默默重载——玩家不知道发生了什么，
-             启动时长变了还以为卡住。 */
+          /* 如果外面那道总闸已经把玩家放行（比如网络卡了 6 秒），
+             这时候再弹「发现新版本」会突然盖在编译着色器或主界面上。
+             已经放行就静默放弃，下次启动再说。 */
+          if (done) return;
           clearTimeout(guard);
           done = true;
           showContentOffer();
           return;
         } else if (k === 'both' || k === 'shell') {
-          msg = '客户端需要更新，热更新无法覆盖这部分';
+          /* 包体更新热更覆盖不了：这里必须问玩家一句，
+             并且给一个真的能走的出口——跳浏览器下载新安装包。
+             以前只把文案改成"客户端需要更新"就放行了，
+             玩家什么也做不了，等于白查。 */
+          if (done) return;
+          clearTimeout(guard);
+          done = true;
+          showShellOffer(k);
+          return;
         }
       }
     } catch (e) {
@@ -508,14 +527,96 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
     });
   }
 
+  /* 包体更新：网页资源换不掉的那部分（Java 壳 / Electron 运行时）。
+     玩家能做的只有去下载新安装包，所以这里直接给下载入口。 */
+  function showShellOffer(kind) {
+    const remote = (updateResult && updateResult.remote) || {};
+    const text = stage.querySelector('#bootUpdText');
+    const bar = stage.querySelector('#bootUpdBar');
+    const orb = stage.querySelector('#bootOrb');
+    waiting = true;
+    if (bar) bar.style.width = '100%';
+    if (orb) orb.classList.add('is-done');
+    if (text) text.textContent = '这次要换安装包';
+
+    const notes = String(remote.notes || '')
+      .split('\n').map((x) => x.trim()).filter(Boolean);
+    const noteHtml = notes.length
+      ? notes.map((x) => `<li>${x}</li>`).join('')
+      : '<li>客户端程序有更新，热更新覆盖不到这一部分</li>';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'boot-modal';
+    overlay.innerHTML = `
+      <div class="boot-modal-card">
+        <p class="boot-modal-k">CLIENT UPDATE</p>
+        <h3 class="boot-modal-h">需要安装新版本</h3>
+        <p class="boot-modal-p">${kind === 'both'
+          ? '这次连客户端程序一起换了，网页热更新覆盖不到。'
+          : '这次的改动在客户端程序里，必须换安装包。'}</p>
+        <ul class="boot-modal-list">${noteHtml}</ul>
+        <p class="boot-modal-meta">存档在本地，换安装包不会丢 · 也可以先继续玩旧版本</p>
+        <div class="boot-upd-actions">
+          <button class="boot-btn" id="shellLater" type="button">先继续玩</button>
+          <button class="boot-btn is-primary" id="shellGo" type="button">去下载</button>
+        </div>
+      </div>`;
+    root.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('on'));
+
+    const closeOverlay = () => {
+      overlay.classList.remove('on');
+      setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 320);
+    };
+
+    const later = overlay.querySelector('#shellLater');
+    const go = overlay.querySelector('#shellGo');
+
+    if (later) later.addEventListener('click', (e) => {
+      e.stopPropagation();
+      waiting = false;
+      closeOverlay();
+      if (text) text.textContent = '继续使用当前版本';
+      timer = setTimeout(() => show(i + 1), 520);
+    });
+
+    if (go) go.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = (CONFIG.update && CONFIG.update.releaseUrl) || '';
+      if (!url) return;
+      // 外壳里有桥就走桥，没有就开新标签页
+      try {
+        const bridge = window.ZBApp || window.zbApp;
+        if (bridge && typeof bridge.openUrl === 'function') { bridge.openUrl(url); }
+        else if (window.zbShell && typeof window.zbShell.openExternal === 'function') { window.zbShell.openExternal(url); }
+        else window.open(url, '_blank', 'noopener');
+      } catch (err) {
+        try { window.open(url, '_blank', 'noopener'); } catch (e2) { /* 打不开就算了 */ }
+      }
+      if (text) text.textContent = '已跳转到下载页（没跳过去的话，去发布页手动下载）';
+    });
+  }
+
   /* 不再支持"点一下就走下一屏"：
      随手一点就把健康忠告和光敏警告划过去，等于没提示。
-     要跳过只能用右下角那个显式的「跳过」按钮。 */
+     要跳过只能用右下角那个显式的「跳过」按钮。
+
+     「跳过」的含义是"跳过前面这些说明"，不是"跳过整个启动"。
+     以前这里直接 finish()，于是点一下就把检查更新和编译着色器
+     一起绕过去了——那两屏是要真干活的，绕过去等于带着旧资源进游戏。
+     现在最多跳到「检查更新」那一屏，后面的必须自己走完。 */
+  const MUST_STOP_KEY = 'update';
   if (skipBtn) skipBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const cur = BOOT_SCREENS[i];
     // 双保险：就算按钮被别的方式点到，这两屏也不响应
     if (cur && (cur.key === 'update' || cur.key === 'shader')) return;
+    const mustIdx = BOOT_SCREENS.findIndex((s) => s.key === MUST_STOP_KEY);
+    if (mustIdx > i) {
+      clear();
+      show(mustIdx);
+      return;
+    }
     finish();
   });
 

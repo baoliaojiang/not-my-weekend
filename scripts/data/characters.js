@@ -159,3 +159,38 @@ export const CHARACTERS = {
 export function getCharacter(id) {
   return CHARACTERS[id] || null;
 }
+
+/* =========================================================
+   按当前进度说话
+   ---------------------------------------------------------
+   以前人物页是"一见面就把整个人抖出来"：不管玩到第几章，
+   同一段介绍、同样两条笔记，连还没发生的事都写在上面。
+   现在拆成两层：
+     · 介绍（intro）是初识印象，永远不变；
+     · "此刻"那行和笔记条数，跟着 chapterId 往后走——
+       玩到哪一步，就只知道到哪一步。
+   ========================================================= */
+
+/** 当前章节序（ch0 → 0） */
+export function chapterIndex(state) {
+  const id = (state && state.chapterId) || 'ch0';
+  const n = parseInt(String(id).replace(/[^0-9]/g, ''), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** 一句话：到这一章为止，你和他/她处在什么位置 */
+export function charNowLine(state) {
+  const i = chapterIndex(state);
+  if (i <= 0) return '还没开学。你只在群里见过这个名字。';
+  if (i <= 2) return '开学第一周，你们说过几次话，都还很客气。';
+  if (i <= 4) return '那一周之后，你们之间多了一点不能明说的东西。';
+  return '事情走到这一步，你们都知道有些话回不去了。';
+}
+
+/** 笔记按进度解锁：第一章一条，第三章第二条，第五章起全给 */
+export function charNotes(c, state) {
+  const list = (c && c.notes) || [];
+  const i = chapterIndex(state);
+  const shown = i <= 1 ? 1 : i <= 3 ? 2 : list.length;
+  return list.slice(0, Math.max(0, shown));
+}

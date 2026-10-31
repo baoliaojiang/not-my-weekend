@@ -171,14 +171,58 @@ export class Stage {
     return 'center';
   }
 
-  /** 把槽位写回 DOM。只改 class，不做位移动画，避免"跳来跳去"。 */
+  /** 把槽位写回 DOM。只改 class，不做位移动画，避免"跳来跳去"。
+
+      排版规则按"台上现在有几个人"决定，而不是照抄剧情里写的 pos：
+        1 个人 → 居中（单人还站角落，画面重心会歪，看着像被挤出画外）
+        2 个人 → 左右
+        3 个人 → 左中右
+      具体谁在左谁在右，用 slots 里记录的原始倾向排序，所以同一个角色
+      在人多的时候位置是稳定的，不会来回换。 */
   applySlots() {
+    const alive = [];
     this.sprites.forEach((el, id) => {
-      if (!el || !el.isConnected) return;
-      const p = this.slots.get(id) || 'center';
+      if (el && el.isConnected) alive.push([id, el]);
+    });
+    const n = alive.length;
+    if (!n) return;
+
+    const rank = { left: 0, center: 1, right: 2 };
+    alive.sort((a, b) =>
+      (rank[this.slots.get(a[0]) || 'center'] ?? 1) - (rank[this.slots.get(b[0]) || 'center'] ?? 1));
+
+    const layout = n === 1 ? ['center']
+      : n === 2 ? ['left', 'right']
+        : ['left', 'center', 'right'];
+
+    // 人数写回容器：CSS 靠它决定立绘能有多大，
+    // 两个人并排还按一个人那么高，横竖屏都会叠在一起。
+    if (this.spriteLayer) this.spriteLayer.dataset.count = String(Math.min(n, 4));
+
+    /* 四个人同台时，以前是 layout[Math.min(idx, 2)]——第 4 个人
+       直接拿了和第三人一样的槽位，两张图完全重叠。所以 3 人以内
+       用固定槽位，4 人以上改成按人数均分的一排。
+
+       尺寸由 CSS 按人数决定，这里绝对不写行内 height：
+       人一多就把立绘算小，屏幕上就是四个小矮人站在教室中间，
+       比"肩膀挨着肩膀"难看得多。宁可挤、宁可叠一点，也不缩。 */
+    alive.forEach(([id, el], idx) => {
+      if (n > 3) {
+        if (!el.classList.contains('pos-multi')) {
+          el.classList.remove('pos-left', 'pos-right', 'pos-center');
+          el.classList.add('pos-multi');
+        }
+        const pct = (idx + 0.5) / n * 94 + 3;
+        el.style.left = pct.toFixed(3) + '%';
+        el.style.height = '';
+        return;
+      }
+      el.style.left = '';
+      el.style.height = '';
+      const p = layout[idx];
       const cls = `pos-${p}`;
       if (el.classList.contains(cls)) return;
-      el.classList.remove('pos-left', 'pos-right', 'pos-center');
+      el.classList.remove('pos-left', 'pos-right', 'pos-center', 'pos-multi');
       el.classList.add(cls);
     });
   }

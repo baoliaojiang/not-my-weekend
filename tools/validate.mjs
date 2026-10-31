@@ -32,7 +32,7 @@ const VALID_TYPES = new Set([
   'bg', 'music', 'sfx', 'show', 'hide', 'say', 'narr', 'choice', 'mat',
   'flag', 'stat', 'note', 'chatmsg', 'phone', 'chatreply', 'hub', 'label',
   'goto', 'wait', 'unlock', 'end', 'branch', 'ending', 'if',
-  'govform', 'govprogress', 'hotline', 'quiz', 'card'
+  'govform', 'govprogress', 'hotline', 'quiz', 'card', 'ask'
 ]);
 
 const KNOWN_WHO = Object.keys(CHARACTERS);
