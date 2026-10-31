@@ -34,3 +34,8 @@ build/_trash/
 build/_*/
 build/_*.png
 _sprite_test.html
+
+# 抓曲/压图过程中的中间产物
+build/_kmcache/
+build/_orig/
+build/_music_bak/

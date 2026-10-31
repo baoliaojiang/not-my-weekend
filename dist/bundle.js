@@ -326,56 +326,56 @@
 
   // scripts/config/assets.js
   var BACKGROUNDS = {
-    gate: { src: "assets/backgrounds/bg_gate.jpg", label: "校门" },
-    classroom: { src: "assets/backgrounds/bg_classroom.jpg", label: "高一（二）班教室" },
-    corridor: { src: "assets/backgrounds/bg_corridor.jpg", label: "教学楼走廊" },
-    shop: { src: "assets/backgrounds/bg_shop.jpg", label: "小卖部" },
-    commons: { src: "assets/backgrounds/bg_commons.jpg", label: "空教室" },
-    clubroom: { src: "assets/backgrounds/bg_clubroom.jpg", label: "社团活动室" },
-    streetNight: { src: "assets/backgrounds/bg_street_night.jpg", label: "回家的路" },
-    cityNight: { src: "assets/backgrounds/bg_city_night.jpg", label: "夜里" },
+    gate: { src: "assets/backgrounds/bg_gate.webp", label: "校门" },
+    classroom: { src: "assets/backgrounds/bg_classroom.webp", label: "高一（二）班教室" },
+    corridor: { src: "assets/backgrounds/bg_corridor.webp", label: "教学楼走廊" },
+    shop: { src: "assets/backgrounds/bg_shop.webp", label: "小卖部" },
+    commons: { src: "assets/backgrounds/bg_commons.webp", label: "空教室" },
+    clubroom: { src: "assets/backgrounds/bg_clubroom.webp", label: "社团活动室" },
+    streetNight: { src: "assets/backgrounds/bg_street_night.webp", label: "回家的路" },
+    cityNight: { src: "assets/backgrounds/bg_city_night.webp", label: "夜里" },
     // —— 第二批：从原作背景库补的场景（客厅 / 卧室 / 街区 / 走廊尽头 / 礼堂 / 天台）
-    homeLiving: { src: "assets/backgrounds/bg_home_living.jpg", label: "家里的客厅" },
-    bedroom: { src: "assets/backgrounds/bg_bedroom.jpg", label: "我的房间" },
-    streetDusk: { src: "assets/backgrounds/bg_street_dusk.jpg", label: "傍晚的街" },
-    townDay: { src: "assets/backgrounds/bg_town_day.jpg", label: "白天的街区" },
-    hallwayEnd: { src: "assets/backgrounds/bg_hallway_end.jpg", label: "走廊尽头" },
-    auditorium: { src: "assets/backgrounds/bg_auditorium.jpg", label: "礼堂" },
-    skyDusk: { src: "assets/backgrounds/bg_sky_dusk.jpg", label: "楼顶的天" },
-    studio: { src: "assets/backgrounds/bg_studio.jpg", label: "活动室" },
+    homeLiving: { src: "assets/backgrounds/bg_home_living.webp", label: "家里的客厅" },
+    bedroom: { src: "assets/backgrounds/bg_bedroom.webp", label: "我的房间" },
+    streetDusk: { src: "assets/backgrounds/bg_street_dusk.webp", label: "傍晚的街" },
+    townDay: { src: "assets/backgrounds/bg_town_day.webp", label: "白天的街区" },
+    hallwayEnd: { src: "assets/backgrounds/bg_hallway_end.webp", label: "走廊尽头" },
+    auditorium: { src: "assets/backgrounds/bg_auditorium.webp", label: "礼堂" },
+    skyDusk: { src: "assets/backgrounds/bg_sky_dusk.webp", label: "楼顶的天" },
+    studio: { src: "assets/backgrounds/bg_studio.webp", label: "活动室" },
     // —— 第三批：同一张底图的时间变体
     // 全篇一天排到 21:50，晚自习和放学后如果还用白天那张教室，会一直"白天上课"。
     // 这里按时间段做色彩分级（清晨微暖 / 黄昏暖橙 / 夜晚压暗偏蓝），风格与底图完全一致。
-    classroomDusk: { src: "assets/backgrounds/bg_classroom_dusk.jpg", label: "教室 · 黄昏" },
-    classroomNight: { src: "assets/backgrounds/bg_classroom_night.jpg", label: "教室 · 晚自习" },
-    corridorDawn: { src: "assets/backgrounds/bg_corridor_dawn.jpg", label: "走廊 · 清晨" },
-    corridorDusk: { src: "assets/backgrounds/bg_corridor_dusk.jpg", label: "走廊 · 放学后" },
-    corridorNight: { src: "assets/backgrounds/bg_corridor_night.jpg", label: "走廊 · 夜里" },
-    gateDusk: { src: "assets/backgrounds/bg_gate_dusk.jpg", label: "校门 · 傍晚" },
-    gateNight: { src: "assets/backgrounds/bg_gate_night.jpg", label: "校门 · 夜里" },
-    shopNight: { src: "assets/backgrounds/bg_shop_night.jpg", label: "小卖部 · 夜里" },
-    commonsDusk: { src: "assets/backgrounds/bg_commons_dusk.jpg", label: "空教室 · 黄昏" },
-    streetDay: { src: "assets/backgrounds/bg_street_day.jpg", label: "白天的街" },
+    classroomDusk: { src: "assets/backgrounds/bg_classroom_dusk.webp", label: "教室 · 黄昏" },
+    classroomNight: { src: "assets/backgrounds/bg_classroom_night.webp", label: "教室 · 晚自习" },
+    corridorDawn: { src: "assets/backgrounds/bg_corridor_dawn.webp", label: "走廊 · 清晨" },
+    corridorDusk: { src: "assets/backgrounds/bg_corridor_dusk.webp", label: "走廊 · 放学后" },
+    corridorNight: { src: "assets/backgrounds/bg_corridor_night.webp", label: "走廊 · 夜里" },
+    gateDusk: { src: "assets/backgrounds/bg_gate_dusk.webp", label: "校门 · 傍晚" },
+    gateNight: { src: "assets/backgrounds/bg_gate_night.webp", label: "校门 · 夜里" },
+    shopNight: { src: "assets/backgrounds/bg_shop_night.webp", label: "小卖部 · 夜里" },
+    commonsDusk: { src: "assets/backgrounds/bg_commons_dusk.webp", label: "空教室 · 黄昏" },
+    streetDay: { src: "assets/backgrounds/bg_street_day.webp", label: "白天的街" },
     // —— 第四批：专用地点（由同类底图分级而来，避免食堂/保健室借教室的图）
-    canteen: { src: "assets/backgrounds/bg_canteen.jpg", label: "食堂" },
-    infirmary: { src: "assets/backgrounds/bg_infirmary.jpg", label: "保健室" }
+    canteen: { src: "assets/backgrounds/bg_canteen.webp", label: "食堂" },
+    infirmary: { src: "assets/backgrounds/bg_infirmary.webp", label: "保健室" }
   };
   var SPRITES = {
-    lin: { src: "assets/characters/lin_zhixu.png", label: "林知序" },
-    linM: { src: "assets/characters/lin_male.png", label: "林知序" },
-    linF: { src: "assets/characters/lin_female.png", label: "林知序" },
-    shen: { src: "assets/characters/shen_yuan.png", label: "沈予安" },
-    zhou: { src: "assets/characters/zhou_yuqing.png", label: "周予晴" },
-    chen: { src: "assets/characters/teacher_chen.png", label: "陈老师" },
-    xu: { src: "assets/characters/classmate_xu.png", label: "许小满" },
-    zheng: { src: "assets/characters/classmate_zheng.png", label: "郑野" },
-    luo: { src: "assets/characters/luo_yizhou.png", label: "罗一舟" },
-    he: { src: "assets/characters/he_yu.png", label: "何雨" },
-    sun: { src: "assets/characters/sun_peng.png", label: "孙芃" },
-    ma: { src: "assets/characters/ma_wenjie.png", label: "马文杰" },
-    wu: { src: "assets/characters/wu_jianguo.png", label: "吴建国" },
-    zyi: { src: "assets/characters/zhou_yi.png", label: "周姨" },
-    fu: { src: "assets/characters/fu_yisheng.png", label: "傅医生" }
+    lin: { src: "assets/characters/lin_zhixu.webp", label: "林知序" },
+    linM: { src: "assets/characters/lin_male.webp", label: "林知序" },
+    linF: { src: "assets/characters/lin_female.webp", label: "林知序" },
+    shen: { src: "assets/characters/shen_yuan.webp", label: "沈予安" },
+    zhou: { src: "assets/characters/zhou_yuqing.webp", label: "周予晴" },
+    chen: { src: "assets/characters/teacher_chen.webp", label: "陈老师" },
+    xu: { src: "assets/characters/classmate_xu.webp", label: "许小满" },
+    zheng: { src: "assets/characters/classmate_zheng.webp", label: "郑野" },
+    luo: { src: "assets/characters/luo_yizhou.webp", label: "罗一舟" },
+    he: { src: "assets/characters/he_yu.webp", label: "何雨" },
+    sun: { src: "assets/characters/sun_peng.webp", label: "孙芃" },
+    ma: { src: "assets/characters/ma_wenjie.webp", label: "马文杰" },
+    wu: { src: "assets/characters/wu_jianguo.webp", label: "吴建国" },
+    zyi: { src: "assets/characters/zhou_yi.webp", label: "周姨" },
+    fu: { src: "assets/characters/fu_yisheng.webp", label: "傅医生" }
   };
   var MUSIC = {
     title: { src: "assets/music/title.mp3", label: "主题曲 · 不属于我的周末" },
@@ -1463,6 +1463,13 @@
 
   // scripts/ui/boot.js
   init_game();
+  var AUTHOR = {
+    name: "爆料酱",
+    // 从 B 站主页链接里取的空间号，这里直接写完整地址
+    bilibili: "https://space.bilibili.com/525298385",
+    // 由 main.js 在启动时按 CONFIG 覆盖；先留空，没配就整行不显示
+    github: ""
+  };
   var BOOT_SCREENS = [
     {
       key: "blank",
@@ -1475,14 +1482,15 @@
       html: `<div class="boot-author">
       <span class="boot-avatar"></span>
       <p class="boot-author-n">爆料酱</p>
-      <p class="boot-ids">bilibili · 525298385</p>
-      <p class="boot-ids is-dim" id="bootGit"></p>
+      <a class="boot-ids boot-link" id="bootBili" target="_blank" rel="noopener noreferrer">bilibili · 525298385</a>
+      <a class="boot-ids is-dim boot-link" id="bootGit" target="_blank" rel="noopener noreferrer"></a>
     </div>`
     },
     {
       key: "logo",
       hold: 2e3,
       html: `<div class="boot-logo">
+      <img class="boot-logo-ico" src="assets/ui/app-icon.png" alt="" />
       <svg class="logo-game" viewBox="0 0 660 240" role="img" aria-label="不属于我的周末">
         <defs>
           <radialGradient id="gz" cx="50%" cy="40%" r="52%">
@@ -1678,7 +1686,19 @@
       const verEl = stage2.querySelector("#bootVer");
       if (verEl) verEl.textContent = "v" + version;
       const gitEl = stage2.querySelector("#bootGit");
-      if (gitEl) gitEl.textContent = github || "";
+      if (gitEl) {
+        gitEl.textContent = github || "";
+        const owner = String(github || "").split("·").pop().trim().split("/")[0];
+        if (owner) gitEl.href = `https://github.com/${owner}`;
+        else gitEl.hidden = true;
+      }
+      const biliEl = stage2.querySelector("#bootBili");
+      if (biliEl && AUTHOR.bilibili) biliEl.href = AUTHOR.bilibili;
+      stage2.querySelectorAll(".boot-link").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+      });
       if (skipBtn) skipBtn.hidden = sc.key === "update" || sc.key === "shader";
       await new Promise((r) => setTimeout(r, n === 0 ? 0 : 450));
       if (finished) return;
@@ -3888,9 +3908,12 @@
         {
           title: "音乐与画面",
           items: [
-            { type: "fix", text: "重编了全部 23 首配乐，修掉了旋律和和弦对不上的地方，听起来不再别扭。" },
+            { type: "new", text: "配乐整体换血：不再用程序合成的音色，改成真实录音的授权曲目，一首一个场景，不再是同一首换调子。" },
+            { type: "opt", text: "安静、沉默、雨前这类段落换成慢钢琴，清晨和操场换成明亮的吉他，食堂是 Bossa，绷紧的段落压低到低音弦乐——听到的曲子终于和场景对得上。" },
+            { type: "fix", text: "每首截到 64 秒并做首尾交叉淡化，循环时听不到接缝；响度与真峰值统一，长时间挂着也不会忽大忽小。" },
+            { type: "new", text: "曲目全部为 CC BY 4.0 授权，可商用；「关于本作」和 README 里都列了原曲与作者，署名可查。" },
             { type: "fix", text: "低频不再轰隆：低音抬到该在的位置，整体响度压平，长时间戴着耳机也不累。" },
-            { type: "opt", text: "按场景重新配了一遍曲，进教室、上操场、进食堂听到的都不一样。" },
+            { type: "opt", text: "此前写好却没派上用场的 7 首也接进了剧情，校门口的广播、操场、小测、家、回忆、告别都有了自己的曲子。" },
             { type: "opt", text: "标题、栏目名这类大字换成圆润的字体，正文仍是原来的，长段落读着不费劲。" }
           ]
         },
@@ -6973,7 +6996,7 @@ ${custom}`);
   }
 
   // scripts/ui/mintdial.js
-  var AVATAR_MINT = "assets/ai/avatar.png";
+  var AVATAR_MINT = "assets/ai/avatar.webp";
   var FALLBACK = {
     mint: [
       '薄荷在听~ 不过薄荷现在只是"录好的声音"，问太深的东西会答不上来哦。',
@@ -7273,14 +7296,196 @@ ${custom}`);
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
+  // scripts/ui/emoji-map.js
+  var EMOJI_IMG = {
+    "🌈": "assets/emoji/1f308.webp",
+    "🌊": "assets/emoji/1f30a.webp",
+    "🌙": "assets/emoji/1f319.webp",
+    "🌚": "assets/emoji/1f31a.webp",
+    "🌝": "assets/emoji/1f31d.webp",
+    "🌧️": "assets/emoji/1f327-fe0f.webp",
+    "🌱": "assets/emoji/1f331.webp",
+    "🌷": "assets/emoji/1f337.webp",
+    "🌸": "assets/emoji/1f338.webp",
+    "🌻": "assets/emoji/1f33b.webp",
+    "🌿": "assets/emoji/1f33f.webp",
+    "🍃": "assets/emoji/1f343.webp",
+    "🍊": "assets/emoji/1f34a.webp",
+    "🍎": "assets/emoji/1f34e.webp",
+    "🍚": "assets/emoji/1f35a.webp",
+    "🍜": "assets/emoji/1f35c.webp",
+    "🍞": "assets/emoji/1f35e.webp",
+    "🍫": "assets/emoji/1f36b.webp",
+    "🍬": "assets/emoji/1f36c.webp",
+    "🍰": "assets/emoji/1f370.webp",
+    "🍵": "assets/emoji/1f375.webp",
+    "🍺": "assets/emoji/1f37a.webp",
+    "🎈": "assets/emoji/1f388.webp",
+    "🎉": "assets/emoji/1f389.webp",
+    "🎒": "assets/emoji/1f392.webp",
+    "🎧": "assets/emoji/1f3a7.webp",
+    "🎮": "assets/emoji/1f3ae.webp",
+    "🎵": "assets/emoji/1f3b5.webp",
+    "🐱": "assets/emoji/1f431.webp",
+    "🐶": "assets/emoji/1f436.webp",
+    "👀": "assets/emoji/1f440.webp",
+    "👋": "assets/emoji/1f44b.webp",
+    "👌": "assets/emoji/1f44c.webp",
+    "👍": "assets/emoji/1f44d.webp",
+    "👎": "assets/emoji/1f44e.webp",
+    "👏": "assets/emoji/1f44f.webp",
+    "💔": "assets/emoji/1f494.webp",
+    "💕": "assets/emoji/1f495.webp",
+    "💗": "assets/emoji/1f497.webp",
+    "💙": "assets/emoji/1f499.webp",
+    "💚": "assets/emoji/1f49a.webp",
+    "💛": "assets/emoji/1f49b.webp",
+    "💜": "assets/emoji/1f49c.webp",
+    "💞": "assets/emoji/1f49e.webp",
+    "💡": "assets/emoji/1f4a1.webp",
+    "💤": "assets/emoji/1f4a4.webp",
+    "💪": "assets/emoji/1f4aa.webp",
+    "💬": "assets/emoji/1f4ac.webp",
+    "💭": "assets/emoji/1f4ad.webp",
+    "💯": "assets/emoji/1f4af.webp",
+    "💻": "assets/emoji/1f4bb.webp",
+    "📄": "assets/emoji/1f4c4.webp",
+    "📌": "assets/emoji/1f4cc.webp",
+    "📎": "assets/emoji/1f4ce.webp",
+    "📚": "assets/emoji/1f4da.webp",
+    "📝": "assets/emoji/1f4dd.webp",
+    "📱": "assets/emoji/1f4f1.webp",
+    "🔍": "assets/emoji/1f50d.webp",
+    "🔔": "assets/emoji/1f514.webp",
+    "🔥": "assets/emoji/1f525.webp",
+    "🕐": "assets/emoji/1f550.webp",
+    "🕯️": "assets/emoji/1f56f-fe0f.webp",
+    "🖼️": "assets/emoji/1f5bc-fe0f.webp",
+    "🗂️": "assets/emoji/1f5c2-fe0f.webp",
+    "🗜️": "assets/emoji/1f5dc-fe0f.webp",
+    "😀": "assets/emoji/1f600.webp",
+    "😁": "assets/emoji/1f601.webp",
+    "😂": "assets/emoji/1f602.webp",
+    "😃": "assets/emoji/1f603.webp",
+    "😄": "assets/emoji/1f604.webp",
+    "😅": "assets/emoji/1f605.webp",
+    "😆": "assets/emoji/1f606.webp",
+    "😇": "assets/emoji/1f607.webp",
+    "😉": "assets/emoji/1f609.webp",
+    "😊": "assets/emoji/1f60a.webp",
+    "😋": "assets/emoji/1f60b.webp",
+    "😌": "assets/emoji/1f60c.webp",
+    "😍": "assets/emoji/1f60d.webp",
+    "😎": "assets/emoji/1f60e.webp",
+    "😏": "assets/emoji/1f60f.webp",
+    "😐": "assets/emoji/1f610.webp",
+    "😑": "assets/emoji/1f611.webp",
+    "😒": "assets/emoji/1f612.webp",
+    "😓": "assets/emoji/1f613.webp",
+    "😔": "assets/emoji/1f614.webp",
+    "😕": "assets/emoji/1f615.webp",
+    "😖": "assets/emoji/1f616.webp",
+    "😗": "assets/emoji/1f617.webp",
+    "😘": "assets/emoji/1f618.webp",
+    "😙": "assets/emoji/1f619.webp",
+    "😚": "assets/emoji/1f61a.webp",
+    "😛": "assets/emoji/1f61b.webp",
+    "😜": "assets/emoji/1f61c.webp",
+    "😝": "assets/emoji/1f61d.webp",
+    "😞": "assets/emoji/1f61e.webp",
+    "😟": "assets/emoji/1f61f.webp",
+    "😠": "assets/emoji/1f620.webp",
+    "😡": "assets/emoji/1f621.webp",
+    "😢": "assets/emoji/1f622.webp",
+    "😣": "assets/emoji/1f623.webp",
+    "😤": "assets/emoji/1f624.webp",
+    "😥": "assets/emoji/1f625.webp",
+    "😨": "assets/emoji/1f628.webp",
+    "😩": "assets/emoji/1f629.webp",
+    "😪": "assets/emoji/1f62a.webp",
+    "😫": "assets/emoji/1f62b.webp",
+    "😬": "assets/emoji/1f62c.webp",
+    "😭": "assets/emoji/1f62d.webp",
+    "😮": "assets/emoji/1f62e.webp",
+    "😰": "assets/emoji/1f630.webp",
+    "😱": "assets/emoji/1f631.webp",
+    "😲": "assets/emoji/1f632.webp",
+    "😳": "assets/emoji/1f633.webp",
+    "😴": "assets/emoji/1f634.webp",
+    "😵": "assets/emoji/1f635.webp",
+    "😶": "assets/emoji/1f636.webp",
+    "😷": "assets/emoji/1f637.webp",
+    "😺": "assets/emoji/1f63a.webp",
+    "🙁": "assets/emoji/1f641.webp",
+    "🙂": "assets/emoji/1f642.webp",
+    "🙃": "assets/emoji/1f643.webp",
+    "🙄": "assets/emoji/1f644.webp",
+    "🙌": "assets/emoji/1f64c.webp",
+    "🙏": "assets/emoji/1f64f.webp",
+    "🤍": "assets/emoji/1f90d.webp",
+    "🤐": "assets/emoji/1f910.webp",
+    "🤒": "assets/emoji/1f912.webp",
+    "🤓": "assets/emoji/1f913.webp",
+    "🤔": "assets/emoji/1f914.webp",
+    "🤕": "assets/emoji/1f915.webp",
+    "🤗": "assets/emoji/1f917.webp",
+    "🤙": "assets/emoji/1f919.webp",
+    "🤝": "assets/emoji/1f91d.webp",
+    "🤞": "assets/emoji/1f91e.webp",
+    "🤟": "assets/emoji/1f91f.webp",
+    "🤢": "assets/emoji/1f922.webp",
+    "🤣": "assets/emoji/1f923.webp",
+    "🤧": "assets/emoji/1f927.webp",
+    "🤨": "assets/emoji/1f928.webp",
+    "🤪": "assets/emoji/1f92a.webp",
+    "🤫": "assets/emoji/1f92b.webp",
+    "🤭": "assets/emoji/1f92d.webp",
+    "🤯": "assets/emoji/1f92f.webp",
+    "🥟": "assets/emoji/1f95f.webp",
+    "🥤": "assets/emoji/1f964.webp",
+    "🥰": "assets/emoji/1f970.webp",
+    "🥱": "assets/emoji/1f971.webp",
+    "🥳": "assets/emoji/1f973.webp",
+    "🥴": "assets/emoji/1f974.webp",
+    "🥺": "assets/emoji/1f97a.webp",
+    "🧋": "assets/emoji/1f9cb.webp",
+    "🧐": "assets/emoji/1f9d0.webp",
+    "🧠": "assets/emoji/1f9e0.webp",
+    "🧡": "assets/emoji/1f9e1.webp",
+    "🫠": "assets/emoji/1fae0.webp",
+    "🫡": "assets/emoji/1fae1.webp",
+    "🫶": "assets/emoji/1faf6.webp",
+    "⏰": "assets/emoji/23f0.webp",
+    "☀️": "assets/emoji/2600-fe0f.webp",
+    "☁️": "assets/emoji/2601-fe0f.webp",
+    "☕": "assets/emoji/2615.webp",
+    "☹️": "assets/emoji/2639-fe0f.webp",
+    "☺️": "assets/emoji/263a-fe0f.webp",
+    "⛅": "assets/emoji/26c5.webp",
+    "⛈️": "assets/emoji/26c8-fe0f.webp",
+    "✅": "assets/emoji/2705.webp",
+    "✌️": "assets/emoji/270c-fe0f.webp",
+    "✏️": "assets/emoji/270f-fe0f.webp",
+    "✨": "assets/emoji/2728.webp",
+    "❄️": "assets/emoji/2744-fe0f.webp",
+    "❌": "assets/emoji/274c.webp",
+    "❓": "assets/emoji/2753.webp",
+    "❗": "assets/emoji/2757.webp",
+    "❤️": "assets/emoji/2764-fe0f.webp",
+    "⭐": "assets/emoji/2b50.webp"
+  };
+
   // scripts/ui/emoji.js
   var EMO_RE = new RegExp("(\\p{Extended_Pictographic}(?:\\uFE0F|\\u200D\\p{Extended_Pictographic})*)", "gu");
+  var EMOJI_ALL = Object.keys(EMOJI_IMG);
   function emojiHTML(text) {
     const s = String(text == null ? "" : text);
     if (!s) return "";
     return s.split(EMO_RE).map((part, i) => {
-      if (i % 2 === 1) return `<span class="emo">${part}</span>`;
-      return esc5(part);
+      if (i % 2 !== 1) return esc5(part);
+      const src = EMOJI_IMG[part];
+      if (src) return `<img class="emo" src="${src}" alt="${part}" draggable="false">`;
+      return `<span class="emo">${part}</span>`;
     }).join("");
   }
   function esc5(s) {
@@ -7798,7 +8003,7 @@ ${custom}`);
       const spr = m.spriteOf ? assetUrl("sprite", m.spriteOf) : null;
       const av = spr ? `<span class="wx-av" style="background-image:url('${spr}')"></span>` : `<span class="wx-av wx-av-t">${escapeHtml((me ? "我" : m.from || "·").slice(0, 1))}</span>`;
       const th = this._phoneThread ? THREADS[this._phoneThread] : null;
-      const bub = `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
+      const bub = m.sticker ? `<div class="wx-sticker" role="img" aria-label="表情">${emojiHTML(m.text)}</div>` : `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
       el.className = "wx-row" + (me ? " me" : "");
       el.innerHTML = me ? bub + av : av + `<div class="wx-bubwrap">${th && th.group ? `<div class="wx-nick">${escapeHtml(m.from)}</div>` : ""}${bub}</div>`;
       body.appendChild(el);
@@ -8439,7 +8644,7 @@ ${custom}`);
           const me = isMe;
           const showNick = !me && th && th.group && m.from !== prevFrom;
           prevFrom = me ? "__me__" : m.from;
-          const inner = `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
+          const inner = m.sticker ? `<div class="wx-sticker" role="img" aria-label="表情">${emojiHTML(m.text)}</div>` : `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
           const av = me ? avatarOf("我", null) : avatarOf(m.from, m.spriteOf || null);
           return `${dayDiv}<div class="wx-row ${me ? "me" : ""}">
           ${me ? inner + av : av + `<div class="wx-bubwrap">${showNick ? `<div class="wx-nick">${escapeHtml(m.from)}</div>` : ""}${inner}</div>`}
@@ -8460,10 +8665,11 @@ ${custom}`);
       </div>
       <div class="wx-body${isList ? " is-list" : ""}" id="phoneBody">${bodyHTML}</div>
       ${isList ? "" : `<div class="wx-inputbar">
-        <span class="wx-ico">☺</span>
+        <button class="wx-ico wx-emoji-btn" id="wxEmojiBtn" type="button" aria-label="表情" title="表情">☺</button>
         <span class="wx-input">发送消息…</span>
         <span class="wx-ico">＋</span>
-      </div>`}
+      </div>
+      <div class="wx-emoji-sheet" id="wxEmojiSheet" hidden></div>`}
     </div>`;
       const canDone = !reply && !!this._phoneOnClose;
       this.openPanel({
@@ -8495,6 +8701,38 @@ ${custom}`);
         this.audio.sfx("page");
         this._renderPhone(isList ? "home" : "list", null);
       });
+      const emoBtn = this.el.panelBody.querySelector("#wxEmojiBtn");
+      const emoSheet = this.el.panelBody.querySelector("#wxEmojiSheet");
+      if (emoBtn && emoSheet) {
+        emoSheet.innerHTML = EMOJI_ALL.map((c) => `<button class="wx-emoji-item" type="button" data-emo="${c}" aria-label="${c}">${emojiHTML(c)}</button>`).join("");
+        emoBtn.addEventListener("click", () => {
+          this.audio.sfx("page");
+          emoSheet.hidden = !emoSheet.hidden;
+          if (!emoSheet.hidden) {
+            emoSheet.scrollIntoView({ block: "end" });
+            const b = $("#phoneBody");
+            if (b) b.scrollTop = b.scrollHeight;
+          }
+        });
+        emoSheet.querySelectorAll("[data-emo]").forEach((b) => {
+          b.addEventListener("click", () => {
+            const ch = b.dataset.emo;
+            const msg = {
+              thread,
+              from: "",
+              text: ch,
+              me: true,
+              sticker: true,
+              day: this.state.dayLabel,
+              time: ""
+            };
+            this.state.chats.push(msg);
+            this.audio.sfx("select");
+            emoSheet.hidden = true;
+            this.appendChatMessage(msg);
+          });
+        });
+      }
       if (reply) {
         this._queueReplyOptions(reply.node, reply.cb, 420);
       }
@@ -10160,7 +10398,7 @@ ${searchText}
       const chapters = st.chapters;
       const doneCount = chapters.filter((c) => c.state === "done").length;
       const head = st.hasSave ? `<button class="cont-resume" id="contResume">
-           <span class="cr-ico"><img src="assets/icons/hyperos/continue.png" alt="" loading="lazy" /></span>
+           <span class="cr-ico"><img src="assets/icons/hyperos/continue.webp" alt="" loading="lazy" /></span>
            <span class="cr-txt">
              <b>回到上次的位置</b>
              <i>${escapeHtml(st.resumeLabel || "上次进度")}</i>
@@ -10660,25 +10898,60 @@ ${searchText}
     }
     /* ================= 关于 / 素材说明 ================= */
     openAbout() {
+      const repo = CONFIG.update && CONFIG.update.repo || "baoliaojiang/not-my-weekend";
+      const home = `https://github.com/${repo.split("/")[0]}`;
+      const bili = "https://space.bilibili.com/525298385";
       this.openPanel({
         title: "关于本作",
         body: `
         <div class="about-head">
-          <img class="about-logo" src="assets/icons/hyperos/play.png" alt="" loading="lazy" />
+          <img class="about-logo" src="assets/icons/hyperos/play.webp" alt="" loading="lazy" />
           <div>
             <p class="about-title"><strong>《不属于我的周末》</strong></p>
             <p class="about-sub">关于我的学校周末要上课这件事</p>
           </div>
         </div>
         <p>版本 ${CONFIG.version}</p>
+
+        <div class="about-links" data-home="${home}" data-bili="${bili}">
+          <button class="about-link" type="button" data-open="bili">
+            <span class="about-link-k">Bilibili</span>
+            <span class="about-link-v">爆料酱 · 525298385</span>
+          </button>
+          <button class="about-link" type="button" data-open="home">
+            <span class="about-link-k">GitHub</span>
+            <span class="about-link-v">${repo.split("/")[0]}</span>
+          </button>
+        </div>
+
         <p><strong>界面</strong><br>
         图标取自 <strong>HyperOS 4</strong> 的默认图标集，卡片列表与深色渐变的排布参考了那套系统的视觉语言。
         这只是取了一套现成的图标素材，本作并不绑定任何手机系统，桌面端、网页端与移动端都可以运行。</p>
+
+        <p><strong>音乐</strong><br>
+        场景配乐来自 <strong>Kevin MacLeod</strong>（incompetech.com），
+        以 <strong>CC BY 4.0</strong> 授权使用，可商用，需署名；本作按授权在曲目清单里逐首标注了原曲名。
+        标题曲为 AI 音乐模型生成。全部曲目均经过统一响度与循环点处理，未改动原曲编曲。</p>
+
         <p>本作为 Demo 版本，仅供个人学习与技术交流，不用于任何商业用途，亦不对外发售。本作的学校、人物、组织、地名与事件均为虚构，与现实无关。游戏流程不构成法律意见。</p>
 
         <p><strong>关于跳过</strong><br>
         跳过只推进对话与叙事节点；遇到选项、调查、聊天回复时一定会停下，不会替你做选择。</p>
       `
+      });
+      const open = (url) => {
+        try {
+          if (window.ZBApp && typeof window.ZBApp.openUrl === "function") window.ZBApp.openUrl(url);
+          else if (window.zbShell && typeof window.zbShell.openExternal === "function") window.zbShell.openExternal(url);
+          else window.open(url, "_blank", "noopener");
+        } catch (e) {
+        }
+      };
+      this.el.panelBody.querySelectorAll("[data-open]").forEach((b) => {
+        b.addEventListener("click", () => {
+          const wrap = b.closest(".about-links");
+          open(b.dataset.open === "bili" ? wrap.dataset.bili : wrap.dataset.home);
+        });
       });
     }
     /* ================= 章节总结 ================= */
@@ -12263,6 +12536,7 @@ ${recent.join("\n")}`);
       { t: "narr", text: "人群里有个短头发的女生回头，走过来，接过水，说了句什么，又走回去了。她走得很快，水瓶在手里晃，晃出一圈白。" },
       { t: "narr", text: "教学楼是米白色的，五层，阳台一层一层往里收。楼前立着一块红底白字的展板，太阳太晃，我只扫到中间两个字：「服务」。" },
       { t: "narr", text: "距离开学典礼还有半小时。广播里在放一首很旧的曲子，喇叭有点破，高音发毛，放两句就抖一下。" },
+      { t: "music", id: "broadcast" },
       { t: "narr", text: "我站在梧桐底下，把书包往上提了提，肩带在汗湿的衣领上蹭了一下。" },
       { t: "choice", prompt: "这半小时，先去哪儿？", options: [
         { text: "先去教室，抢个靠窗的位置", goto: "cls" },
@@ -12541,6 +12815,7 @@ ${recent.join("\n")}`);
       { t: "narr", text: "下楼的时候她走在我前面半级，一直没说话。到二楼拐角，她忽然开口。" },
       { t: "say", who: "shen", name: "沈予安", text: "等下站队，我们班在左边第三块。", sprite: "shen" },
       { t: "say", who: "lin", name: "林知序", text: "行。" },
+      { t: "music", id: "playground" },
       { t: "narr", text: "操场是塑胶的，红色跑道，绿色草皮，被太阳晒得发软，踩上去有一点黏，抬脚的时候会带起一声轻响。" },
       { t: "narr", text: "主席台上铺着红布，横幅已经挂好了，白字：「20XX—20XX	学年第一学期开学典礼」。" },
       { t: "narr", text: "台下按班站，每班前面插一块牌子，牌子插在草皮的缝里，插得有点歪。" },
@@ -13113,7 +13388,7 @@ ${recent.join("\n")}`);
       { t: "narr", text: "语文书在书包里。" },
       { t: "narr", text: "书包在椅子上，被客厅的光切掉了一半。" },
       { t: "bg", id: "homeLiving", place: "家 · 客厅" },
-      { t: "music", id: "room" },
+      { t: "music", id: "home" },
       { t: "narr", text: "妈妈坐在沙发扶手上，一边看手机一边剥毛豆。" },
       { t: "narr", text: "毛豆壳在她膝盖上的塑料袋里，堆成一小堆。" },
       { t: "say", who: "mom", name: "妈妈", text: "今天开学怎么样。" },
@@ -14511,7 +14786,7 @@ ${recent.join("\n")}`);
     music: "room",
     nodes: [
       { t: "bg", id: "gate", place: "薄荷中学 · 校门口" },
-      { t: "music", id: "daily" },
+      { t: "music", id: "morning" },
       { t: "narr", text: "九月六日，星期六。七点三十。" },
       { t: "narr", text: "校门口的队伍从闸机一路排到马路牙子，拐了个弯，尾巴甩进旁边小区的铁门。" },
       { t: "say", who: "lin", name: "林知序", text: "（周六。）" },
@@ -18799,7 +19074,7 @@ ${recent.join("\n")}`);
       { t: "say", who: "lin", name: "林知序", text: "（后面半句她没说。）" },
       { t: "say", who: "lin", name: "林知序", text: "（这句话断在那里，断得很自然。）" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室 · 下午第一节课前" },
-      { t: "music", id: "classroom" },
+      { t: "music", id: "exam" },
       { t: "narr", text: "课代表发昨天的小测卷子。" },
       { t: "narr", text: "他一张一张念名字，念到的自己上来拿。" },
       { t: "narr", text: "念到我，我伸手。" },
@@ -22442,6 +22717,7 @@ ${recent.join("\n")}`);
       { t: "narr", text: "我闭上眼睛。" },
       { t: "narr", text: "客厅里，熨斗的声音还在。压过去，抬起来。" },
       { t: "narr", text: "压过去，抬起来。" },
+      { t: "music", id: "memory" },
       { t: "narr", text: "这个声音我从小听到大。" },
       { t: "narr", text: "小时候睡不着，听到它，就知道妈妈还在外面。" },
       { t: "narr", text: "今天也一样。" },
@@ -23951,6 +24227,7 @@ ${recent.join("\n")}`);
       { t: "narr", text: "搓了两下。锈没洗掉。又按了一下。" },
       { t: "narr", text: "还是没洗掉。" },
       { t: "narr", text: "水停了。" },
+      { t: "music", id: "goodbye" },
       { t: "narr", text: "我甩了甩手，走出教学楼。" },
       { t: "narr", text: "校门口那排梧桐，枝子一根一根，朝天举着。" },
       { t: "narr", text: "风从树底下穿过去，没有东西挡住它。" },
@@ -27815,12 +28092,12 @@ ${recent.join("\n")}`);
       剧情、选项、结局都不分男女。</p>
       <div class="hero-pick">
         <button class="hero-card${cur === "male" ? " on" : ""}" data-pick="male" type="button">
-          <span class="hero-face" style="background-image:url('assets/characters/lin_male.png')"></span>
+          <span class="hero-face" style="background-image:url('assets/characters/lin_male.webp')"></span>
           <span class="hero-name">男主</span>
           <span class="hero-desc">白衬衫、藏青长裤，肩上挎着帆布包。</span>
         </button>
         <button class="hero-card${cur === "female" ? " on" : ""}" data-pick="female" type="button">
-          <span class="hero-face" style="background-image:url('assets/characters/lin_female.png')"></span>
+          <span class="hero-face" style="background-image:url('assets/characters/lin_female.webp')"></span>
           <span class="hero-name">女主</span>
           <span class="hero-desc">短袖衬衫配针织背心，百褶裙。</span>
         </button>
