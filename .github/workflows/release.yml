@@ -72,9 +72,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
-          gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" \
-            --json assets --jq '.assets[].name' 2>/dev/null | while IFS= read -r n; do
-              [ -n "$n" ] && gh release delete-asset "${{ github.ref_name }}" "$n" --repo "${{ github.repository }}" --yes
+          # 按 asset id 删除，避免中文名在 shell 里被转义弄丢导致删不掉
+          gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" \
+            --jq '.assets[] | "\(.id)"' 2>/dev/null | while IFS= read -r id; do
+              [ -n "$id" ] && gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$id"
             done
 
       - name: 发布 Release（附全部产物）
