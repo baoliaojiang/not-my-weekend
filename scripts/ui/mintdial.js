@@ -16,7 +16,7 @@
    ========================================================= */
 import { faceUrl } from '../config/assets.js';
 
-const AVATAR_MINT = 'assets/ai/avatar.png';
+const AVATAR_MINT = 'assets/ai/avatar.webp';
 
 /* ---------------- 内置回复（没配 Key 时用） ---------------- */
 const FALLBACK = {

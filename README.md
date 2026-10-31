@@ -23,7 +23,7 @@
 
 - 主线 7 章（序章 + 六章）+ 5 条支线，八类结局
 - 行动点调查、课堂小测、手机私聊／群聊、材料收集、可填写的政务投诉表单、12345 逐句通话
-- **立绘、背景与音乐全部自制**：14 张角色立绘、28 张场景背景、23 段背景音乐，均由本项目生成
+- **立绘与背景自制**：14 张角色立绘、28 张场景背景，均由本项目生成；**场景配乐为 CC BY 4.0 授权的第三方曲目**（见下方「音乐来源与授权」），标题曲由 AI 音乐模型生成
 - 手机界面里的图标与字体是例外，见下方「手机图标与字体」一节
 
 ## 直接玩
@@ -197,3 +197,43 @@ python tools/bg_tone.py 底图.jpg 输出.jpg dusk                   # 场景调
 
 一句话：**引擎可以拿去学，故事和画面不能拿走。**
 需要授权（同人作品、视频搬运等）请通过 B 站私信联系。
+
+## 音乐来源与授权
+
+场景配乐（24 段中的 23 段）来自 **Kevin MacLeod**（[incompetech.com](https://incompetech.com)），
+以 **Creative Commons: By Attribution 4.0**（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)）授权使用。
+该授权**允许商业使用**，条件是保留署名——本节的曲目清单即为署名。
+
+每首曲子都按场景挑过：慢钢琴给安静与沉默、明亮吉他给清晨、Bossa 给食堂、低音弦乐给绷紧的段落。
+进游戏前统一做了三件事：截取中段 64 秒、首尾 2 秒交叉淡化（循环无接缝）、
+RMS 归一到 −21 dBFS 并把真峰值压到 −3 dBFS 以下。**没有改动原曲的编曲与演奏。**
+
+标题曲 `title.mp3` 由 AI 音乐模型生成，不属于上述授权范围。
+
+| 场景 | 曲目 | 原作者 | 授权 |
+|---|---|---|---|
+| `daily` | Daily Beetle | Kevin MacLeod | CC BY 4.0 |
+| `morning` | Clear Air | Kevin MacLeod | CC BY 4.0 |
+| `classroom` | Almost New | Kevin MacLeod | CC BY 4.0 |
+| `calm` | Avec Soin | Kevin MacLeod | CC BY 4.0 |
+| `calm2` | Facile | Kevin MacLeod | CC BY 4.0 |
+| `silent` | Blue Paint | Kevin MacLeod | CC BY 4.0 |
+| `room` | Continue Life | Kevin MacLeod | CC BY 4.0 |
+| `playground` | Cheery Monday | Kevin MacLeod | CC BY 4.0 |
+| `canteen` | BossaBossa | Kevin MacLeod | CC BY 4.0 |
+| `relax` | Clear Waters | Kevin MacLeod | CC BY 4.0 |
+| `city` | Clean Soul | Kevin MacLeod | CC BY 4.0 |
+| `night_street` | Comfortable Mystery | Kevin MacLeod | CC BY 4.0 |
+| `office` | Bittersweet | Kevin MacLeod | CC BY 4.0 |
+| `hall` | Dreams Become Real | Kevin MacLeod | CC BY 4.0 |
+| `sunset` | Aretes | Kevin MacLeod | CC BY 4.0 |
+| `hope` | Eternal Hope | Kevin MacLeod | CC BY 4.0 |
+| `tense` | Dark Times | Kevin MacLeod | CC BY 4.0 |
+| `exam` | Colorless Aura | Kevin MacLeod | CC BY 4.0 |
+| `memory` | Danse Morialta | Kevin MacLeod | CC BY 4.0 |
+| `goodbye` | At Rest | Kevin MacLeod | CC BY 4.0 |
+| `daydream` | Dream Culture | Kevin MacLeod | CC BY 4.0 |
+| `rain` | Calmant | Kevin MacLeod | CC BY 4.0 |
+| `broadcast` | Eastminster | Kevin MacLeod | CC BY 4.0 |
+
+> 商用前请自行核对上游条款的最新版本；若后续替换曲目，请同步更新本节清单。

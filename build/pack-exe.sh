@@ -24,6 +24,24 @@ node "$ROOT/build/make-www.mjs"
 echo "== 1/5 打干净版 exe =="
 bash "$ROOT/build/build-exe.sh"
 
+echo "== 1.5/5 精简运行时：只留中文与英文语言包 =="
+# Electron 默认带 55 种语言，locales 占 39MB，实际只用到 zh-CN / en-US
+KEEP_LANGS=" zh-CN zh-TW en-US en-GB "
+for f in "$CLEAN/locales"/*.pak; do
+  [ -e "$f" ] || continue
+  b="$(basename "$f" .pak)"
+  case "$KEEP_LANGS" in
+    *" $b "*) ;;
+    *) rm -f "$f" ;;
+  esac
+done
+# Chromium 的授权全文 9MB：内容必须带，但没必要明文占体积，压成 .gz 并在旁边留一句说明
+if [ -f "$CLEAN/LICENSES.chromium.html" ]; then
+  gzip -9 -f "$CLEAN/LICENSES.chromium.html" || true
+  printf '%s\n' 'Chromium 的授权与第三方声明见 LICENSES.chromium.html.gz（gzip 压缩，解压后为原始 HTML）。' > "$CLEAN/LICENSES-README.txt"
+fi
+echo "    精简后大小：$(du -sh "$CLEAN" | cut -f1)"
+
 echo "== 2/5 清档：发布目录里不许带用户数据 =="
 # www 是纯静态资源，正常不会有存档；这里是兜底，防止哪天把调试存档带进去。
 find "$CLEAN/resources/app" -maxdepth 3 \

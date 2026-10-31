@@ -4276,7 +4276,7 @@ body.glass .ai-msg-row.me .ai-bub{ background:var(--solid); }
 
 /* ---- 头像换成角色形象（透明底 PNG） ---- */
 .ai-avatar{
-  background-image:url("../assets/ai/avatar.png");
+  background-image:url("../assets/ai/avatar.webp");
   background-size:cover; background-position:center 28%;
   background-color:#dfe9d8;
   box-shadow:0 0 0 1px rgba(255,255,255,.22), 0 4px 14px rgba(120,160,140,.28);
@@ -4586,7 +4586,7 @@ body.motion-off .boot-card-ic{ animation:none; }
 /* 署名页：圆形头像 + 账号（参考 miHoYo 的极简署名） */
 .boot-avatar{
   display:block; width:84px; height:84px; margin:0 auto 20px;
-  border-radius:50%; background:center/cover no-repeat url('assets/ui/author.png');
+  border-radius:50%; background:center/cover no-repeat url('../assets/ui/author.webp');
   border:1px solid rgba(233,230,223,.18);
   box-shadow:0 10px 40px rgba(0,0,0,.55);
   animation:avatarIn 1.2s cubic-bezier(.22,.8,.28,1) both;
@@ -5964,12 +5964,86 @@ body.is-portrait #phoneFab, body.is-portrait #phoneFab span{ position:static; }
    正文里的 emoji
    ---------------------------------------------------------
    和"表情包"分开：表情包是单独一条图片消息，emoji 嵌在句子里。
-   不预置图片，直接用系统字形——iOS/macOS 上就是苹果那一套。
+   苹果那套图已经离线抓在 assets/emoji/（tools/fetch-emoji.mjs），
+   所以这里是内联小图，三端同一张脸；表里没有的字符保留系统字形。
    ========================================================= */
 .emo{
   font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","EmojiOne Color",sans-serif;
   font-size:1.08em; line-height:1; vertical-align:-.12em;
   letter-spacing:0;
 }
+img.emo{
+  display:inline-block; width:1.16em; height:1.16em;
+  margin:0 .06em; vertical-align:-.22em;
+  object-fit:contain; border:0; background:none;
+  /* 图本身带透明边，别让它撑高行距 */
+  flex:0 0 auto;
+}
 .wx-bub .emo, .ai-bub .emo{ margin:0 1px; }
 .dl-line p .emo{ font-size:1.06em; vertical-align:-.1em; }
+/* 深色气泡里 emoji 图有一点白边更精神，浅色气泡则不用 */
+.mos.dark img.emo{ filter:drop-shadow(0 0 1px rgba(0,0,0,.28)); }
+
+/* =========================================================
+   标题屏顶上的圆标
+   ---------------------------------------------------------
+   启动序列第二屏（游戏标题）顶部加一枚圆形图标，和第一屏的
+   作者头像圆章呼应：一个是"我"，一个是"这部作品"。
+   ========================================================= */
+.boot-logo-ico{
+  display:block; width:96px; height:96px; margin:0 auto 18px;
+  border-radius:50%; object-fit:cover; object-position:50% 42%;
+  /* 这枚图标本身是一张暗调插画，压在全黑背景上很容易糊成一个黑洞：
+     给它一圈亮边当作"印章"的边沿，再补一层极淡的外发光，轮廓才立得住 */
+  border:1px solid rgba(246,243,236,.26);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.45),
+    0 0 0 5px rgba(246,243,236,.035),
+    0 10px 34px rgba(0,0,0,.66),
+    0 0 64px rgba(246,243,236,.08);
+  filter:brightness(1.12) contrast(1.05) saturate(1.04);
+  animation:bootIcoIn 1.1s cubic-bezier(.22,.8,.28,1) both;
+}
+@keyframes bootIcoIn{
+  from{ opacity:0; transform:scale(.82); filter:blur(6px); }
+  to  { opacity:1; transform:scale(1); filter:blur(0); }
+}
+body.motion-off .boot-logo-ico{ animation:none; }
+body.is-portrait .boot-logo-ico{ width:76px; height:76px; margin-bottom:14px; }
+
+/* 「关于本作」里的主页入口：两枚并排的药丸，左边平台名，右边账号 */
+.about-links{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0 18px;
+}
+.about-link{
+  display:flex; flex-direction:column; gap:3px; align-items:flex-start;
+  padding:10px 13px; text-align:left; cursor:pointer;
+  background:rgba(30,34,40,.04); border:1px solid rgba(30,34,40,.14);
+  border-radius:10px; font:inherit; color:inherit;
+  transition:background .16s ease, border-color .16s ease, transform .16s ease;
+}
+.about-link:hover{ background:rgba(30,34,40,.07); border-color:rgba(30,34,40,.24); }
+.about-link:active{ transform:scale(.985); }
+.about-link-k{ font-size:.72rem; letter-spacing:.1em; opacity:.55; text-transform:uppercase; }
+.about-link-v{ font-size:.86rem; font-weight:600; }
+.mos.dark .about-link{ background:rgba(235,232,225,.06); border-color:rgba(235,232,225,.15); }
+.mos.dark .about-link:hover{ background:rgba(235,232,225,.1); }
+@media (max-width:520px){
+  .about-links{ grid-template-columns:1fr; }
+}
+
+/* 署名页的链接行：看起来还是那两行小字，但可以点进主页 */
+a.boot-ids{
+  display:block; text-decoration:none; color:inherit;
+  transition:color .18s ease, opacity .18s ease;
+}
+a.boot-ids:hover{ color:#f6f3ec; opacity:1; }
+a.boot-ids.is-dim:hover{ color:rgba(246,243,236,.8); }
+
+/* 署名页的链接行：看起来还是那两行小字，但可以点进主页 */
+a.boot-ids{
+  display:block; text-decoration:none; color:inherit;
+  transition:color .18s ease, opacity .18s ease;
+}
+a.boot-ids:hover{ color:#f6f3ec; opacity:1; }
+a.boot-ids.is-dim:hover{ color:rgba(246,243,236,.8); }

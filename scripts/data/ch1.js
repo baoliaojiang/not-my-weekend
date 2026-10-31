@@ -456,7 +456,7 @@ export default {
     { t: 'narr', text: '语文书在书包里。' },
     { t: 'narr', text: '书包在椅子上，被客厅的光切掉了一半。' },
     { t: 'bg', id: 'homeLiving', place: '家 · 客厅' },
-    { t: 'music', id: 'room' },
+    { t: 'music', id: 'home' },
     { t: 'narr', text: '妈妈坐在沙发扶手上，一边看手机一边剥毛豆。' },
     { t: 'narr', text: '毛豆壳在她膝盖上的塑料袋里，堆成一小堆。' },
     { t: 'say', who: 'mom', name: '妈妈', text: '今天开学怎么样。' },

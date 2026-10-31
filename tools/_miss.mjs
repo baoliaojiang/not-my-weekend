@@ -1,0 +1,12 @@
+import puppeteer from 'file:///C:/Users/12821/.workbuddy/binaries/node/workspace/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js';
+const b = await puppeteer.launch({ executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless:'new', args:['--no-sandbox','--allow-file-access-from-files','--mute-audio'] });
+const p = await b.newPage();
+const miss=[];
+p.on('requestfailed', r=>miss.push(r.url()));
+p.on('response', r=>{ if(r.status()>=400) miss.push(r.status()+' '+r.url()); });
+await p.goto('file:///D:/workbuddy/2026-10-23-16-33-10/index.html',{waitUntil:'networkidle2'});
+await new Promise(r=>setTimeout(r,1500));
+await p.evaluate(()=>document.querySelector('#aiFab').click());
+await new Promise(r=>setTimeout(r,900));
+console.log([...new Set(miss)].join('\n')||'none');
+await b.close();

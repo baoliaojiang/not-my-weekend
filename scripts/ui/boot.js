@@ -39,14 +39,15 @@ export const BOOT_SCREENS = [
     html: `<div class="boot-author">
       <span class="boot-avatar"></span>
       <p class="boot-author-n">爆料酱</p>
-      <p class="boot-ids">bilibili · 525298385</p>
-      <p class="boot-ids is-dim" id="bootGit"></p>
+      <a class="boot-ids boot-link" id="bootBili" target="_blank" rel="noopener noreferrer">bilibili · 525298385</a>
+      <a class="boot-ids is-dim boot-link" id="bootGit" target="_blank" rel="noopener noreferrer"></a>
     </div>`
   },
   {
     key: 'logo',
     hold: 2000,
     html: `<div class="boot-logo">
+      <img class="boot-logo-ico" src="assets/ui/app-icon.png" alt="" />
       <svg class="logo-game" viewBox="0 0 660 240" role="img" aria-label="不属于我的周末">
         <defs>
           <radialGradient id="gz" cx="50%" cy="40%" r="52%">
@@ -251,9 +252,20 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
 
     const verEl = stage.querySelector('#bootVer');
     if (verEl) verEl.textContent = 'v' + version;
-    // 署名页那行 GitHub：没配仓库就留空，不显示 github.com/OWNER 这种占位
+    // 署名页那两行：bilibili 与 GitHub，都能点，点了去主页
     const gitEl = stage.querySelector('#bootGit');
-    if (gitEl) gitEl.textContent = github || '';
+    if (gitEl) {
+      gitEl.textContent = github || '';
+      const owner = String(github || '').split('·').pop().trim().split('/')[0];
+      if (owner) gitEl.href = `https://github.com/${owner}`;
+      else gitEl.hidden = true;
+    }
+    const biliEl = stage.querySelector('#bootBili');
+    if (biliEl && AUTHOR.bilibili) biliEl.href = AUTHOR.bilibili;
+    // 这一屏本来就"点一下跳过"，链接触发的是跳转不该顺带翻页
+    stage.querySelectorAll('.boot-link').forEach((a) => {
+      a.addEventListener('click', (e) => { e.stopPropagation(); });
+    });
     // 「检查更新」与「编译着色器」是实际要干活的屏，跳过会让游戏带着旧资源/未准备的环境启动
     if (skipBtn) skipBtn.hidden = (sc.key === 'update' || sc.key === 'shader');
 

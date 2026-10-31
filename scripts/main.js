@@ -983,12 +983,12 @@ function pickProtagonist(then) {
       剧情、选项、结局都不分男女。</p>
       <div class="hero-pick">
         <button class="hero-card${cur === 'male' ? ' on' : ''}" data-pick="male" type="button">
-          <span class="hero-face" style="background-image:url('assets/characters/lin_male.png')"></span>
+          <span class="hero-face" style="background-image:url('assets/characters/lin_male.webp')"></span>
           <span class="hero-name">男主</span>
           <span class="hero-desc">白衬衫、藏青长裤，肩上挎着帆布包。</span>
         </button>
         <button class="hero-card${cur === 'female' ? ' on' : ''}" data-pick="female" type="button">
-          <span class="hero-face" style="background-image:url('assets/characters/lin_female.png')"></span>
+          <span class="hero-face" style="background-image:url('assets/characters/lin_female.webp')"></span>
           <span class="hero-name">女主</span>
           <span class="hero-desc">短袖衬衫配针织背心，百褶裙。</span>
         </button>

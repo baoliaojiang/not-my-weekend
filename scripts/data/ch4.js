@@ -485,7 +485,7 @@ export default {
     { t: 'say', who: 'lin', name: '林知序', text: '（后面半句她没说。）' },
     { t: 'say', who: 'lin', name: '林知序', text: '（这句话断在那里，断得很自然。）' },
     { t: 'bg', id: 'classroom', place: '高一（2）班 · 教室 · 下午第一节课前' },
-    { t: 'music', id: 'classroom' },
+    { t: 'music', id: 'exam' },
     { t: 'narr', text: '课代表发昨天的小测卷子。' },
     { t: 'narr', text: '他一张一张念名字，念到的自己上来拿。' },
     { t: 'narr', text: '念到我，我伸手。' },

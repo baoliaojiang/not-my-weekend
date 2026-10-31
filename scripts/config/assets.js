@@ -17,39 +17,39 @@ export const ASSET_SOURCE = '自制生成';
 /* 全部场景背景为 AI 生成（日式动画背景美术）；同场景的黄昏/夜里/清晨
    由 tools/bg_tone.py 从底图调色而来，保证构图完全一致。 */
 export const BACKGROUNDS = {
-  gate:        { src: 'assets/backgrounds/bg_gate.jpg',        label: '校门' },
-  classroom:   { src: 'assets/backgrounds/bg_classroom.jpg',   label: '高一（二）班教室' },
-  corridor:    { src: 'assets/backgrounds/bg_corridor.jpg',    label: '教学楼走廊' },
-  shop:        { src: 'assets/backgrounds/bg_shop.jpg',        label: '小卖部' },
-  commons:     { src: 'assets/backgrounds/bg_commons.jpg',     label: '空教室' },
-  clubroom:    { src: 'assets/backgrounds/bg_clubroom.jpg',    label: '社团活动室' },
-  streetNight: { src: 'assets/backgrounds/bg_street_night.jpg', label: '回家的路' },
-  cityNight:   { src: 'assets/backgrounds/bg_city_night.jpg',  label: '夜里' },
+  gate:        { src: 'assets/backgrounds/bg_gate.webp',        label: '校门' },
+  classroom:   { src: 'assets/backgrounds/bg_classroom.webp',   label: '高一（二）班教室' },
+  corridor:    { src: 'assets/backgrounds/bg_corridor.webp',    label: '教学楼走廊' },
+  shop:        { src: 'assets/backgrounds/bg_shop.webp',        label: '小卖部' },
+  commons:     { src: 'assets/backgrounds/bg_commons.webp',     label: '空教室' },
+  clubroom:    { src: 'assets/backgrounds/bg_clubroom.webp',    label: '社团活动室' },
+  streetNight: { src: 'assets/backgrounds/bg_street_night.webp', label: '回家的路' },
+  cityNight:   { src: 'assets/backgrounds/bg_city_night.webp',  label: '夜里' },
   // —— 第二批：从原作背景库补的场景（客厅 / 卧室 / 街区 / 走廊尽头 / 礼堂 / 天台）
-  homeLiving:  { src: 'assets/backgrounds/bg_home_living.jpg', label: '家里的客厅' },
-  bedroom:     { src: 'assets/backgrounds/bg_bedroom.jpg',     label: '我的房间' },
-  streetDusk:  { src: 'assets/backgrounds/bg_street_dusk.jpg', label: '傍晚的街' },
-  townDay:     { src: 'assets/backgrounds/bg_town_day.jpg',    label: '白天的街区' },
-  hallwayEnd:  { src: 'assets/backgrounds/bg_hallway_end.jpg', label: '走廊尽头' },
-  auditorium:  { src: 'assets/backgrounds/bg_auditorium.jpg',  label: '礼堂' },
-  skyDusk:     { src: 'assets/backgrounds/bg_sky_dusk.jpg',    label: '楼顶的天' },
-  studio:      { src: 'assets/backgrounds/bg_studio.jpg',      label: '活动室' },
+  homeLiving:  { src: 'assets/backgrounds/bg_home_living.webp', label: '家里的客厅' },
+  bedroom:     { src: 'assets/backgrounds/bg_bedroom.webp',     label: '我的房间' },
+  streetDusk:  { src: 'assets/backgrounds/bg_street_dusk.webp', label: '傍晚的街' },
+  townDay:     { src: 'assets/backgrounds/bg_town_day.webp',    label: '白天的街区' },
+  hallwayEnd:  { src: 'assets/backgrounds/bg_hallway_end.webp', label: '走廊尽头' },
+  auditorium:  { src: 'assets/backgrounds/bg_auditorium.webp',  label: '礼堂' },
+  skyDusk:     { src: 'assets/backgrounds/bg_sky_dusk.webp',    label: '楼顶的天' },
+  studio:      { src: 'assets/backgrounds/bg_studio.webp',      label: '活动室' },
   // —— 第三批：同一张底图的时间变体
   // 全篇一天排到 21:50，晚自习和放学后如果还用白天那张教室，会一直"白天上课"。
   // 这里按时间段做色彩分级（清晨微暖 / 黄昏暖橙 / 夜晚压暗偏蓝），风格与底图完全一致。
-  classroomDusk:  { src: 'assets/backgrounds/bg_classroom_dusk.jpg',  label: '教室 · 黄昏' },
-  classroomNight: { src: 'assets/backgrounds/bg_classroom_night.jpg', label: '教室 · 晚自习' },
-  corridorDawn:   { src: 'assets/backgrounds/bg_corridor_dawn.jpg',   label: '走廊 · 清晨' },
-  corridorDusk:   { src: 'assets/backgrounds/bg_corridor_dusk.jpg',   label: '走廊 · 放学后' },
-  corridorNight:  { src: 'assets/backgrounds/bg_corridor_night.jpg',  label: '走廊 · 夜里' },
-  gateDusk:       { src: 'assets/backgrounds/bg_gate_dusk.jpg',       label: '校门 · 傍晚' },
-  gateNight:      { src: 'assets/backgrounds/bg_gate_night.jpg',      label: '校门 · 夜里' },
-  shopNight:      { src: 'assets/backgrounds/bg_shop_night.jpg',      label: '小卖部 · 夜里' },
-  commonsDusk:    { src: 'assets/backgrounds/bg_commons_dusk.jpg',    label: '空教室 · 黄昏' },
-  streetDay:      { src: 'assets/backgrounds/bg_street_day.jpg',      label: '白天的街' },
+  classroomDusk:  { src: 'assets/backgrounds/bg_classroom_dusk.webp',  label: '教室 · 黄昏' },
+  classroomNight: { src: 'assets/backgrounds/bg_classroom_night.webp', label: '教室 · 晚自习' },
+  corridorDawn:   { src: 'assets/backgrounds/bg_corridor_dawn.webp',   label: '走廊 · 清晨' },
+  corridorDusk:   { src: 'assets/backgrounds/bg_corridor_dusk.webp',   label: '走廊 · 放学后' },
+  corridorNight:  { src: 'assets/backgrounds/bg_corridor_night.webp',  label: '走廊 · 夜里' },
+  gateDusk:       { src: 'assets/backgrounds/bg_gate_dusk.webp',       label: '校门 · 傍晚' },
+  gateNight:      { src: 'assets/backgrounds/bg_gate_night.webp',      label: '校门 · 夜里' },
+  shopNight:      { src: 'assets/backgrounds/bg_shop_night.webp',      label: '小卖部 · 夜里' },
+  commonsDusk:    { src: 'assets/backgrounds/bg_commons_dusk.webp',    label: '空教室 · 黄昏' },
+  streetDay:      { src: 'assets/backgrounds/bg_street_day.webp',      label: '白天的街' },
   // —— 第四批：专用地点（由同类底图分级而来，避免食堂/保健室借教室的图）
-  canteen:        { src: 'assets/backgrounds/bg_canteen.jpg',         label: '食堂' },
-  infirmary:      { src: 'assets/backgrounds/bg_infirmary.jpg',       label: '保健室' }
+  canteen:        { src: 'assets/backgrounds/bg_canteen.webp',         label: '食堂' },
+  infirmary:      { src: 'assets/backgrounds/bg_infirmary.webp',       label: '保健室' }
 };
 
 /* 主角立绘按性别分两套。
@@ -58,21 +58,21 @@ export const BACKGROUNDS = {
 /* 全部立绘为本作 AI 生成（统一画风：青年向日系动画、细长眼型、
    硬边赛璐璐上色、淡蓝紫冷调）。 */
 export const SPRITES = {
-  lin:     { src: 'assets/characters/lin_zhixu.png',      label: '林知序' },
-  linM:    { src: 'assets/characters/lin_male.png',       label: '林知序' },
-  linF:    { src: 'assets/characters/lin_female.png',     label: '林知序' },
-  shen:    { src: 'assets/characters/shen_yuan.png',       label: '沈予安' },
-  zhou:    { src: 'assets/characters/zhou_yuqing.png',     label: '周予晴' },
-  chen:    { src: 'assets/characters/teacher_chen.png',    label: '陈老师' },
-  xu:      { src: 'assets/characters/classmate_xu.png',    label: '许小满' },
-  zheng:   { src: 'assets/characters/classmate_zheng.png', label: '郑野' },
-  luo:     { src: 'assets/characters/luo_yizhou.png',      label: '罗一舟' },
-  he:      { src: 'assets/characters/he_yu.png',           label: '何雨' },
-  sun:     { src: 'assets/characters/sun_peng.png',        label: '孙芃' },
-  ma:      { src: 'assets/characters/ma_wenjie.png',       label: '马文杰' },
-  wu:      { src: 'assets/characters/wu_jianguo.png',      label: '吴建国' },
-  zyi:     { src: 'assets/characters/zhou_yi.png',         label: '周姨' },
-  fu:      { src: 'assets/characters/fu_yisheng.png',      label: '傅医生' }
+  lin:     { src: 'assets/characters/lin_zhixu.webp',      label: '林知序' },
+  linM:    { src: 'assets/characters/lin_male.webp',       label: '林知序' },
+  linF:    { src: 'assets/characters/lin_female.webp',     label: '林知序' },
+  shen:    { src: 'assets/characters/shen_yuan.webp',       label: '沈予安' },
+  zhou:    { src: 'assets/characters/zhou_yuqing.webp',     label: '周予晴' },
+  chen:    { src: 'assets/characters/teacher_chen.webp',    label: '陈老师' },
+  xu:      { src: 'assets/characters/classmate_xu.webp',    label: '许小满' },
+  zheng:   { src: 'assets/characters/classmate_zheng.webp', label: '郑野' },
+  luo:     { src: 'assets/characters/luo_yizhou.webp',      label: '罗一舟' },
+  he:      { src: 'assets/characters/he_yu.webp',           label: '何雨' },
+  sun:     { src: 'assets/characters/sun_peng.webp',        label: '孙芃' },
+  ma:      { src: 'assets/characters/ma_wenjie.webp',       label: '马文杰' },
+  wu:      { src: 'assets/characters/wu_jianguo.webp',      label: '吴建国' },
+  zyi:     { src: 'assets/characters/zhou_yi.webp',         label: '周姨' },
+  fu:      { src: 'assets/characters/fu_yisheng.webp',      label: '傅医生' }
 };
 
 /* 全部背景音乐为本作程序合成（tools/make_music.py）：

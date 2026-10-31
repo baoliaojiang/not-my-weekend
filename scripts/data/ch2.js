@@ -30,7 +30,7 @@ export default {
 
   nodes: [
     { t: 'bg', id: 'gate', place: '薄荷中学 · 校门口' },
-    { t: 'music', id: 'daily' },
+    { t: 'music', id: 'morning' },
     { t: 'narr', text: '九月六日，星期六。七点三十。' },
     { t: 'narr', text: '校门口的队伍从闸机一路排到马路牙子，拐了个弯，尾巴甩进旁边小区的铁门。' },
     { t: 'say', who: 'lin', name: '林知序', text: '（周六。）' },

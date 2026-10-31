@@ -1,0 +1,209 @@
+{
+ "calm": {
+  "title": "Avec Soin",
+  "file": "Avec Soin.mp3",
+  "isrc": "USUAN1100860",
+  "feel": "Calming, Relaxed",
+  "bpm": "64",
+  "length": "00:02:25",
+  "inst": "Piano"
+ },
+ "calm2": {
+  "title": "Facile",
+  "file": "Facile.mp3",
+  "isrc": "USUAN1100858",
+  "feel": "Calming, Relaxed",
+  "bpm": "59",
+  "length": "00:03:32",
+  "inst": "Piano"
+ },
+ "silent": {
+  "title": "Blue Paint",
+  "file": "Blue Paint.mp3",
+  "isrc": "USUAN1100566",
+  "feel": "Calming, Relaxed, Somber",
+  "bpm": "64",
+  "length": "00:02:11",
+  "inst": "Piano"
+ },
+ "room": {
+  "title": "Continue Life",
+  "file": "Continue Life.mp3",
+  "isrc": "USUAN1100282",
+  "feel": "Relaxed, Calming, Uplifting",
+  "bpm": null,
+  "length": "00:01:54",
+  "inst": "Piano"
+ },
+ "daily": {
+  "title": "Daily Beetle",
+  "file": "Daily Beetle.mp3",
+  "isrc": "USUAN1500025",
+  "feel": "Calming, Bouncy",
+  "bpm": "100",
+  "length": "00:05:17",
+  "inst": "Ukulele, Guitar, Marimba, Music Box, Toy Piano, Drums"
+ },
+ "morning": {
+  "title": "Clear Air",
+  "file": "Clear Air.mp3",
+  "isrc": "USUAN1100626",
+  "feel": "Bright, Calming, Relaxed",
+  "bpm": "68",
+  "length": "00:03:04",
+  "inst": "Guitar, Piano"
+ },
+ "classroom": {
+  "title": "Almost New",
+  "file": "Almost New.mp3",
+  "isrc": "USUAN1800008",
+  "feel": "Bright, Calming, Mysterious",
+  "bpm": "80",
+  "length": "00:03:23",
+  "inst": "Piano, Basses"
+ },
+ "playground": {
+  "title": "Cheery Monday",
+  "file": "Cheery Monday.mp3",
+  "isrc": "USUAN1700065",
+  "feel": "Bouncy, Bright, Relaxed",
+  "bpm": "102",
+  "length": "00:01:20",
+  "inst": "Bass, Piano, Percussion, Glockenspiel"
+ },
+ "canteen": {
+  "title": "BossaBossa",
+  "file": "BossaBossa.mp3",
+  "isrc": "USUAN1600055",
+  "feel": "Calming, Grooving, Bright",
+  "bpm": "77",
+  "length": "00:02:47",
+  "inst": "Piano, Bass, Drums, Guitar"
+ },
+ "relax": {
+  "title": "Clear Waters",
+  "file": "Clear Waters.mp3",
+  "isrc": "USUAN1100290",
+  "feel": "Calming, Relaxed",
+  "bpm": "96",
+  "length": "00:02:08",
+  "inst": "Piano"
+ },
+ "city": {
+  "title": "Clean Soul",
+  "file": "Clean Soul.mp3",
+  "isrc": "USUAN1300033",
+  "feel": "Calming, Mysterious, Relaxed",
+  "bpm": null,
+  "length": "00:05:07",
+  "inst": "Electric Piano, Bass"
+ },
+ "night_street": {
+  "title": "Comfortable Mystery",
+  "file": "Comfortable Mystery.mp3",
+  "isrc": "USUAN1100287",
+  "feel": "Relaxed, Eerie, Mystical, Calming",
+  "bpm": "65",
+  "length": "00:03:56",
+  "inst": "Electric Piano"
+ },
+ "office": {
+  "title": "Bittersweet",
+  "file": "Bittersweet.mp3",
+  "isrc": "USUAN1700004",
+  "feel": "Calming, Relaxed, Somber",
+  "bpm": "73",
+  "length": "00:03:22",
+  "inst": "Synth, Cello, Piano, Choir"
+ },
+ "hall": {
+  "title": "Dreams Become Real",
+  "file": "Dreams Become Real.mp3",
+  "isrc": "USUAN1500027",
+  "feel": "Calming, Somber",
+  "bpm": "60",
+  "length": "00:06:50",
+  "inst": "Piano, Synths"
+ },
+ "sunset": {
+  "title": "Aretes",
+  "file": "Aretes.mp3",
+  "isrc": "USUAN1100325",
+  "feel": "Calming, Uplifting",
+  "bpm": "57",
+  "length": "00:04:36",
+  "inst": "Piano, Synths, Choir"
+ },
+ "hope": {
+  "title": "Eternal Hope",
+  "file": "Eternal Hope.mp3",
+  "isrc": "USUAN1100238",
+  "feel": "Calming, Uplifting, Relaxed",
+  "bpm": null,
+  "length": "00:04:44",
+  "inst": "Piano, Strings, Helicon, French Horn, Choir"
+ },
+ "tense": {
+  "title": "Dark Times",
+  "file": "Dark Times.mp3",
+  "isrc": "USUAN1100747",
+  "feel": "Dark, Somber",
+  "bpm": "48",
+  "length": "00:03:04",
+  "inst": "Strings"
+ },
+ "exam": {
+  "title": "Colorless Aura",
+  "file": "Colorless Aura.mp3",
+  "isrc": "USUAN1400008",
+  "feel": "Mysterious, Somber",
+  "bpm": "50",
+  "length": "00:02:38",
+  "inst": "Piano"
+ },
+ "memory": {
+  "title": "Danse Morialta",
+  "file": "Danse Morialta.mp3",
+  "isrc": "USUAN1200026",
+  "feel": "Calming, Relaxed, Somber, Uplifting",
+  "bpm": "70",
+  "length": "00:03:56",
+  "inst": "Piano"
+ },
+ "goodbye": {
+  "title": "At Rest",
+  "file": "At Rest.mp3",
+  "isrc": "USUAN1100748",
+  "feel": "Relaxed, Somber",
+  "bpm": "57",
+  "length": "00:03:27",
+  "inst": "Piano, Voice, Strings, Choir"
+ },
+ "daydream": {
+  "title": "Dream Culture",
+  "file": "Dream Culture.mp3",
+  "isrc": "USUAN1300046",
+  "feel": "Calming, Relaxed, Uplifting",
+  "bpm": "70",
+  "length": "00:03:34",
+  "inst": "Piano, Percussion"
+ },
+ "rain": {
+  "title": "Calmant",
+  "file": "Calmant.mp3",
+  "isrc": "USUAN1100859",
+  "feel": "Relaxed, Somber",
+  "bpm": "58",
+  "length": "00:03:24",
+  "inst": "Piano"
+ },
+ "broadcast": {
+  "title": "Eastminster",
+  "file": "Eastminster.mp3",
+  "isrc": "USUAN1100719",
+  "feel": "Calming, Relaxed",
+  "bpm": "51",
+  "length": "00:06:45",
+  "inst": "Plucked Strings, Synths"
+ }
+}

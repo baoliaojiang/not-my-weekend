@@ -32,7 +32,7 @@ import {
 import { buildAssistantSystem, assistantGreeting } from '../data/assistant.js';
 import { gameCenterHTML, g2048HTML, bind2048, mineHTML, bindMine } from './mintgames.js';
 import { dialAppHTML, bindDial, dialPersonas } from './mintdial.js';
-import { emojiHTML } from './emoji.js';
+import { emojiHTML, EMOJI_ALL } from './emoji.js';
 import { describeTrust, describePressure, STANCE_TEXT } from '../core/state.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -593,7 +593,10 @@ export class UI {
       ? `<span class="wx-av" style="background-image:url('${spr}')"></span>`
       : `<span class="wx-av wx-av-t">${escapeHtml((me ? '我' : m.from || '·').slice(0, 1))}</span>`;
     const th = this._phoneThread ? THREADS[this._phoneThread] : null;
-    const bub = `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
+    // 表情包是一条独立的图消息，不套气泡（正文 emoji 才跟着字走）
+    const bub = m.sticker
+      ? `<div class="wx-sticker" role="img" aria-label="表情">${emojiHTML(m.text)}</div>`
+      : `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
     el.className = 'wx-row' + (me ? ' me' : '');
     el.innerHTML = me
       ? bub + av
@@ -1236,7 +1239,9 @@ export class UI {
         // 微信里连续同一个人发消息，昵称只在第一条上出现
         const showNick = !me && th && th.group && m.from !== prevFrom;
         prevFrom = me ? '__me__' : m.from;
-        const inner = `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
+        const inner = m.sticker
+          ? `<div class="wx-sticker" role="img" aria-label="表情">${emojiHTML(m.text)}</div>`
+          : `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
         const av = me
           ? avatarOf('我', null)
           : avatarOf(m.from, m.spriteOf || null);
@@ -1260,10 +1265,11 @@ export class UI {
       </div>
       <div class="wx-body${isList ? ' is-list' : ''}" id="phoneBody">${bodyHTML}</div>
       ${isList ? '' : `<div class="wx-inputbar">
-        <span class="wx-ico">☺</span>
+        <button class="wx-ico wx-emoji-btn" id="wxEmojiBtn" type="button" aria-label="表情" title="表情">☺</button>
         <span class="wx-input">发送消息…</span>
         <span class="wx-ico">＋</span>
-      </div>`}
+      </div>
+      <div class="wx-emoji-sheet" id="wxEmojiSheet" hidden></div>`}
     </div>`;
 
     /* 只有一个"看看手机"的节点（不是等玩家回复）时，给一个明确的收尾口：
@@ -1296,6 +1302,43 @@ export class UI {
       // 列表页的返回键回手机桌面，会话页的返回键回列表
       this._renderPhone(isList ? 'home' : 'list', null);
     });
+
+    /* 表情面板：只在会话页出现。选一张就作为「贴纸」单独发出去——
+       和正文里跟字走的 emoji 是一套图，但形态不同：这里不套气泡。 */
+    const emoBtn = this.el.panelBody.querySelector('#wxEmojiBtn');
+    const emoSheet = this.el.panelBody.querySelector('#wxEmojiSheet');
+    if (emoBtn && emoSheet) {
+      emoSheet.innerHTML = EMOJI_ALL
+        .map((c) => `<button class="wx-emoji-item" type="button" data-emo="${c}" aria-label="${c}">${emojiHTML(c)}</button>`)
+        .join('');
+      emoBtn.addEventListener('click', () => {
+        this.audio.sfx('page');
+        emoSheet.hidden = !emoSheet.hidden;
+        if (!emoSheet.hidden) {
+          emoSheet.scrollIntoView({ block: 'end' });
+          const b = $('#phoneBody');
+          if (b) b.scrollTop = b.scrollHeight;
+        }
+      });
+      emoSheet.querySelectorAll('[data-emo]').forEach((b) => {
+        b.addEventListener('click', () => {
+          const ch = b.dataset.emo;
+          const msg = {
+            thread,
+            from: '',
+            text: ch,
+            me: true,
+            sticker: true,
+            day: this.state.dayLabel,
+            time: ''
+          };
+          this.state.chats.push(msg);
+          this.audio.sfx('select');
+          emoSheet.hidden = true;
+          this.appendChatMessage(msg);
+        });
+      });
+    }
 
     if (reply) {
       // 首次进入也留一点时间让人看到最后一条消息再出选项
@@ -2981,7 +3024,7 @@ export class UI {
 
     const head = st.hasSave
       ? `<button class="cont-resume" id="contResume">
-           <span class="cr-ico"><img src="assets/icons/hyperos/continue.png" alt="" loading="lazy" /></span>
+           <span class="cr-ico"><img src="assets/icons/hyperos/continue.webp" alt="" loading="lazy" /></span>
            <span class="cr-txt">
              <b>回到上次的位置</b>
              <i>${escapeHtml(st.resumeLabel || '上次进度')}</i>
@@ -3490,25 +3533,61 @@ export class UI {
 
   /* ================= 关于 / 素材说明 ================= */
   openAbout() {
+    const repo = (CONFIG.update && CONFIG.update.repo) || 'baoliaojiang/not-my-weekend';
+    const home = `https://github.com/${repo.split('/')[0]}`;
+    const bili = 'https://space.bilibili.com/525298385';
     this.openPanel({
       title: '关于本作',
       body: `
         <div class="about-head">
-          <img class="about-logo" src="assets/icons/hyperos/play.png" alt="" loading="lazy" />
+          <img class="about-logo" src="assets/icons/hyperos/play.webp" alt="" loading="lazy" />
           <div>
             <p class="about-title"><strong>《不属于我的周末》</strong></p>
             <p class="about-sub">关于我的学校周末要上课这件事</p>
           </div>
         </div>
         <p>版本 ${CONFIG.version}</p>
+
+        <div class="about-links" data-home="${home}" data-bili="${bili}">
+          <button class="about-link" type="button" data-open="bili">
+            <span class="about-link-k">Bilibili</span>
+            <span class="about-link-v">爆料酱 · 525298385</span>
+          </button>
+          <button class="about-link" type="button" data-open="home">
+            <span class="about-link-k">GitHub</span>
+            <span class="about-link-v">${repo.split('/')[0]}</span>
+          </button>
+        </div>
+
         <p><strong>界面</strong><br>
         图标取自 <strong>HyperOS 4</strong> 的默认图标集，卡片列表与深色渐变的排布参考了那套系统的视觉语言。
         这只是取了一套现成的图标素材，本作并不绑定任何手机系统，桌面端、网页端与移动端都可以运行。</p>
+
+        <p><strong>音乐</strong><br>
+        场景配乐来自 <strong>Kevin MacLeod</strong>（incompetech.com），
+        以 <strong>CC BY 4.0</strong> 授权使用，可商用，需署名；本作按授权在曲目清单里逐首标注了原曲名。
+        标题曲为 AI 音乐模型生成。全部曲目均经过统一响度与循环点处理，未改动原曲编曲。</p>
+
         <p>本作为 Demo 版本，仅供个人学习与技术交流，不用于任何商业用途，亦不对外发售。本作的学校、人物、组织、地名与事件均为虚构，与现实无关。游戏流程不构成法律意见。</p>
 
         <p><strong>关于跳过</strong><br>
         跳过只推进对话与叙事节点；遇到选项、调查、聊天回复时一定会停下，不会替你做选择。</p>
       `
+    });
+
+    /* 一键跳主页：网页里开新标签，Electron 交给系统浏览器，安卓交给 ZBApp */
+    const open = (url) => {
+      try {
+        if (window.ZBApp && typeof window.ZBApp.openUrl === 'function') window.ZBApp.openUrl(url);
+        else if (window.zbShell && typeof window.zbShell.openExternal === 'function') window.zbShell.openExternal(url);
+        else window.open(url, '_blank', 'noopener');
+      } catch (e) { /* 打不开就算了，别把面板搞崩 */ }
+    };
+    this.el.panelBody.querySelectorAll('[data-open]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const wrap = b.closest('.about-links');
+        open(b.dataset.open === 'bili' ? wrap.dataset.bili : wrap.dataset.home);
+      });
     });
   }
 
