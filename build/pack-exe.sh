@@ -13,7 +13,8 @@ set -euo pipefail
 ROOT="D:/workbuddy/2026-10-23-16-33-10"
 OUT="$ROOT/build/out"
 NAME="不属于我的周末"
-VER="0.5.3"
+VER="$(grep -oE "version: *'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'" "$ROOT/scripts/config/game.js" | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")"
+[ -n "$VER" ] || VER="0.0.0.0"
 CLEAN="$OUT/exe/$NAME"
 ZIP="$OUT/$NAME-v$VER-win.zip"
 

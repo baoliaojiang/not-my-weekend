@@ -37,6 +37,20 @@ args.forEach((a, i) => { if (a === '--notes' && args[i + 1]) notes.push(args[i +
 // 版本单一真源
 const cfg = await import(pathToFileURL(join(ROOT, 'scripts/config/game.js')).href);
 const version = cfg.CONFIG.version;
+
+/* 没手给 --notes 时，直接用游戏内更新日志这一版的内容：
+   发布页和游戏里必须是同一套说法，否则玩家在两边看到的东西对不上。 */
+if (!notes.length) {
+  try {
+    const cl = await import(pathToFileURL(join(ROOT, 'scripts/data/changelog.js')).href);
+    const top = (cl.CHANGELOG || [])[0];
+    if (top) {
+      (top.sections || []).forEach(sec => {
+        (sec.items || []).forEach(it => notes.push(`${sec.title}：${it.text}`));
+      });
+    }
+  } catch (e) { /* 读不到就不写 notes，后面有兜底 */ }
+}
 const shell = opt('shell', version);
 
 if (!existsSync(join(WWW, 'index.html'))) {

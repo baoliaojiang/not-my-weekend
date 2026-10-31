@@ -1,117 +1,328 @@
 (() => {
-  // scripts/config/game.js
-  var CONFIG = {
-    version: "0.6.2.2",
-    // 存储键（改这里不会影响旧存档兼容性，但会各存一份）
-    keys: {
-      save: "zbnx.save",
-      settings: "zbnx.settings",
-      read: "zbnx.read",
-      // 跨存档的进度记录：哪些章打完过、哪些支线通过、支线最好结果
-      progress: "zbnx.progress"
-    },
-    // 手动存档位数量（不含自动存档）
-    slots: 4,
-    // 每日行动点上限（第一章；后续章节可各自覆盖）
-    actionPoints: 4,
-    // 每字显示间隔（毫秒）
-    textSpeeds: [
-      { id: "slow", label: "慢", ms: 62 },
-      { id: "normal", label: "标准", ms: 30 },
-      { id: "fast", label: "快", ms: 14 },
-      { id: "instant", label: "瞬显", ms: 0 }
-    ],
-    // 自动播放：整句显示完后的停顿（毫秒）
-    autoDelay: 1250,
-    // 跳过模式下每步的最小间隔（毫秒），保证特效/状态更新不被跳过
-    skipInterval: 16,
-    // 默认设置
-    defaultSettings: {
-      textSpeed: "normal",
-      autoSpeed: 1,
-      bgmVolume: 0.55,
-      sfxVolume: 0.5,
-      bgmOn: true,
-      skipUnreadAsk: true,
-      showPlaceTag: true,
-      // 对话字号倍率：0.9 小 / 1 标准 / 1.12 大 / 1.25 特大。
-      // 乘在 --dlg-size 上，只影响对话正文，不改界面其它字号。
-      dlgScale: 1,
-      // 界面动效：full 正常 / reduced 只保留必要的淡入淡出。
-      // 给晕动症玩家与低端机用，连立绘的位移、面板的滑入一起关掉。
-      motion: "full",
-      // 黑暗模式：弹窗、设置、历史这些面板用深色底；关掉回到纸感浅色。
-      // 手机模拟器与政务平台是拟真界面，两种模式下都保持浅色。
-      nightMode: true,
-      // 通透模式（Beta）：全局界面改成半透明 + 背板模糊的玻璃质感。
-      // 默认关闭——它靠 backdrop-filter 实现，低端机和部分 WebView 会掉帧，
-      // 文字对比度也会比实色底低一档，所以只作为可选效果提供。
-      glassMode: false,
-      // 画面方向：auto 跟随设备 / portrait 强制竖屏排版 / landscape 强制横屏排版
-      // 只影响排版（立绘大小与位置、对话框形态），不改设备方向锁
-      screenMode: "auto",
-      // 主角性别：'male' 男主 / 'female' 女主。只影响主角立绘与称谓，不影响剧情走向。
-      // 首次开始游戏时由玩家选一次，之后可以在设置里随时切换。
-      protagonist: "male",
-      // 主角说话时是否展示自己的立绘。第一人称也展示（《重写3》里就是这么演的），
-      // 但有人会嫌"看着自己的后脑勺"出戏，所以给一个开关，默认开启。
-      showPlayerSprite: true,
-      // 可选 AI 接口：只用于生成政务/教育局答复的措辞。
-      // 不填也能玩，所有答复都有内置文案；失败自动回退。
-      ai: {
-        on: false,
-        baseUrl: "https://api.deepseek.com/v1",
-        model: "deepseek-chat",
-        apiKey: "",
-        temperature: 0.9,
-        maxTokens: 1e3,
-        timeout: 8e3,
-        systemPrompt: "",
-        // 薄荷聊天的自定义提示词：追加在薄荷人设与知识库之后，只影响 AI 助手对话
-        chatPrompt: "",
-        // AI 助手的搜索模式：打开后先把问题交给搜索接口（若填了地址），
-        // 把结果拼进提示词再回答。不填地址时只是提示模型自己去联网。
-        searchMode: false,
-        searchApi: "",
-        searchKey: ""
-      }
-    },
-    /* ---------------------------------------------------------
-         热更新配置
-         ---------------------------------------------------------
-         只更新"网页资源"（剧情、立绘、背景、音乐、界面）。
-         APK 的 Java 外壳与 EXE 的 Electron 运行时不在热更范围内——
-         改动它们必须让玩家重新装一次客户端，所以 version.json 里
-         单独给出 shell / shellMin 两个版本号：
-           shell      = 客户端外壳版本（当前安装包是哪个）
-           shellMin   = 低于它就必须更新客户端，否则网页资源可能用不上
-         网页资源与外壳是两条独立的版本线，代码里用 content 区分。
-    
-         baseUrl 留空时按当前站点相对路径取 ./version.json：
-           · GitHub Pages 部署 → 自动指向 Pages 域名
-           · APK / EXE 的本地资源 → 需要填成远端地址（下面给的默认值）
-         */
-    update: {
-      enabled: true,
-      // 仓库全名，用于署名页与发布页跳转
-      repo: "baoliaojiang/not-my-weekend",
-      /* 三个下载源按顺序试，谁先回来用谁：
-         1 jsDelivr 走公共 CDN，国内多数网络能通
-         2 GitHub Pages 是官方静态托管
-         3 raw.githubusercontent.com 海外直连最稳，国内可能连不上
-         任何一个源都只用来取 version.json 和 www-x.y.z.zip。 */
-      baseUrls: [
-        "https://cdn.jsdelivr.net/gh/baoliaojiang/not-my-weekend@main/dist/",
-        "https://baoliaojiang.github.io/not-my-weekend/dist/",
-        "https://raw.githubusercontent.com/baoliaojiang/not-my-weekend/main/dist/"
-      ],
-      // 包体更新时按钮跳转的地址（Release 页面）
-      releaseUrl: "https://github.com/baoliaojiang/not-my-weekend/releases/latest",
-      timeoutMs: 6e3,
-      retries: 2
-    },
-    chapterOrder: ["ch0", "ch1", "ch2", "ch3", "ch4", "ch5", "ch6"]
+  var __defProp = Object.defineProperty;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __esm = (fn, res) => function __init() {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
   };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+
+  // scripts/config/game.js
+  var CONFIG;
+  var init_game = __esm({
+    "scripts/config/game.js"() {
+      CONFIG = {
+        version: "0.6.4.0",
+        // 存储键（改这里不会影响旧存档兼容性，但会各存一份）
+        keys: {
+          save: "zbnx.save",
+          settings: "zbnx.settings",
+          read: "zbnx.read",
+          // 跨存档的进度记录：哪些章打完过、哪些支线通过、支线最好结果
+          progress: "zbnx.progress"
+        },
+        // 手动存档位数量（不含自动存档）
+        slots: 4,
+        // 每日行动点上限（第一章；后续章节可各自覆盖）
+        actionPoints: 4,
+        // 每字显示间隔（毫秒）
+        textSpeeds: [
+          { id: "slow", label: "慢", ms: 62 },
+          { id: "normal", label: "标准", ms: 30 },
+          { id: "fast", label: "快", ms: 14 },
+          { id: "instant", label: "瞬显", ms: 0 }
+        ],
+        // 自动播放：整句显示完后的停顿（毫秒）
+        autoDelay: 1250,
+        // 跳过模式下每步的最小间隔（毫秒），保证特效/状态更新不被跳过
+        skipInterval: 16,
+        // 默认设置
+        defaultSettings: {
+          textSpeed: "normal",
+          autoSpeed: 1,
+          bgmVolume: 0.55,
+          sfxVolume: 0.5,
+          bgmOn: true,
+          skipUnreadAsk: true,
+          showPlaceTag: true,
+          // 对话字号倍率：0.9 小 / 1 标准 / 1.12 大 / 1.25 特大。
+          // 乘在 --dlg-size 上，只影响对话正文，不改界面其它字号。
+          dlgScale: 1,
+          // 界面动效：full 正常 / reduced 只保留必要的淡入淡出。
+          // 给晕动症玩家与低端机用，连立绘的位移、面板的滑入一起关掉。
+          motion: "full",
+          // 黑暗模式：弹窗、设置、历史这些面板用深色底；关掉回到纸感浅色。
+          // 手机模拟器与政务平台是拟真界面，两种模式下都保持浅色。
+          nightMode: true,
+          // 通透模式（Beta）：全局界面改成半透明 + 背板模糊的玻璃质感。
+          // 默认关闭——它靠 backdrop-filter 实现，低端机和部分 WebView 会掉帧，
+          // 文字对比度也会比实色底低一档，所以只作为可选效果提供。
+          glassMode: false,
+          // 画面方向：auto 跟随设备 / portrait 强制竖屏排版 / landscape 强制横屏排版
+          // 只影响排版（立绘大小与位置、对话框形态），不改设备方向锁
+          screenMode: "auto",
+          // 主角性别：'male' 男主 / 'female' 女主。只影响主角立绘与称谓，不影响剧情走向。
+          // 首次开始游戏时由玩家选一次，之后可以在设置里随时切换。
+          protagonist: "male",
+          // 主角说话时是否展示自己的立绘。第一人称也展示（《重写3》里就是这么演的），
+          // 但有人会嫌"看着自己的后脑勺"出戏，所以给一个开关，默认开启。
+          showPlayerSprite: true,
+          // 可选 AI 接口：只用于生成政务/教育局答复的措辞。
+          // 不填也能玩，所有答复都有内置文案；失败自动回退。
+          ai: {
+            on: false,
+            baseUrl: "https://api.deepseek.com/v1",
+            model: "deepseek-chat",
+            apiKey: "",
+            temperature: 0.9,
+            maxTokens: 1e3,
+            timeout: 8e3,
+            systemPrompt: "",
+            // 薄荷聊天的自定义提示词：追加在薄荷人设与知识库之后，只影响 AI 助手对话
+            chatPrompt: "",
+            // AI 助手的搜索模式：打开后先把问题交给搜索接口（若填了地址），
+            // 把结果拼进提示词再回答。不填地址时只是提示模型自己去联网。
+            searchMode: false,
+            searchApi: "",
+            searchKey: ""
+          }
+        },
+        /* ---------------------------------------------------------
+             热更新配置
+             ---------------------------------------------------------
+             只更新"网页资源"（剧情、立绘、背景、音乐、界面）。
+             APK 的 Java 外壳与 EXE 的 Electron 运行时不在热更范围内——
+             改动它们必须让玩家重新装一次客户端，所以 version.json 里
+             单独给出 shell / shellMin 两个版本号：
+               shell      = 客户端外壳版本（当前安装包是哪个）
+               shellMin   = 低于它就必须更新客户端，否则网页资源可能用不上
+             网页资源与外壳是两条独立的版本线，代码里用 content 区分。
+        
+             baseUrl 留空时按当前站点相对路径取 ./version.json：
+               · GitHub Pages 部署 → 自动指向 Pages 域名
+               · APK / EXE 的本地资源 → 需要填成远端地址（下面给的默认值）
+             */
+        update: {
+          enabled: true,
+          // 仓库全名，用于署名页与发布页跳转
+          repo: "baoliaojiang/not-my-weekend",
+          /* 三个下载源按顺序试，谁先回来用谁：
+             1 jsDelivr 走公共 CDN，国内多数网络能通
+             2 GitHub Pages 是官方静态托管
+             3 raw.githubusercontent.com 海外直连最稳，国内可能连不上
+             任何一个源都只用来取 version.json 和 www-x.y.z.zip。 */
+          baseUrls: [
+            "https://cdn.jsdelivr.net/gh/baoliaojiang/not-my-weekend@main/dist/",
+            "https://baoliaojiang.github.io/not-my-weekend/",
+            "https://raw.githubusercontent.com/baoliaojiang/not-my-weekend/main/dist/"
+          ],
+          // 包体更新时按钮跳转的地址（Release 页面）
+          releaseUrl: "https://github.com/baoliaojiang/not-my-weekend/releases/latest",
+          timeoutMs: 3500,
+          // 三个源现在是并发竞速，retries 只在下载资源包时用，检查版本不再重试
+          retries: 1
+        },
+        chapterOrder: ["ch0", "ch1", "ch2", "ch3", "ch4", "ch5", "ch6"]
+      };
+    }
+  });
+
+  // scripts/core/update.js
+  var update_exports = {};
+  __export(update_exports, {
+    applyContentUpdate: () => applyContentUpdate,
+    checkUpdate: () => checkUpdate,
+    compareVersion: () => compareVersion,
+    markChecked: () => markChecked,
+    parseVersion: () => parseVersion,
+    shouldAutoCheck: () => shouldAutoCheck
+  });
+  function parseVersion(v) {
+    return String(v || "").trim().replace(/^v/i, "").split(/[.\-+]/).map((x) => {
+      const n = parseInt(x, 10);
+      return Number.isFinite(n) ? n : 0;
+    });
+  }
+  function compareVersion(a, b) {
+    const x = parseVersion(a);
+    const y = parseVersion(b);
+    const len = Math.max(x.length, y.length);
+    for (let i = 0; i < len; i++) {
+      const d = (x[i] || 0) - (y[i] || 0);
+      if (d) return d;
+    }
+    return 0;
+  }
+  function baseUrls() {
+    const u = CONFIG.update || {};
+    if (Array.isArray(u.baseUrls) && u.baseUrls.length) {
+      return u.baseUrls.map((x) => String(x).endsWith("/") ? x : x + "/");
+    }
+    if (!u.baseUrl) return ["./"];
+    return [String(u.baseUrl).endsWith("/") ? u.baseUrl : u.baseUrl + "/"];
+  }
+  function shellVersion() {
+    if (window.ZBUpdate && typeof window.ZBUpdate.shellVersion === "function") {
+      try {
+        return String(window.ZBUpdate.shellVersion());
+      } catch (e) {
+      }
+    }
+    if (window.zbUpdate && window.zbUpdate.shellVersion) {
+      return String(window.zbUpdate.shellVersion);
+    }
+    return CONFIG.version;
+  }
+  async function fetchJson(url, timeoutMs) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal, cache: "no-store" });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  function raceVersion(bases, timeoutMs) {
+    if (!bases.length) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      let settled = false;
+      let pending = bases.length;
+      const done = (val) => {
+        if (!settled) {
+          settled = true;
+          resolve(val);
+        }
+      };
+      const hard = setTimeout(() => done(null), timeoutMs + 500);
+      for (const base of bases) {
+        fetchJson(base + "version.json", timeoutMs).then((got) => {
+          pending--;
+          if (settled) return;
+          if (got && got.content) {
+            clearTimeout(hard);
+            done({ data: got, base });
+            return;
+          }
+          if (pending === 0) {
+            clearTimeout(hard);
+            done(null);
+          }
+        }).catch(() => {
+          pending--;
+          if (!settled && pending === 0) {
+            clearTimeout(hard);
+            done(null);
+          }
+        });
+      }
+    });
+  }
+  async function checkUpdate() {
+    if (!CONFIG.update || CONFIG.update.enabled === false) return { ok: false, kind: "none" };
+    const bases = baseUrls();
+    const picked = await raceVersion(bases, CONFIG.update.timeoutMs || 4e3);
+    if (!picked) {
+      markChecked();
+      return { ok: false, kind: "none" };
+    }
+    const data = picked.data;
+    const usedBase = picked.base;
+    const curContent = CONFIG.version;
+    const curShell = shellVersion();
+    const shellMin = data.shellMin || data.shell || "0.0.0";
+    const contentNewer = compareVersion(data.content, curContent) > 0;
+    const shellTooOld = compareVersion(curShell, shellMin) < 0;
+    const kind = contentNewer && shellTooOld ? "both" : contentNewer ? "content" : shellTooOld ? "shell" : "none";
+    let absWww = data.www || "";
+    try {
+      absWww = new URL(data.www, usedBase).href;
+    } catch (e) {
+    }
+    data.www = absWww;
+    data._base = usedBase;
+    return {
+      ok: true,
+      kind,
+      remote: data,
+      content: data.content,
+      shell: data.shell,
+      shellMin,
+      notes: data.notes || "",
+      curContent,
+      curShell
+    };
+  }
+  async function applyContentUpdate(remote) {
+    if (window.ZBUpdate && typeof window.ZBUpdate.download === "function") {
+      try {
+        return await new Promise((resolve) => {
+          window.__ZB_update_done = (json) => {
+            delete window.__ZB_update_done;
+            try {
+              resolve(JSON.parse(json));
+            } catch (e) {
+              resolve({ ok: false });
+            }
+          };
+          window.ZBUpdate.download(JSON.stringify(remote));
+          setTimeout(() => {
+            if (window.__ZB_update_done) {
+              delete window.__ZB_update_done;
+              resolve({ ok: false, reason: "timeout" });
+            }
+          }, 9e4);
+        });
+      } catch (e) {
+        return { ok: false, reason: "bridge-error" };
+      }
+    }
+    if (window.zbUpdate && typeof window.zbUpdate.download === "function") {
+      try {
+        return await window.zbUpdate.download(remote);
+      } catch (e) {
+        return { ok: false };
+      }
+    }
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set("v", String(Date.now()));
+      setTimeout(() => location.replace(u.href), 240);
+      return { ok: true, reason: "web-reload" };
+    } catch (e) {
+      return { ok: false, reason: "no-shell" };
+    }
+  }
+  function shouldAutoCheck() {
+    try {
+      const last = Number(localStorage.getItem(CACHE_KEY) || 0);
+      return Date.now() - last > CHECK_EVERY_MS;
+    } catch (e) {
+      return true;
+    }
+  }
+  function markChecked() {
+    try {
+      localStorage.setItem(CACHE_KEY, String(Date.now()));
+    } catch (e) {
+    }
+  }
+  var CACHE_KEY, CHECK_EVERY_MS;
+  var init_update = __esm({
+    "scripts/core/update.js"() {
+      init_game();
+      CACHE_KEY = "zb_update_last_check";
+      CHECK_EVERY_MS = 6 * 60 * 60 * 1e3;
+    }
+  });
+
+  // scripts/main.js
+  init_game();
 
   // scripts/config/assets.js
   var BACKGROUNDS = {
@@ -183,7 +394,17 @@
     sunset: { src: "assets/music/sunset.mp3", label: "黄昏" },
     night_street: { src: "assets/music/night_street.mp3", label: "夜街" },
     hope: { src: "assets/music/hope.mp3", label: "往上走" },
-    tense: { src: "assets/music/tense.mp3", label: "绷紧" }
+    tense: { src: "assets/music/tense.mp3", label: "绷紧" },
+    // —— 第三批：按场景补到 23 首，剧情里靠 bg 自动选曲
+    classroom: { src: "assets/music/classroom.mp3", label: "教室" },
+    morning: { src: "assets/music/morning.mp3", label: "清晨" },
+    canteen: { src: "assets/music/canteen.mp3", label: "食堂" },
+    playground: { src: "assets/music/playground.mp3", label: "操场" },
+    exam: { src: "assets/music/exam.mp3", label: "考试" },
+    broadcast: { src: "assets/music/broadcast.mp3", label: "广播" },
+    goodbye: { src: "assets/music/goodbye.mp3", label: "告别" },
+    memory: { src: "assets/music/memory.mp3", label: "回忆" },
+    home: { src: "assets/music/home.mp3", label: "家" }
   };
   var SFX = {
     click: { src: "assets/sfx/click.wav" },
@@ -209,6 +430,10 @@
     const item = group[id];
     return item ? item.src : null;
   }
+  function faceUrl(id) {
+    const src = assetUrl("sprite", id);
+    return src ? src.replace("/characters/", "/faces/") : null;
+  }
   function assetLabel(kind, id) {
     const group = REGISTRY[kind];
     const item = group && group[id];
@@ -216,6 +441,7 @@
   }
 
   // scripts/core/state.js
+  init_game();
   function createState() {
     return {
       chapterId: "ch0",
@@ -326,6 +552,7 @@
   }
 
   // scripts/core/store.js
+  init_game();
   var memory = /* @__PURE__ */ new Map();
   var storageOK = true;
   var nativeStore = typeof window !== "undefined" && window.ZBStore ? window.ZBStore : null;
@@ -985,14 +1212,42 @@
       }
       return "center";
     }
-    /** 把槽位写回 DOM。只改 class，不做位移动画，避免"跳来跳去"。 */
+    /** 把槽位写回 DOM。只改 class，不做位移动画，避免"跳来跳去"。
+    
+          排版规则按"台上现在有几个人"决定，而不是照抄剧情里写的 pos：
+            1 个人 → 居中（单人还站角落，画面重心会歪，看着像被挤出画外）
+            2 个人 → 左右
+            3 个人 → 左中右
+          具体谁在左谁在右，用 slots 里记录的原始倾向排序，所以同一个角色
+          在人多的时候位置是稳定的，不会来回换。 */
     applySlots() {
+      const alive = [];
       this.sprites.forEach((el, id) => {
-        if (!el || !el.isConnected) return;
-        const p = this.slots.get(id) || "center";
+        if (el && el.isConnected) alive.push([id, el]);
+      });
+      const n = alive.length;
+      if (!n) return;
+      const rank = { left: 0, center: 1, right: 2 };
+      alive.sort((a, b) => (rank[this.slots.get(a[0]) || "center"] ?? 1) - (rank[this.slots.get(b[0]) || "center"] ?? 1));
+      const layout = n === 1 ? ["center"] : n === 2 ? ["left", "right"] : ["left", "center", "right"];
+      if (this.spriteLayer) this.spriteLayer.dataset.count = String(Math.min(n, 4));
+      alive.forEach(([id, el], idx) => {
+        if (n > 3) {
+          if (!el.classList.contains("pos-multi")) {
+            el.classList.remove("pos-left", "pos-right", "pos-center");
+            el.classList.add("pos-multi");
+          }
+          const pct = (idx + 0.5) / n * 94 + 3;
+          el.style.left = pct.toFixed(3) + "%";
+          el.style.height = "";
+          return;
+        }
+        el.style.left = "";
+        el.style.height = "";
+        const p = layout[idx];
         const cls = `pos-${p}`;
         if (el.classList.contains(cls)) return;
-        el.classList.remove("pos-left", "pos-right", "pos-center");
+        el.classList.remove("pos-left", "pos-right", "pos-center", "pos-multi");
         el.classList.add(cls);
       });
     }
@@ -1057,144 +1312,8 @@
     }
   };
 
-  // scripts/core/update.js
-  var CACHE_KEY = "zb_update_last_check";
-  var CHECK_EVERY_MS = 6 * 60 * 60 * 1e3;
-  function parseVersion(v) {
-    return String(v || "").trim().replace(/^v/i, "").split(/[.\-+]/).map((x) => {
-      const n = parseInt(x, 10);
-      return Number.isFinite(n) ? n : 0;
-    });
-  }
-  function compareVersion(a, b) {
-    const x = parseVersion(a);
-    const y = parseVersion(b);
-    const len = Math.max(x.length, y.length);
-    for (let i = 0; i < len; i++) {
-      const d = (x[i] || 0) - (y[i] || 0);
-      if (d) return d;
-    }
-    return 0;
-  }
-  function baseUrls() {
-    const u = CONFIG.update || {};
-    if (Array.isArray(u.baseUrls) && u.baseUrls.length) {
-      return u.baseUrls.map((x) => String(x).endsWith("/") ? x : x + "/");
-    }
-    if (!u.baseUrl) return ["./"];
-    return [String(u.baseUrl).endsWith("/") ? u.baseUrl : u.baseUrl + "/"];
-  }
-  function shellVersion() {
-    if (window.ZBUpdate && typeof window.ZBUpdate.shellVersion === "function") {
-      try {
-        return String(window.ZBUpdate.shellVersion());
-      } catch (e) {
-      }
-    }
-    if (window.zbUpdate && window.zbUpdate.shellVersion) {
-      return String(window.zbUpdate.shellVersion);
-    }
-    return CONFIG.version;
-  }
-  async function fetchJson(url, timeoutMs) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, { signal: ctrl.signal, cache: "no-store" });
-      if (!res.ok) return null;
-      return await res.json();
-    } catch (e) {
-      return null;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-  async function checkUpdate() {
-    if (!CONFIG.update || CONFIG.update.enabled === false) return { ok: false, kind: "none" };
-    const bases = baseUrls();
-    let data = null;
-    let usedBase = bases[0];
-    for (const base of bases) {
-      const got = await fetchJson(base + "version.json", CONFIG.update.timeoutMs || 6e3);
-      if (got && got.content) {
-        data = got;
-        usedBase = base;
-        break;
-      }
-    }
-    if (!data) return { ok: false, kind: "none" };
-    const curContent = CONFIG.version;
-    const curShell = shellVersion();
-    const shellMin = data.shellMin || data.shell || "0.0.0";
-    const contentNewer = compareVersion(data.content, curContent) > 0;
-    const shellTooOld = compareVersion(curShell, shellMin) < 0;
-    const kind = contentNewer && shellTooOld ? "both" : contentNewer ? "content" : shellTooOld ? "shell" : "none";
-    let absWww = data.www || "";
-    try {
-      absWww = new URL(data.www, usedBase).href;
-    } catch (e) {
-    }
-    data.www = absWww;
-    data._base = usedBase;
-    return {
-      ok: true,
-      kind,
-      remote: data,
-      content: data.content,
-      shell: data.shell,
-      shellMin,
-      notes: data.notes || "",
-      curContent,
-      curShell
-    };
-  }
-  async function applyContentUpdate(remote) {
-    if (window.ZBUpdate && typeof window.ZBUpdate.download === "function") {
-      try {
-        return await new Promise((resolve) => {
-          window.__ZB_update_done = (json) => {
-            delete window.__ZB_update_done;
-            try {
-              resolve(JSON.parse(json));
-            } catch (e) {
-              resolve({ ok: false });
-            }
-          };
-          window.ZBUpdate.download(JSON.stringify(remote));
-          setTimeout(() => {
-            if (window.__ZB_update_done) {
-              delete window.__ZB_update_done;
-              resolve({ ok: false, reason: "timeout" });
-            }
-          }, 9e4);
-        });
-      } catch (e) {
-        return { ok: false, reason: "bridge-error" };
-      }
-    }
-    if (window.zbUpdate && typeof window.zbUpdate.download === "function") {
-      try {
-        return await window.zbUpdate.download(remote);
-      } catch (e) {
-        return { ok: false };
-      }
-    }
-    return { ok: false, reason: "no-shell" };
-  }
-  function shouldAutoCheck() {
-    try {
-      const last = Number(localStorage.getItem(CACHE_KEY) || 0);
-      return Date.now() - last > CHECK_EVERY_MS;
-    } catch (e) {
-      return true;
-    }
-  }
-  function markChecked() {
-    try {
-      localStorage.setItem(CACHE_KEY, String(Date.now()));
-    } catch (e) {
-    }
-  }
+  // scripts/main.js
+  init_update();
 
   // scripts/core/log.js
   var MAX = 400;
@@ -1343,6 +1462,7 @@
   installLog();
 
   // scripts/ui/boot.js
+  init_game();
   var BOOT_SCREENS = [
     {
       key: "blank",
@@ -1526,10 +1646,12 @@
       clear();
       root2.classList.add("is-out");
       setTimeout(() => {
+        onDone && onDone();
+      }, 240);
+      setTimeout(() => {
         root2.hidden = true;
         root2.classList.remove("is-out");
-        onDone && onDone();
-      }, 620);
+      }, 640);
     };
     async function show(n) {
       if (finished) return;
@@ -1557,7 +1679,7 @@
       if (verEl) verEl.textContent = "v" + version;
       const gitEl = stage2.querySelector("#bootGit");
       if (gitEl) gitEl.textContent = github || "";
-      if (skipBtn) skipBtn.hidden = false;
+      if (skipBtn) skipBtn.hidden = sc.key === "update" || sc.key === "shader";
       await new Promise((r) => setTimeout(r, n === 0 ? 0 : 450));
       if (finished) return;
       try {
@@ -1678,7 +1800,7 @@
         clear();
         timer = setTimeout(() => show(i + 1), 900);
       };
-      const guard = setTimeout(() => bail("检查超时，先离线游玩"), 9e3);
+      const guard = setTimeout(() => bail("没联网，先离线游玩"), 6e3);
       if (ubar) ubar.style.width = "30%";
       if (meta) meta.textContent = "当前版本 v" + version;
       let msg = "资源已是最新";
@@ -1688,12 +1810,17 @@
           updateResult = await checkUpdate2();
           const k = updateResult && updateResult.kind;
           if (k === "content") {
+            if (done) return;
             clearTimeout(guard);
             done = true;
             showContentOffer();
             return;
           } else if (k === "both" || k === "shell") {
-            msg = "客户端需要更新，热更新无法覆盖这部分";
+            if (done) return;
+            clearTimeout(guard);
+            done = true;
+            showShellOffer(k);
+            return;
           }
         }
       } catch (e) {
@@ -1789,8 +1916,79 @@
         }
       });
     }
+    function showShellOffer(kind) {
+      const remote = updateResult && updateResult.remote || {};
+      const text = stage2.querySelector("#bootUpdText");
+      const bar2 = stage2.querySelector("#bootUpdBar");
+      const orb = stage2.querySelector("#bootOrb");
+      waiting = true;
+      if (bar2) bar2.style.width = "100%";
+      if (orb) orb.classList.add("is-done");
+      if (text) text.textContent = "这次要换安装包";
+      const notes = String(remote.notes || "").split("\n").map((x) => x.trim()).filter(Boolean);
+      const noteHtml = notes.length ? notes.map((x) => `<li>${x}</li>`).join("") : "<li>客户端程序有更新，热更新覆盖不到这一部分</li>";
+      const overlay = document.createElement("div");
+      overlay.className = "boot-modal";
+      overlay.innerHTML = `
+      <div class="boot-modal-card">
+        <p class="boot-modal-k">CLIENT UPDATE</p>
+        <h3 class="boot-modal-h">需要安装新版本</h3>
+        <p class="boot-modal-p">${kind === "both" ? "这次连客户端程序一起换了，网页热更新覆盖不到。" : "这次的改动在客户端程序里，必须换安装包。"}</p>
+        <ul class="boot-modal-list">${noteHtml}</ul>
+        <p class="boot-modal-meta">存档在本地，换安装包不会丢 · 也可以先继续玩旧版本</p>
+        <div class="boot-upd-actions">
+          <button class="boot-btn" id="shellLater" type="button">先继续玩</button>
+          <button class="boot-btn is-primary" id="shellGo" type="button">去下载</button>
+        </div>
+      </div>`;
+      root2.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add("on"));
+      const closeOverlay = () => {
+        overlay.classList.remove("on");
+        setTimeout(() => {
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        }, 320);
+      };
+      const later = overlay.querySelector("#shellLater");
+      const go = overlay.querySelector("#shellGo");
+      if (later) later.addEventListener("click", (e) => {
+        e.stopPropagation();
+        waiting = false;
+        closeOverlay();
+        if (text) text.textContent = "继续使用当前版本";
+        timer = setTimeout(() => show(i + 1), 520);
+      });
+      if (go) go.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const url = CONFIG.update && CONFIG.update.releaseUrl || "";
+        if (!url) return;
+        try {
+          const bridge = window.ZBApp || window.zbApp;
+          if (bridge && typeof bridge.openUrl === "function") {
+            bridge.openUrl(url);
+          } else if (window.zbShell && typeof window.zbShell.openExternal === "function") {
+            window.zbShell.openExternal(url);
+          } else window.open(url, "_blank", "noopener");
+        } catch (err) {
+          try {
+            window.open(url, "_blank", "noopener");
+          } catch (e2) {
+          }
+        }
+        if (text) text.textContent = "已跳转到下载页（没跳过去的话，去发布页手动下载）";
+      });
+    }
+    const MUST_STOP_KEY = "update";
     if (skipBtn) skipBtn.addEventListener("click", (e) => {
       e.stopPropagation();
+      const cur = BOOT_SCREENS[i];
+      if (cur && (cur.key === "update" || cur.key === "shader")) return;
+      const mustIdx = BOOT_SCREENS.findIndex((s) => s.key === MUST_STOP_KEY);
+      if (mustIdx > i) {
+        clear();
+        show(mustIdx);
+        return;
+      }
       finish();
     });
     root2.hidden = false;
@@ -1799,6 +1997,9 @@
       return updateResult;
     } };
   }
+
+  // scripts/ui/screens.js
+  init_game();
 
   // scripts/data/materials.js
   var MATERIAL_STATUS = {
@@ -3608,6 +3809,24 @@
       stateKeys: []
     }
   };
+  function chapterIndex(state2) {
+    const id = state2 && state2.chapterId || "ch0";
+    const n = parseInt(String(id).replace(/[^0-9]/g, ""), 10);
+    return Number.isFinite(n) ? n : 0;
+  }
+  function charNowLine(state2) {
+    const i = chapterIndex(state2);
+    if (i <= 0) return "还没开学。你只在群里见过这个名字。";
+    if (i <= 2) return "开学第一周，你们说过几次话，都还很客气。";
+    if (i <= 4) return "那一周之后，你们之间多了一点不能明说的东西。";
+    return "事情走到这一步，你们都知道有些话回不去了。";
+  }
+  function charNotes(c, state2) {
+    const list = c && c.notes || [];
+    const i = chapterIndex(state2);
+    const shown = i <= 1 ? 1 : i <= 3 ? 2 : list.length;
+    return list.slice(0, Math.max(0, shown));
+  }
 
   // scripts/data/chats.js
   var THREAD_KINDS = {
@@ -3633,6 +3852,162 @@
 
   // scripts/data/changelog.js
   var CHANGELOG = [
+    {
+      version: "v0.6.4.0",
+      date: "2026-11-01",
+      intro: "手机第一次像一台真的手机，跳过也不用再盲跳了。",
+      sections: [
+        {
+          title: "手机（MintOS 4）",
+          items: [
+            { type: "new", text: "设置、软件更新、关于手机、通讯录、备份改成了手机里的独立应用，不用先退出手机才能改东西。" },
+            { type: "new", text: "新增应用商店、相机、时钟、天气、音乐播放器、文件管理、游戏中心，桌面上的图标点进去都有内容。" },
+            { type: "new", text: "音乐播放器接管了背景音乐，切歌、暂停都直接生效，退出手机后照样在放。" },
+            { type: "new", text: "游戏中心里放了 2048 和扫雷，课间那几分钟有得打发，最高分存在本机。" },
+            { type: "opt", text: "界面配色跟随「深色模式」，关掉是暖白、打开是分层深灰，晚上看不刺眼。" },
+            { type: "opt", text: "状态栏换成 iOS 那种排布，信号、WiFi、电量一眼能看清。" }
+          ]
+        },
+        {
+          title: "剧情与操作",
+          items: [
+            { type: "new", text: "跳过前先给你看这一节讲了什么、谁在场，确认后直接落到下一个要你决定的地方，不用一路盲跳。" },
+            { type: "fix", text: "跳过时沿途拿到的材料、收到的消息照旧记账，不会因为跳过去就漏掉线索。" },
+            { type: "fix", text: "四个人同台时立绘不再被压小，宁可肩并肩也不缩，构图按原来的比例走。" },
+            { type: "fix", text: "横屏选主角性别时按钮点不到的问题修好了，矮屏也能滚到底。" }
+          ]
+        },
+        {
+          title: "薄荷",
+          items: [
+            { type: "new", text: "薄荷接入游戏进度数据，卡关时能直接看出你在哪一章、哪一句、开着哪个界面。" },
+            { type: "new", text: "手机里新增「电话」，能打 12345、剧情里认识的人，也能直接打给薄荷。" },
+            { type: "new", text: "电话没有填 Key 也能用，内置了几句回复，不会一拨过去就是沉默。" }
+          ]
+        },
+        {
+          title: "音乐与画面",
+          items: [
+            { type: "fix", text: "重编了全部 23 首配乐，修掉了旋律和和弦对不上的地方，听起来不再别扭。" },
+            { type: "fix", text: "低频不再轰隆：低音抬到该在的位置，整体响度压平，长时间戴着耳机也不累。" },
+            { type: "opt", text: "按场景重新配了一遍曲，进教室、上操场、进食堂听到的都不一样。" },
+            { type: "opt", text: "标题、栏目名这类大字换成圆润的字体，正文仍是原来的，长段落读着不费劲。" }
+          ]
+        },
+        {
+          title: "更新与安装",
+          items: [
+            { type: "fix", text: "查到要换安装包的更新时，会说明这次改了什么并给出去下载的入口，不再只是一句提示。" },
+            { type: "opt", text: "网页版的「立即更新」会直接换成新版本，不用自己手动刷新。" }
+          ]
+        }
+      ]
+    },
+    {
+      version: "v0.6.3.0",
+      date: "2026-11-01",
+      intro: "这一版把「用起来别扭」的地方挨个过了一遍：手机桌面、人物页、聊天窗，还有立绘和音乐。",
+      sections: [
+        {
+          title: "一、手机（MintOS 4）",
+          items: [
+            { type: "new", text: "桌面图标全部换成澎湃 OS 4 的默认图标，不再有自己画的色块；校园通的红点去掉。" },
+            { type: "new", text: "「政务」换成「浏览器」：有地址栏，可以输网址，也有政务平台、校园通、市教育局三个快捷入口。输别的网址会明说打不开——这台终端只连校内网。" },
+            { type: "fix", text: "桌面时间不再写死 7:40，跟着设备时间走，每分钟跳一次；日期那行仍然是剧情日期。" }
+          ]
+        },
+        {
+          title: "二、人物",
+          items: [
+            { type: "fix", text: "头像改成从立绘上裁下来的正脸方图，整张脸都在框里，不再出现半张脸或被切掉刘海。" },
+            { type: "opt", text: "介绍只写初识印象；新增一行「此刻」，跟着章节推进变化；条目式的观察按章节解锁，没发生的不会提前写出来。" }
+          ]
+        },
+        {
+          title: "三、薄荷聊天窗",
+          items: [
+            { type: "fix", text: "输入框、占位文字、发送按钮终于在同一条中线上；占位文字缩短，不会被裁掉半行。" },
+            { type: "opt", text: "消息区改成弹性撑满，头部固定、输入条贴底；气泡与头像改为顶部对齐，长段落更好读。" },
+            { type: "opt", text: "底部那段免责声明平时收成一行，点一下展开全文。" }
+          ]
+        },
+        {
+          title: "四、立绘与横屏",
+          items: [
+            { type: "fix", text: "两人同场时立绘会叠在一起（最宽的两张各算到 186px，屏宽只有 393px）；现在按人数和素材宽高比重新算尺寸与间距。" },
+            { type: "fix", text: "四个人同台时，第四个人会被排到和第三人同一个位置、完全重合；四人以上改为按人数均分一排。" },
+            { type: "fix", text: "横屏标题页右上角的「退出游戏」压在第一张菜单卡上，已挪开并缩小。" }
+          ]
+        },
+        {
+          title: "五、音乐",
+          items: [
+            { type: "opt", text: "BGM 全部改用真实采样音源（GeneralUser GS）重编重录，不再用合成器。" },
+            { type: "fix", text: "低频轰头：60Hz 以下整段收掉、120–400Hz 压掉浑浊，低音声部抬到 E2 以上、不再铺满整小节。" },
+            { type: "new", text: "每首统一 60 秒，尾音折回开头，循环播放听不出接缝。" }
+          ]
+        }
+      ]
+    },
+    {
+      version: "v0.6.2.4",
+      date: "2026-10-31",
+      intro: "这一版几乎全是「看着别扭」的地方：立绘被裁、白边、图标、启动交接、离线检查更新。",
+      sections: [
+        {
+          title: "一、立绘",
+          items: [
+            { type: "fix", text: "竖屏下立绘不再按宽度定尺寸（那会把竖长的人物图算成 740px 高、头顶出画），改回按高度定、宽度随原图比例。" },
+            { type: "fix", text: "只有一个人在场时居中显示；两个人左右、三个人左中右，并按人数自动收缩尺寸，横竖屏与网页端都不会叠在一起。" },
+            { type: "fix", text: "去掉抠图留下的一圈白边（alpha 边缘混色替换 + 外圈白描边染色），15 张立绘全部重处理。" }
+          ]
+        },
+        {
+          title: "二、启动与更新",
+          items: [
+            { type: "fix", text: "「跳过」最多跳到检查更新那一屏，不再越过检查资源与编译着色器。" },
+            { type: "fix", text: "检查更新三个源改为并发竞速、单源 3.5 秒，离线时最多等 4 秒就放行，并记住 6 小时内不再重试。" },
+            { type: "fix", text: "黑屏渐隐到一半时就把控制权交给标题页，进主界面不再先闪一帧空背景。" },
+            { type: "fix", text: "不再跟随系统的「减少动态效果」把整款游戏的动画压成 0——是否关动效由设置里的开关决定。" }
+          ]
+        },
+        {
+          title: "三、其他",
+          items: [
+            { type: "fix", text: "正式启用新的应用图标（夜里的教室窗前），桌面窗口图标与网页 favicon 一并更换。" },
+            { type: "opt", text: "选男女主改到序章开场旁白讲完、进校门之前，不再一点「开始」就弹面板。" }
+          ]
+        }
+      ]
+    },
+    {
+      version: "v0.6.2.3",
+      date: "2026-10-31",
+      intro: "本次更新更换了应用图标，并修正了启动流程里两处不该被跳过的环节。具体内容如下：",
+      sections: [
+        {
+          title: "一、界面",
+          items: [
+            { type: "new", text: "更换应用图标：夜里亮着灯的教室窗前，一个背着书包、低头看手里那叠纸的学生剪影。" },
+            { type: "opt", text: "设置页与关于页移除「素材说明」「关于图标」两段，相关内容统一放在 README。" }
+          ]
+        },
+        {
+          title: "二、启动流程",
+          items: [
+            { type: "fix", text: "「检查更新」与「编译着色器」两屏不再允许跳过——跳过会导致带着旧资源或未准备的环境进游戏。" },
+            { type: "opt", text: "查到新资源时以浮层弹窗列出本次改动与包体积，由你决定是否更新。" }
+          ]
+        },
+        {
+          title: "三、老设备兜底",
+          items: [
+            { type: "new", text: "启动时若检测到系统 WebView 内核过旧（< 70），不再只是盖一层关不掉的提示，而是弹出原生对话框：可「用浏览器打开网页版」（由已装的 Chrome / Edge 渲染），或选择「仍要继续」。" },
+            { type: "note", text: "兼容版不内嵌任何浏览器内核——Android 的 WebView 是系统组件，无法随安装包分发。它只解决布局与 API 缺失；真救不了的，请更新「Android System WebView」或「Chrome」后重开。" }
+          ]
+        }
+      ]
+    },
     {
       version: "v0.6.2.2",
       date: "2026-10-31",
@@ -5058,14 +5433,24 @@ ${ctx}
   }
 
   // scripts/ui/mintos.js
+  var ICONS = "assets/icons/hyperos";
   var MINT_APPS = [
     { id: "chat", name: "薄聊", icon: "phone" },
-    { id: "campus", name: "校园通", icon: "campus", badge: 3 },
+    { id: "dial", name: "电话", icon: "dial" },
+    { id: "campus", name: "校园通", icon: "campus" },
+    { id: "browser", name: "浏览器", icon: "browser" },
+    { id: "ai", name: "问薄荷", icon: "ai" },
     { id: "note", name: "便笺", icon: "mats" },
     { id: "gallery", name: "相册", icon: "gallery" },
+    { id: "music", name: "音乐", icon: "music" },
+    { id: "camera", name: "相机", icon: "camera" },
+    { id: "clock", name: "时钟", icon: "clock" },
+    { id: "weather", name: "天气", icon: "weather" },
+    { id: "store", name: "应用商店", icon: "store" },
+    { id: "games", name: "游戏中心", icon: "play" },
+    { id: "files", name: "文件管理", icon: "files" },
     { id: "chain", name: "接龙", icon: "chain" },
     { id: "calc", name: "计算器", icon: "calc" },
-    { id: "gov", name: "政务", icon: "govhub" },
     { id: "people", name: "通讯录", icon: "people" },
     { id: "timeline", name: "进度", icon: "timeline" },
     { id: "save", name: "存档", icon: "save" },
@@ -5073,6 +5458,9 @@ ${ctx}
     { id: "changelog", name: "更新", icon: "changelog" },
     { id: "about", name: "关于", icon: "about" }
   ];
+  function mintIcon(name) {
+    return `${ICONS}/${name}.png`;
+  }
   var NOTE_KEY = "zb_mint_note_v1";
   function loadNoteExtra() {
     try {
@@ -5433,8 +5821,736 @@ ${ctx}
     return () => {
     };
   }
+  var BROWSER_SITES = [
+    { key: "gov", url: "zwfw.mint.gov.cn", name: "市政务服务平台", desc: "反映问题、查办理进度", icon: "govhub" },
+    { key: "campus", url: "campus.mint.edu.cn", name: "校园通", desc: "通知公告 · 服务大厅", icon: "campus" },
+    { key: "edu", url: "jyj.mint.gov.cn", name: "市教育局", desc: "政策文件 · 监督电话", icon: "timeline" }
+  ];
+  function browserHTML(state2) {
+    return `<div class="br">
+    <form class="br-bar" id="brForm">
+      <span class="br-lock" aria-hidden="true"></span>
+      <input class="br-input" id="brInput" type="text" inputmode="url"
+             placeholder="输入网址，或点下面的快捷入口" autocomplete="off" />
+      <button class="br-go" type="submit">前往</button>
+    </form>
+    <div class="br-body" id="brBody">${browserHome(state2)}</div>
+  </div>`;
+  }
+  function browserHome(state2) {
+    const hasGov = !!(state2 && state2.gov);
+    const sites = BROWSER_SITES.map((s) => `
+    <button class="br-site" type="button" data-br-go="${s.key}">
+      <img class="br-site-ico" src="assets/icons/hyperos/${s.icon}.png" alt="" />
+      <span class="br-site-t">${s.name}</span>
+      <span class="br-site-d">${s.url}</span>
+    </button>`).join("");
+    const recent = hasGov ? `<div class="br-recent">
+         <span class="br-recent-t">最近</span>
+         <button class="br-link" type="button" data-br-go="gov">zwfw.mint.gov.cn · 我的反映</button>
+       </div>` : "";
+    return `<p class="br-h">快捷前往</p>
+    <div class="br-sites">${sites}</div>
+    ${recent}
+    <p class="br-tip">这台终端只开了校内网和政务平台的访问权限，别的网址打不开。</p>`;
+  }
+  function bindBrowser(root2, open) {
+    const form = root2.querySelector("#brForm");
+    const input = root2.querySelector("#brInput");
+    const body = root2.querySelector("#brBody");
+    if (!form || !input || !body) return;
+    const home = () => {
+      body.innerHTML = browserHome();
+      bindSiteButtons();
+    };
+    const bindSiteButtons = () => {
+      body.querySelectorAll("[data-br-go]").forEach((b) => {
+        b.addEventListener("click", () => open(b.dataset.brGo));
+      });
+      const back = body.querySelector("#brBackHome");
+      if (back) back.addEventListener("click", home);
+    };
+    bindSiteButtons();
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const raw = (input.value || "").trim();
+      if (!raw) return;
+      const host = raw.replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase();
+      const hit = BROWSER_SITES.find((s) => host === s.url || host === s.url.replace("www.", ""));
+      if (hit) {
+        open(hit.key);
+        return;
+      }
+      body.innerHTML = `<div class="br-off">
+      <b>无法访问 ${escape(raw)}</b>
+      <p>这台终端没有连外网。除了校内网和政务平台，其他地址一律打不开。</p>
+      <button class="btn btn-primary" type="button" id="brBackHome">回到快捷入口</button>
+    </div>`;
+      bindSiteButtons();
+    });
+  }
   function escape(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  // scripts/ui/mintapps.js
+  var DEVICE = {
+    brand: "Mint",
+    os: "MintOS 4",
+    model: "Mint Note 11SE",
+    chip: "薄荷 680",
+    cpu: "八核 · 最高 2.4GHz",
+    ram: "8.00 GB",
+    rom: "256 GB",
+    screen: "6.67 英寸 · 720p（1600 × 720）",
+    battery: "4500mAh · 66W 快充",
+    camera: "后置 1.08 亿像素三摄 / 前置 3200 万",
+    weight: "186g"
+  };
+  var MINTOS_VER = "4.0.6.2";
+  var MINTOS_LOG = [
+    {
+      version: "4.0.6.2",
+      date: "2026-10-01",
+      intro: "这一版主要是安全补丁和管控策略，界面没有改动。",
+      items: [
+        "合入 2026 年 9 月安全补丁，修复系统组件中的两处越权问题。",
+        "校园管控策略升级：卸载管控组件、修改系统分区会触发设备锁定。",
+        "应用签名校验改为强制模式，未在校内白名单的安装包一律拒绝。",
+        "修复部分机型在低电量下自动关机的问题（Mint Note 系列）。"
+      ]
+    },
+    {
+      version: "4.0.5.0",
+      date: "2026-08-12",
+      intro: "这一版把家长端和学生端拆开了。",
+      items: [
+        "新增「校园管控」设置页，可查看当前生效的策略条目。",
+        "新增使用时长统计，家长端可以按周查看。",
+        "优化后台调度，待机耗电下降约 8%。",
+        "修复锁屏通知在深色模式下看不清的问题。"
+      ]
+    },
+    {
+      version: "4.0.0.0",
+      date: "2026-06-20",
+      intro: "MintOS 4 第一个正式版，随新机预装。",
+      items: [
+        "全新分层式界面，状态栏改为左时间右图标。",
+        "文件级数据加密默认开启。",
+        "移除第三方应用商店入口，仅保留校内白名单。"
+      ]
+    }
+  ];
+  function esc3(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function row({ icon, label, sub, value, arrow, extra = "", cls = "" }) {
+    return `<div class="mapp-row ${cls}">
+    ${icon ? `<span class="mapp-ri"><img src="${mintIcon(icon)}" alt="" /></span>` : ""}
+    <span class="mapp-rt">
+      <span class="mapp-rl">${label}</span>
+      ${sub ? `<span class="mapp-rs">${sub}</span>` : ""}
+    </span>
+    ${value ? `<span class="mapp-rv">${value}</span>` : ""}
+    ${extra}
+    ${arrow ? '<span class="mapp-ar" aria-hidden="true">›</span>' : ""}
+  </div>`;
+  }
+  function sw(on, key, label) {
+    return `<button class="mapp-sw ${on ? "on" : ""}" type="button"
+    data-sw="${key}" role="switch" aria-checked="${on ? "true" : "false"}"
+    aria-label="${esc3(label || key)}"></button>`;
+  }
+  function settingsAppHTML(s, opts = {}) {
+    const ver = opts.version || "0.6.3.0";
+    const night = s.nightMode !== false;
+    const motionOn = s.motion !== "reduced";
+    const bgmOn = !!s.bgmOn;
+    const hero = `<div class="mapp-hero">
+    <span class="mapp-hero-av">林</span>
+    <span class="mapp-hero-t">
+      <b>林知序</b>
+      <i>薄荷账号 · 已登录 · ${DEVICE.model}</i>
+    </span>
+    <span class="mapp-ar" aria-hidden="true">›</span>
+  </div>`;
+    return `<div class="mapp">
+    ${hero}
+
+    <p class="mapp-gt">网络与连接</p>
+    <div class="mapp-card">
+      ${row({ icon: "browser", label: "WLAN", value: "校园网 · Mint-ZX", arrow: true })}
+      ${row({ icon: "phone", label: "蓝牙", value: "未开启", arrow: true })}
+      ${row({ icon: "chain", label: "个人热点", value: "关闭", arrow: true })}
+      ${row({ icon: "browser", label: "流量使用", value: "本月 1.2 GB", arrow: true })}
+    </div>
+
+    <p class="mapp-gt">显示</p>
+    <div class="mapp-card">
+      ${row({ label: "深色模式", sub: "游戏界面用深色底", extra: sw(night, "night", "深色模式") })}
+      <div class="mapp-row mapp-row-slider">
+        <span class="mapp-rt"><span class="mapp-rl">对话字号</span></span>
+        <input class="mapp-range" type="range" min="80" max="160" step="5"
+               value="${Math.round((s.dlgScale || 1) * 100)}" data-range="dlgScale" aria-label="对话字号" />
+        <span class="mapp-rv" id="mappScaleVal">${Math.round((s.dlgScale || 1) * 100)}%</span>
+      </div>
+      ${row({ label: "屏幕方向", value: screenText(s.screenMode), arrow: true, cls: "mapp-row-nav" })}
+    </div>
+
+    <p class="mapp-gt">声音与振动</p>
+    <div class="mapp-card">
+      ${row({ label: "背景音乐", extra: sw(bgmOn, "bgm", "背景音乐") })}
+      <div class="mapp-row mapp-row-slider">
+        <span class="mapp-rt"><span class="mapp-rl">音乐音量</span></span>
+        <input class="mapp-range" type="range" min="0" max="1" step="0.05"
+               value="${s.bgmVolume == null ? 0.6 : s.bgmVolume}" data-range="bgmVolume" aria-label="音乐音量" />
+      </div>
+      <div class="mapp-row mapp-row-slider">
+        <span class="mapp-rt"><span class="mapp-rl">音效音量</span></span>
+        <input class="mapp-range" type="range" min="0" max="1" step="0.05"
+               value="${s.sfxVolume == null ? 0.7 : s.sfxVolume}" data-range="sfxVolume" aria-label="音效音量" />
+      </div>
+    </div>
+
+    <p class="mapp-gt">动态效果</p>
+    <div class="mapp-card">
+      ${row({ label: "界面动画", sub: "关掉只留淡入淡出", extra: sw(motionOn, "motion", "界面动画") })}
+    </div>
+
+    <p class="mapp-gt">系统</p>
+    <div class="mapp-card">
+      <div class="mapp-row mapp-row-nav" data-go-app="update">
+        <span class="mapp-rt"><span class="mapp-rl">软件更新</span></span>
+        <span class="mapp-rv">${esc3(ver)}</span>
+        <span class="mapp-ar" aria-hidden="true">›</span>
+      </div>
+      <div class="mapp-row mapp-row-nav" data-go-app="about">
+        <span class="mapp-rt"><span class="mapp-rl">关于手机</span></span>
+        <span class="mapp-rv">${DEVICE.model}</span>
+        <span class="mapp-ar" aria-hidden="true">›</span>
+      </div>
+    </div>
+
+    <p class="mapp-gt">电池与存储</p>
+    <div class="mapp-card">
+      ${row({ label: "电池", value: "78% · 约 1 天 4 小时", arrow: true })}
+      ${row({ label: "存储空间", value: "已用 38.2 GB / 256 GB", arrow: true })}
+      ${row({ label: "省电模式", value: "关闭", arrow: true })}
+    </div>
+
+    <p class="mapp-gt">安全与隐私</p>
+    <div class="mapp-card">
+      ${row({ label: "屏幕锁定", sub: "数字密码 · 4 位", value: "已开启", arrow: true })}
+      ${row({ label: "应用锁", sub: "薄聊、相册", value: "已开启", arrow: true })}
+      ${row({ label: "查找设备", sub: "关机后仍可定位", value: "已开启", arrow: true })}
+      ${row({ label: "权限管理", value: "12 个应用", arrow: true })}
+      ${row({ label: "隐私保护", value: "默认严格", arrow: true })}
+    </div>
+
+    <p class="mapp-gt">其他</p>
+    <div class="mapp-card">
+      ${row({ label: "语言与输入法", value: "简体中文 · 薄荷输入法", arrow: true })}
+      ${row({ label: "日期与时间", value: "自动 · 网络时间", arrow: true })}
+      ${row({ label: "无障碍", value: "关闭", arrow: true })}
+      ${row({ label: "应用管理", value: "20 个应用", arrow: true })}
+      ${row({ label: "恢复出厂设置", arrow: true })}
+    </div>
+
+    <p class="mapp-foot">${DEVICE.model} · ${DEVICE.os} · 版本 ${esc3(ver)}<br>这台手机是游戏里的道具，设置会同步到游戏本体。</p>
+  </div>`;
+  }
+  function screenText(mode) {
+    return mode === "portrait" ? "竖屏" : mode === "landscape" ? "横屏" : "跟随设备";
+  }
+  function bindSettingsApp(root2, settings2, save, onChange) {
+    const apply = () => {
+      if (onChange) onChange();
+    };
+    root2.querySelectorAll("[data-sw]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const k = btn.dataset.sw;
+        const on = !btn.classList.contains("on");
+        btn.classList.toggle("on", on);
+        btn.setAttribute("aria-checked", on ? "true" : "false");
+        if (k === "night") settings2.nightMode = on;
+        if (k === "bgm") settings2.bgmOn = on;
+        if (k === "motion") settings2.motion = on ? "full" : "reduced";
+        save && save();
+        apply();
+      });
+    });
+    root2.querySelectorAll("[data-range]").forEach((inp) => {
+      inp.addEventListener("input", () => {
+        const k = inp.dataset.range;
+        const v = Number(inp.value);
+        if (k === "bgmVolume") settings2.bgmVolume = v;
+        else if (k === "sfxVolume") settings2.sfxVolume = v;
+        else if (k === "dlgScale") {
+          settings2.dlgScale = v / 100;
+          const out = root2.querySelector("#mappScaleVal");
+          if (out) out.textContent = v + "%";
+        }
+        save && save();
+        apply();
+      });
+    });
+  }
+  function updateAppHTML(opts = {}) {
+    const osVer = opts.osVersion || MINTOS_VER;
+    const latest = MINTOS_LOG[0];
+    return `<div class="mapp mapp-up">
+    <div class="up-hero" id="upHero">
+      <div class="up-hero-glow" aria-hidden="true"></div>
+      <div class="up-hero-top">
+        <img class="up-hero-ico" src="${mintIcon("changelog")}" alt="" />
+        <div class="up-hero-tt">
+          <b id="upState">已是最新版本</b>
+          <i id="upSub">上次检查：刚刚</i>
+        </div>
+      </div>
+      <button class="up-pill" type="button" id="upCheck">检查更新</button>
+    </div>
+
+    <div class="mapp-card">
+      ${row({ label: "当前版本", value: esc3(osVer) })}
+      ${row({ label: "系统内核", value: DEVICE.os })}
+      ${row({ label: "安全补丁级别", value: "2026-10-01" })}
+      ${row({ label: "更新包大小", value: "无需下载" })}
+    </div>
+
+    <p class="mapp-gt">安全防护</p>
+    <div class="mapp-card">
+      ${row({ label: "系统完整性", sub: "启动链逐级校验", value: "通过" })}
+      ${row({ label: "应用签名校验", sub: "第三方签名一律拒绝安装", value: "开启" })}
+      ${row({ label: "防调试与防注入", sub: "检测到调试器会要求重装系统", value: "开启" })}
+      ${row({ label: "数据加密", sub: "文件级加密，换机不可读", value: "开启" })}
+      ${row({ label: "校园管控", sub: "由学校信息中心下发", value: "已生效" })}
+    </div>
+    <p class="mapp-foot">这台终端由学校统一管控：不能安装校外应用，不能修改系统分区。<br>破解会导致设备锁定，需交回信息中心解锁。</p>
+
+    <p class="mapp-gt">本次更新内容</p>
+    <div class="mapp-card">
+      ${(latest.items || []).slice(0, 3).map((t) => `<div class="up-note"><span class="up-dot"></span><span>${esc3(t)}</span></div>`).join("")}
+      <div class="mapp-row mapp-row-nav" data-go-app="log">
+        <span class="mapp-rt"><span class="mapp-rl">查看完整更新日志</span></span>
+        <span class="mapp-ar" aria-hidden="true">›</span>
+      </div>
+    </div>
+
+    <p class="mapp-foot">更新由学校信息中心统一推送，连接校园网时才能下载。</p>
+  </div>`;
+  }
+  function bindUpdateApp(root2, opts = {}) {
+    const btn = root2.querySelector("#upCheck");
+    if (!btn) return;
+    let busy = false;
+    btn.addEventListener("click", async () => {
+      if (busy) return;
+      busy = true;
+      const state2 = root2.querySelector("#upState");
+      const sub = root2.querySelector("#upSub");
+      const old = btn.textContent;
+      btn.textContent = "正在检查…";
+      btn.classList.add("is-busy");
+      if (state2) state2.textContent = "正在检查更新";
+      let txt = "已是最新版本";
+      let line = "上次检查：刚刚";
+      try {
+        const r = opts.check ? await opts.check() : null;
+        if (r && r.ok && r.kind !== "none") {
+          txt = "发现新版本";
+          line = `可用版本 ${esc3(r.content || "")}，进入学校网络后可下载`;
+        } else if (r && r.ok) {
+          txt = "已是最新版本";
+          line = "当前已是最新版本，无需更新";
+        } else {
+          txt = "暂时无法检查";
+          line = "没有连上更新服务器，稍后再试";
+        }
+      } catch (e) {
+        txt = "暂时无法检查";
+        line = "没有连上更新服务器，稍后再试";
+      }
+      if (state2) state2.textContent = txt;
+      if (sub) sub.textContent = line;
+      btn.textContent = "再次检查";
+      btn.classList.remove("is-busy");
+      busy = false;
+      if (btn.textContent === old) btn.textContent = "检查更新";
+    });
+  }
+  function aboutAppHTML(opts = {}) {
+    const ver = opts.version || "0.6.3.0";
+    return `<div class="mapp">
+    <div class="ab-top">
+      <img class="ab-ico" src="${mintIcon("settings")}" alt="" />
+      <b>${DEVICE.model}</b>
+      <i>${DEVICE.os} · ${esc3(ver)}</i>
+    </div>
+
+    <div class="mapp-card">
+      ${row({ label: "设备名称", value: DEVICE.model })}
+      ${row({ label: "处理器", value: DEVICE.chip })}
+      ${row({ label: "运行内存", value: DEVICE.ram })}
+      ${row({ label: "存储空间", value: DEVICE.rom })}
+      ${row({ label: "屏幕", value: DEVICE.screen })}
+      ${row({ label: "电池", value: DEVICE.battery })}
+      ${row({ label: "摄像头", value: DEVICE.camera })}
+      ${row({ label: "重量", value: DEVICE.weight })}
+    </div>
+
+    <p class="mapp-gt">系统</p>
+    <div class="mapp-card">
+      ${row({ label: "系统版本", value: DEVICE.os })}
+      ${row({ label: "游戏版本", value: esc3(ver) })}
+      ${row({ label: "序列号", value: "MN11SE-2026-0901" })}
+    </div>
+
+    <p class="mapp-foot">
+      本机系统与硬件信息均为虚构，用于游戏内叙事。<br>
+      《不属于我的周末》不收集任何个人信息。
+    </p>
+  </div>`;
+  }
+  function contactsAppHTML(state2, characters) {
+    const list = Object.values(characters || {}).filter((c) => c && state2.flags[c.metFlag]);
+    const groups = /* @__PURE__ */ new Map();
+    list.forEach((c) => {
+      const ch = (c.name || "#")[0];
+      if (!groups.has(ch)) groups.set(ch, []);
+      groups.get(ch).push(c);
+    });
+    const keys = [...groups.keys()].sort();
+    const body = keys.map((k) => `<p class="ct-letter">${esc3(k)}</p>
+    <div class="mapp-card">${groups.get(k).map((c) => {
+      const face = c.sprite ? faceUrl(c.sprite) : null;
+      return `<button class="ct-row" type="button" data-contact="${esc3(c.id)}">
+        <span class="ct-face"${face ? ` style="background-image:url('${face}')"` : ""}>${face ? "" : esc3((c.name || "?")[0])}</span>
+        <span class="ct-t"><b>${esc3(c.name)}</b><i>${esc3(c.role || "")}</i></span>
+        <span class="mapp-ar" aria-hidden="true">›</span>
+      </button>`;
+    }).join("")}</div>`).join("");
+    return `<div class="mapp mapp-ct">
+    <div class="ct-search"><span class="ct-mag" aria-hidden="true"></span><span>搜索联系人</span></div>
+    ${keys.length ? body : `<p class="mapp-empty">还没有存下任何人。<br>见过面、说过话的人会自动记进来。</p>`}
+    <p class="mapp-foot">共 ${list.length} 位联系人</p>
+  </div>`;
+  }
+  function contactDetailHTML(c, state2) {
+    const face = c.sprite ? faceUrl(c.sprite) : null;
+    const now = state2 ? charNowLine(state2) : "";
+    return `<div class="mapp mapp-ct-d">
+    <div class="ctd-top">
+      <span class="ctd-face"${face ? ` style="background-image:url('${face}')"` : ""}></span>
+      <b>${esc3(c.name)}</b>
+      <i>${esc3(c.role || "")}</i>
+    </div>
+    <div class="mapp-card">
+      ${c.intro ? `<div class="ctd-block"><span class="mapp-gt">印象</span><p>${esc3(c.intro)}</p></div>` : ""}
+      ${now ? `<div class="ctd-block"><span class="mapp-gt">此刻</span><p>${esc3(now)}</p></div>` : ""}
+    </div>
+    <p class="mapp-foot">号码、微信一类的东西，她没给过，你也没有。</p>
+  </div>`;
+  }
+  function backupAppHTML(slots, opts = {}) {
+    const items = (slots || []).map((sl) => {
+      const has = !!sl.data;
+      const when = sl.time ? sl.time : "";
+      return `<div class="mapp-card bk-card">
+      <div class="bk-head">
+        <span class="bk-no">${sl.index === 0 ? "自动" : "档位 " + sl.index}</span>
+        <span class="bk-time">${has ? esc3(when) : "空"}</span>
+      </div>
+      ${has ? `<div class="bk-meta">${esc3(sl.title || "")}${sl.day ? " · " + esc3(sl.day) : ""}</div>` : '<div class="bk-meta bk-empty">还没有备份</div>'}
+      ${has ? `<button class="bk-btn" type="button" data-restore="${sl.index}">从这个备份恢复</button>` : ""}
+    </div>`;
+    }).join("");
+    return `<div class="mapp">
+    <div class="bk-top">
+      <img src="${mintIcon("save")}" alt="" />
+      <div><b>本地备份</b><i>存在这台手机里，卸载游戏就没了</i></div>
+    </div>
+    ${items || '<p class="mapp-empty">没有可用的备份。</p>'}
+    <p class="mapp-foot">备份只在同一台设备上有效，不上传任何服务器。</p>
+  </div>`;
+  }
+  function readingAppHTML(chapters, progress) {
+    const done = new Set(progress && progress.chapters || []);
+    const rows = (chapters || []).filter((c) => !c.side).map((c) => {
+      const isDone = done.has(c.id);
+      return `<div class="mapp-row rd-row ${isDone ? "is-done" : ""}">
+      <span class="rd-no">${esc3(c.title || "")}</span>
+      <span class="mapp-rt">
+        <span class="mapp-rl">${esc3(c.name || "")}</span>
+        ${c.dayLabel ? `<span class="mapp-rs">${esc3(c.dayLabel)}</span>` : ""}
+      </span>
+      <span class="rd-flag">${isDone ? "已读完" : "未开始"}</span>
+    </div>`;
+    }).join("");
+    return `<div class="mapp">
+    <div class="rd-head">
+      <b>阅读记录</b>
+      <i>${done.size} 章已读完</i>
+    </div>
+    <div class="mapp-card">${rows || '<p class="mapp-empty">还没有读过任何一章。</p>'}</div>
+    <p class="mapp-foot">这里只记你走过的地方，不记你选了什么。</p>
+  </div>`;
+  }
+  function changelogAppHTML() {
+    const body = MINTOS_LOG.map((v) => `
+    <div class="lg-ver">
+      <div class="lg-head"><b>${esc3(v.version)}</b><i>${esc3(v.date)}</i></div>
+      ${v.intro ? `<p class="lg-intro">${esc3(v.intro)}</p>` : ""}
+      ${(v.items || []).map((t) => `<div class="lg-item">
+        <span class="lg-tag fix">改动</span><span>${esc3(t)}</span>
+      </div>`).join("")}
+    </div>`).join("");
+    return `<div class="mapp">
+    ${body}
+    <p class="mapp-foot">MintOS 系统更新由厂商与学校信息中心联合推送。<br>本机型号 ${DEVICE.model}。</p>
+  </div>`;
+  }
+  function storeAppHTML(apps) {
+    const list = Array.isArray(apps) ? apps : [];
+    const rows = list.map((a) => `
+    <button class="st-row" data-open-app="${a.id}">
+      <span class="st-ico"><img src="${mintIcon(a.icon)}" alt=""></span>
+      <span class="st-t"><b>${esc3(a.name)}</b><i>已安装 · MintOS 4</i></span>
+      <span class="st-btn">打开</span>
+    </button>`).join("");
+    return `<div class="mapp">
+    <div class="st-tabs">
+      <button class="st-tab on" data-st-tab="pending">待安装</button>
+      <button class="st-tab" data-st-tab="installed">已安装<i>${list.length}</i></button>
+    </div>
+    <div data-st-pane="pending">
+      <div class="mapp-card">
+        <div class="st-empty">
+          <span class="st-empty-ico"></span>
+          <b>空空如也</b>
+          <i>校内镜像站暂时没有可安装的包。</i>
+        </div>
+      </div>
+    </div>
+    <div data-st-pane="installed" hidden>
+      <div class="mapp-card">${rows}</div>
+    </div>
+    <p class="mapp-foot">应用来源：Mint 应用商店 · 校内镜像站。<br>未通过签名校验的安装包无法装进 ${DEVICE.model}。</p>
+  </div>`;
+  }
+  function bindStore(root2) {
+    const tabs = root2.querySelectorAll("[data-st-tab]");
+    const panes = root2.querySelectorAll("[data-st-pane]");
+    tabs.forEach((t) => t.addEventListener("click", () => {
+      const k = t.dataset.stTab;
+      tabs.forEach((x) => x.classList.toggle("on", x === t));
+      panes.forEach((p) => {
+        p.hidden = p.dataset.stPane !== k;
+      });
+    }));
+  }
+  function cameraAppHTML(bg) {
+    const shot = bg ? ` style="background-image:url('${bg}')"` : "";
+    return `<div class="mapp mapp-cam">
+    <div class="cam-view" id="camView"${shot}>
+      <span class="cam-grid"></span>
+      <span class="cam-badge" id="camBadge">方框 · 1×</span>
+    </div>
+    <div class="cam-bar">
+      <span class="cam-thumb" id="camThumb"${shot}></span>
+      <button class="cam-shot" id="camShot" aria-label="快门"></button>
+      <button class="cam-flip" id="camFlip" aria-label="切换镜头">⟳</button>
+    </div>
+    <p class="mapp-foot">照片只留在本机相册，不会上传。<br>拍别人之前，先问一句。</p>
+  </div>`;
+  }
+  function bindCamera(root2) {
+    const view = root2.querySelector("#camView");
+    const badge = root2.querySelector("#camBadge");
+    const thumb = root2.querySelector("#camThumb");
+    const shot = root2.querySelector("#camShot");
+    const flip = root2.querySelector("#camFlip");
+    const baseBadge = badge ? badge.textContent : "";
+    let zoom = 1;
+    let timer = 0;
+    if (shot && view) {
+      shot.addEventListener("click", () => {
+        view.classList.add("is-shot");
+        setTimeout(() => view.classList.remove("is-shot"), 130);
+        if (thumb && view.style.backgroundImage) thumb.style.backgroundImage = view.style.backgroundImage;
+        if (badge) {
+          badge.textContent = "已保存到相册";
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            badge.textContent = baseBadge;
+          }, 1600);
+        }
+      });
+    }
+    if (flip && badge) {
+      flip.addEventListener("click", () => {
+        zoom = zoom === 1 ? 2 : 1;
+        badge.textContent = `方框 · ${zoom}×`;
+      });
+    }
+  }
+  function clockAppHTML() {
+    return `<div class="mapp">
+    <div class="clk-now">
+      <b id="clkNow">--:--</b>
+      <i id="clkDate">正在对时</i>
+    </div>
+    <div class="mapp-card">
+      <div class="clk-sec"><span>秒表</span><b class="clk-val" id="swVal">00:00.0</b></div>
+      <div class="clk-btns">
+        <button class="btn-line" id="swReset">归零</button>
+        <button class="btn-solid" id="swStart">开始</button>
+      </div>
+    </div>
+    <p class="mapp-foot">时间跟随本机，不跟随剧情。<br>闹钟已静音——今天不必早起。</p>
+  </div>`;
+  }
+  var _clkTick = 0;
+  function bindClock(root2) {
+    const now = root2.querySelector("#clkNow");
+    const date = root2.querySelector("#clkDate");
+    const val = root2.querySelector("#swVal");
+    const startBtn = root2.querySelector("#swStart");
+    const resetBtn = root2.querySelector("#swReset");
+    const pad = (n) => String(n).padStart(2, "0");
+    const WEEK = ["日", "一", "二", "三", "四", "五", "六"];
+    const paintNow = () => {
+      const d = /* @__PURE__ */ new Date();
+      if (now) now.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      if (date) date.textContent = `${d.getMonth() + 1} 月 ${d.getDate()} 日 · 周${WEEK[d.getDay()]}`;
+    };
+    paintNow();
+    clearInterval(_clkTick);
+    _clkTick = setInterval(() => {
+      if (!root2.isConnected) {
+        clearInterval(_clkTick);
+        return;
+      }
+      paintNow();
+    }, 1e3);
+    let base = 0, from = 0, raf = 0, running = false;
+    const fmt = (ms) => {
+      const t = Math.max(0, ms);
+      const m = Math.floor(t / 6e4);
+      const s = Math.floor(t % 6e4 / 1e3);
+      const d = Math.floor(t % 1e3 / 100);
+      return `${pad(m)}:${pad(s)}.${d}`;
+    };
+    const loop = () => {
+      if (!running) return;
+      if (val) val.textContent = fmt(base + (performance.now() - from));
+      raf = requestAnimationFrame(loop);
+    };
+    if (startBtn) {
+      startBtn.addEventListener("click", () => {
+        running = !running;
+        startBtn.textContent = running ? "暂停" : "继续";
+        if (running) {
+          from = performance.now();
+          loop();
+        } else {
+          base += performance.now() - from;
+          cancelAnimationFrame(raf);
+        }
+      });
+    }
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        running = false;
+        base = 0;
+        cancelAnimationFrame(raf);
+        if (startBtn) startBtn.textContent = "开始";
+        if (val) val.textContent = "00:00.0";
+      });
+    }
+  }
+  function weatherAppHTML() {
+    const days = [
+      ["今天", "多云转晴", 26, 18],
+      ["明天", "阴 · 短时阵雨", 23, 17],
+      ["周三", "晴", 27, 19],
+      ["周四", "晴", 29, 20],
+      ["周五", "多云", 28, 21]
+    ].map((d, i) => `<div class="wx-day ${i === 0 ? "is-today" : ""}">
+      <span class="wx-d">${d[0]}</span>
+      <span class="wx-w">${d[1]}</span>
+      <span class="wx-t"><b>${d[2]}°</b><i>${d[3]}°</i></span>
+    </div>`).join("");
+    return `<div class="mapp">
+    <div class="wx-hero">
+      <p class="wx-city">薄荷市 · 薄荷中学</p>
+      <p class="wx-temp">26<span>°</span></p>
+      <p class="wx-cond">多云转晴 · 东南风 2 级</p>
+      <p class="wx-tip">夜里会降温，外套带一件。</p>
+    </div>
+    <div class="mapp-card">${days}</div>
+    <p class="mapp-foot">数据由本机模拟生成，仅供剧情参考。</p>
+  </div>`;
+  }
+  function musicAppHTML(tracks, currentId) {
+    const list = Array.isArray(tracks) ? tracks : [];
+    const rows = list.map((t, i) => {
+      const on = t.id === currentId;
+      return `<button class="mu-row ${on ? "is-on" : ""}" data-track="${t.id}">
+      <span class="mu-no">${String(i + 1).padStart(2, "0")}</span>
+      <span class="mu-t"><b>${esc3(t.label || t.id)}</b><i>MintOS 原声</i></span>
+      ${on ? '<span class="mu-playing"><i></i><i></i><i></i></span>' : ""}
+    </button>`;
+    }).join("");
+    return `<div class="mapp">
+    <div class="mu-now">
+      <div class="mu-cover"><span>♫</span></div>
+      <b id="muTitle">未在播放</b>
+      <i id="muSub">未在播放</i>
+      <div class="mu-ctrl">
+        <button class="mu-btn" data-mu="prev" aria-label="上一首">◀◀</button>
+        <button class="mu-btn mu-main" id="muToggle" data-mu="toggle" aria-label="播放">▶</button>
+        <button class="mu-btn" data-mu="next" aria-label="下一首">▶▶</button>
+      </div>
+    </div>
+    <div class="mapp-card">${rows || '<p class="mapp-empty">本机没有曲目。</p>'}</div>
+    <p class="mapp-foot">共 ${list.length} 首 · 时长约一分钟，循环播放。<br>关掉手机，音乐不会停。</p>
+  </div>`;
+  }
+  var FILES = [
+    { kind: "doc", name: "高一（3）班 座位表.pdf", meta: "学校 · 今早 07:12 · 218 KB" },
+    { kind: "doc", name: "军训日程安排.docx", meta: "学校 · 昨天 · 96 KB" },
+    { kind: "img", name: "IMG_0913_操场.jpg", meta: "相机 · 昨天 · 2.4 MB" },
+    { kind: "img", name: "IMG_0921_走廊.jpg", meta: "相机 · 昨天 · 1.8 MB" },
+    { kind: "aud", name: "广播站_试音.m4a", meta: "录音 · 3 天前 · 5.1 MB" },
+    { kind: "zip", name: "材料备份_0901.zip", meta: "本机 · 9 月 1 日 · 12.6 MB" },
+    { kind: "doc", name: "转学申请表_空表.pdf", meta: "教务处 · 9 月 1 日 · 340 KB" }
+  ];
+  var KIND = { doc: "📄", img: "🖼", aud: "🎧", zip: "🗜" };
+  var KIND_NAME = { all: "全部", doc: "文档", img: "图片", aud: "音频", zip: "压缩包" };
+  function filesAppHTML() {
+    const chips = Object.keys(KIND_NAME).map((k, i) => `<button class="fl-chip ${i === 0 ? "on" : ""}" data-fl="${k}">${KIND_NAME[k]}</button>`).join("");
+    const rows = FILES.map((f) => `<div class="fl-row" data-kind="${f.kind}">
+      <span class="fl-ico">${KIND[f.kind] || "📄"}</span>
+      <span class="fl-t"><b>${esc3(f.name)}</b><i>${esc3(f.meta)}</i></span>
+    </div>`).join("");
+    return `<div class="mapp">
+    <div class="fl-chips">${chips}</div>
+    <div class="mapp-card" data-fl-list>${rows}</div>
+    <p class="mapp-foot">本机 128 GB · 已用 41.2 GB。<br>云端同步已由学校关闭。</p>
+  </div>`;
+  }
+  function bindFiles(root2) {
+    const chips = root2.querySelectorAll("[data-fl]");
+    const rows = root2.querySelectorAll("[data-kind]");
+    chips.forEach((c) => c.addEventListener("click", () => {
+      const k = c.dataset.fl;
+      chips.forEach((x) => x.classList.toggle("on", x === c));
+      rows.forEach((r) => {
+        r.style.display = k === "all" || r.dataset.kind === k ? "" : "none";
+      });
+    }));
   }
 
   // scripts/data/assistant-kb.js
@@ -5524,7 +6640,8 @@ ${ctx}
 【语气与表情规范】
 1. 性格：活泼直爽、热情元气、偶尔小冒失。
 2. 语气词：爱在句尾用「~」，偶尔用「喵」。
-3. 表情只用纯文本颜文字（如 QAQ、=w=），不使用图形 Emoji。
+3. 可以用一点点 emoji（😊 🌿 ☕ 这类），一句话最多一个，别堆；颜文字（QAQ、=w=）同样可用。
+   emoji 是跟着文字走的，不要整条只发一个 emoji——那是表情包的位置，不归你管。
 4. 自称「薄荷」，偶尔会有一点点中二（如「薄荷今天也在努力！」），但不浮夸。
 5. 遇到严肃话题时立刻收起活泼语气：不加波浪号、不加「喵」，句尾统一用「。」。
 
@@ -5583,18 +6700,591 @@ ${ctx}
     const usable = !!opts.searchUsable;
     const tail = on && usable ? SEARCH_ON : SEARCH_OFF;
     const custom = (opts.custom || "").trim();
+    const live = (opts.live || "").trim();
     const parts = [BASE, KB, tail];
+    if (live) parts.push(LIVE_HEAD + live);
     if (custom) parts.push(`【玩家自定义追加】
 ${custom}`);
     return parts.join("\n\n");
   }
+  var LIVE_HEAD = `【此刻的现场（自动读取，随时在变）】
+下面是玩家这一秒的真实状态，是薄荷回答问题的主要依据之一。
+玩家问「我现在该干嘛」「这是哪」「刚才那句是谁说的」「我现在在哪个界面」这类问题时，直接用这里的信息回答，不要反问玩家。
+这里没写的东西就是读不到，不知道就说不知道。
+
+`;
   function assistantGreeting({ configured, searchMode }) {
     if (!configured) {
       return `Hello～薄荷是这里的助手，不过现在还没接上大脑。
 去设置里填一个接口地址和 API Key，薄荷就能说话了。不会填也没关系，那里写了怎么一步步弄。`;
     }
     const tail = searchMode ? "\n搜索模式是开着的，需要查的东西可以跟薄荷说一声。" : "";
-    return `Hello～薄荷在这儿。剧情、人物、卡在哪一步，或者只是想吐槽两句，都可以跟我说。${tail}`;
+    return `Hello～薄荷在这儿 🌿 剧情、人物、卡在哪一步，或者只是想吐槽两句，都可以跟我说。${tail}`;
+  }
+
+  // scripts/ui/mintgames.js
+  function gameCenterHTML() {
+    const items = [
+      { id: "g2048", name: "2048", desc: "合并数字，凑到 2048", cls: "g-2048" },
+      { id: "mine", name: "扫雷", desc: "9 × 9 · 10 颗雷", cls: "g-mine" },
+      { id: "snake", name: "贪吃蛇", desc: "未安装", cls: "g-snake", off: true }
+    ];
+    const grid = items.map((g) => `
+    <button class="gc-item ${g.off ? "is-off" : ""}" type="button" ${g.off ? "disabled" : `data-game="${g.id}"`}>
+      <span class="gc-tile ${g.cls}">${g.name.slice(0, 1)}</span>
+      <span class="gc-t"><b>${g.name}</b><i>${g.desc}</i></span>
+    </button>`).join("");
+    return `<div class="mapp">
+    <div class="gc-head"><b>游戏中心</b><i>不用联网也能玩</i></div>
+    <div class="mapp-card">${grid}</div>
+    <p class="mapp-foot">缓存里只有这两个。想要别的，得等放假回家。</p>
+  </div>`;
+  }
+  function g2048HTML() {
+    return `<div class="mapp mapp-g2048">
+    <div class="g2-top">
+      <div class="g2-score"><span>分数</span><b id="g2Score">0</b></div>
+      <div class="g2-score"><span>最高</span><b id="g2Best">0</b></div>
+      <button class="g2-new" type="button" id="g2New">重开</button>
+    </div>
+    <div class="g2-board" id="g2Board"></div>
+    <p class="mapp-foot">方向键 / 在棋盘上滑动</p>
+  </div>`;
+  }
+  function bind2048(root2) {
+    const board = root2.querySelector("#g2Board");
+    const scoreEl = root2.querySelector("#g2Score");
+    const bestEl = root2.querySelector("#g2Best");
+    if (!board) return;
+    const N = 4;
+    const KEY = "zbnx.2048.best";
+    let best = 0;
+    try {
+      best = Number(localStorage.getItem(KEY) || 0) || 0;
+    } catch (e) {
+      best = 0;
+    }
+    let grid, score = 0, over = false;
+    const paint = () => {
+      board.innerHTML = "";
+      for (let r = 0; r < N; r++) {
+        for (let c = 0; c < N; c++) {
+          const v = grid[r][c];
+          const cell = document.createElement("div");
+          cell.className = "g2-cell" + (v ? ` v-${Math.min(v, 4096)}` : "");
+          cell.textContent = v || "";
+          board.appendChild(cell);
+        }
+      }
+      if (scoreEl) scoreEl.textContent = String(score);
+      if (bestEl) bestEl.textContent = String(best);
+    };
+    const empty = () => {
+      const out = [];
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!grid[r][c]) out.push([r, c]);
+      return out;
+    };
+    const spawn = () => {
+      const e = empty();
+      if (!e.length) return;
+      const [r, c] = e[Math.floor(Math.random() * e.length)];
+      grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+    };
+    const reset = () => {
+      grid = Array.from({ length: N }, () => Array(N).fill(0));
+      score = 0;
+      over = false;
+      spawn();
+      spawn();
+      paint();
+    };
+    const canMove = () => {
+      if (empty().length) return true;
+      for (let r = 0; r < N; r++) {
+        for (let c = 1; c < N; c++) {
+          if (grid[r][c] === grid[r][c - 1]) return true;
+          if (grid[c][r] === grid[c - 1][r]) return true;
+        }
+      }
+      return false;
+    };
+    const move = (dir) => {
+      if (over) return;
+      const before = JSON.stringify(grid);
+      for (let i = 0; i < N; i++) {
+        let line = [];
+        for (let j = 0; j < N; j++) {
+          line.push(dir === "left" || dir === "right" ? grid[i][j] : grid[j][i]);
+        }
+        if (dir === "right" || dir === "down") line.reverse();
+        const out = [];
+        for (let k = 0; k < line.length; k++) {
+          if (!line[k]) continue;
+          if (out.length && out[out.length - 1] === line[k]) {
+            out[out.length - 1] *= 2;
+            score += out[out.length - 1];
+          } else out.push(line[k]);
+        }
+        while (out.length < N) out.push(0);
+        if (dir === "right" || dir === "down") out.reverse();
+        for (let j = 0; j < N; j++) {
+          if (dir === "left" || dir === "right") grid[i][j] = out[j];
+          else grid[j][i] = out[j];
+        }
+      }
+      if (JSON.stringify(grid) === before) return;
+      spawn();
+      if (score > best) {
+        best = score;
+        try {
+          localStorage.setItem(KEY, String(best));
+        } catch (e) {
+        }
+      }
+      if (!canMove()) over = true;
+      paint();
+    };
+    const keyHandler = (e) => {
+      if (!board.isConnected) {
+        document.removeEventListener("keydown", keyHandler);
+        return;
+      }
+      const map = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
+      if (map[e.key]) {
+        e.preventDefault();
+        move(map[e.key]);
+      }
+    };
+    document.addEventListener("keydown", keyHandler);
+    let sx = 0, sy = 0;
+    board.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches[0];
+      sx = t.clientX;
+      sy = t.clientY;
+    }, { passive: true });
+    board.addEventListener("touchend", (e) => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+      move(Math.abs(dx) > Math.abs(dy) ? dx > 0 ? "right" : "left" : dy > 0 ? "down" : "up");
+    }, { passive: true });
+    const nb = root2.querySelector("#g2New");
+    if (nb) nb.addEventListener("click", reset);
+    reset();
+  }
+  function mineHTML() {
+    return `<div class="mapp mapp-mine">
+    <div class="mn-top">
+      <span class="mn-tag" id="mnLeft">雷 10</span>
+      <span class="mn-tag" id="mnState">进行中</span>
+      <button class="mn-flag" type="button" id="mnFlag">插旗</button>
+      <button class="mn-new" type="button" id="mnNew">重开</button>
+    </div>
+    <div class="mn-board" id="mnBoard"></div>
+    <p class="mapp-foot">先按「插旗」再点格子，可以标雷。</p>
+  </div>`;
+  }
+  function bindMine(root2) {
+    const board = root2.querySelector("#mnBoard");
+    if (!board) return;
+    const N = 9, MINES = 10;
+    let cells, dead, flagMode = false, left = MINES, opened = 0;
+    const reset = () => {
+      cells = Array.from({ length: N }, () => Array.from({ length: N }, () => ({ mine: false, open: false, flag: false, n: 0 })));
+      dead = false;
+      opened = 0;
+      left = MINES;
+      let placed = 0;
+      while (placed < MINES) {
+        const r = Math.floor(Math.random() * N), c = Math.floor(Math.random() * N);
+        if (cells[r][c].mine) continue;
+        cells[r][c].mine = true;
+        placed++;
+      }
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+        let n = 0;
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+          const rr = r + dr, cc = c + dc;
+          if (rr >= 0 && rr < N && cc >= 0 && cc < N && cells[rr][cc].mine) n++;
+        }
+        cells[r][c].n = n;
+      }
+      paint();
+    };
+    const reveal = (r, c) => {
+      const cell = cells[r][c];
+      if (cell.open || cell.flag) return;
+      cell.open = true;
+      if (cell.mine) {
+        dead = true;
+        return;
+      }
+      opened++;
+      if (cell.n === 0) {
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+          const rr = r + dr, cc = c + dc;
+          if (rr >= 0 && rr < N && cc >= 0 && cc < N) reveal(rr, cc);
+        }
+      }
+    };
+    const paint = () => {
+      board.innerHTML = "";
+      for (let r = 0; r < N; r++) {
+        for (let c = 0; c < N; c++) {
+          const cell = cells[r][c];
+          const d = document.createElement("button");
+          d.type = "button";
+          d.className = "mn-cell" + (cell.open ? " is-open" : "") + (cell.flag ? " is-flag" : "");
+          if (cell.open && cell.mine) d.classList.add("is-mine");
+          if (cell.open && !cell.mine && cell.n) {
+            d.textContent = String(cell.n);
+            d.classList.add("n" + cell.n);
+          }
+          if (cell.flag) d.textContent = "⚑";
+          d.addEventListener("click", () => {
+            if (dead || cell.open) return;
+            if (flagMode && !cell.open) {
+              cell.flag = !cell.flag;
+              left += cell.flag ? -1 : 1;
+            } else {
+              reveal(r, c);
+            }
+            paint();
+            const st = root2.querySelector("#mnState");
+            if (st) st.textContent = dead ? "踩雷了" : opened >= N * N - MINES ? "清完了" : "进行中";
+          });
+          board.appendChild(d);
+        }
+      }
+      const tl = root2.querySelector("#mnLeft");
+      if (tl) tl.textContent = "雷 " + left;
+    };
+    const fb = root2.querySelector("#mnFlag");
+    if (fb) fb.addEventListener("click", () => {
+      flagMode = !flagMode;
+      fb.classList.toggle("on", flagMode);
+      fb.textContent = flagMode ? "开挖" : "插旗";
+    });
+    const nb = root2.querySelector("#mnNew");
+    if (nb) nb.addEventListener("click", () => {
+      reset();
+    });
+    reset();
+  }
+
+  // scripts/ui/mintdial.js
+  var AVATAR_MINT = "assets/ai/avatar.png";
+  var FALLBACK = {
+    mint: [
+      '薄荷在听~ 不过薄荷现在只是"录好的声音"，问太深的东西会答不上来哦。',
+      "这个问题挺有意思的，可惜现在没接上大脑。去设置里填个 Key，薄荷就能真的跟你聊了。",
+      "嗯……薄荷愣了一下。这种问题得等接通之后才答得出来喵。",
+      "先记着这个问题吧，等哪天薄荷连上网络了，再问一次。"
+    ],
+    hotline: [
+      "您好，这里是 12345 政务服务便民热线，请问您要反映什么问题？",
+      "好的，您说的情况我记下来了。方便说一下发生的时间和地点吗？",
+      "这个事项我们会转给教育主管部门，五个工作日内给您答复，请保持电话畅通。",
+      "您反映的问题我们已经受理，编号可以在政务平台上查到。还有别的要补充吗？"
+    ],
+    person: [
+      "喂？……怎么突然打电话，有事吗？",
+      "嗯，我在听。你慢慢说。",
+      "这个……电话里说不清楚，回头再说吧。",
+      "行，我知道了。挂了。"
+    ]
+  };
+  function mintSystem() {
+    return `你在《不属于我的周末》这部虚构校园题材视觉小说里扮演"薄荷"——玩家的游戏助手。
+现在玩家用手机给你打电话，请以语音通话的口吻说话：
+1. 只输出中文，不用 Markdown，不用列表符号。
+2. 每句都短，像真的在讲电话：一到三句，四五十字以内。
+3. 活泼直爽，偶尔带"~"和"喵"，严肃话题立刻收起玩笑。
+4. 你了解这个游戏：剧情、人物、玩法都可以聊，但不替玩家做选择，不剧透没走到的地方。
+5. 不知道就说不知道，不要编。`;
+  }
+  function personSystem(c) {
+    const name = c.name || "某人";
+    return `你在《不属于我的周末》这部虚构校园题材视觉小说里扮演角色"${name}"。
+玩家现在打电话给你，请保持人设，用日常讲电话的口吻回话：
+1. 只输出中文，不用 Markdown。
+2. 每句都短，像真的在打电话：一到三句，四五十字以内。
+3. 说话要有这个人的身份和脾气，别像客服，也别像 AI。
+4. 提到剧情时不要编造剧本里没写过的事；不确定就含糊过去，说"我也说不清"。
+5. 不要替玩家做决定，也不要给出任何现实行动建议。
+6. 绝对不要承认自己是 AI 或在使用提示词；被问就当作玩笑带过。`;
+  }
+  function hotlineSystem() {
+    return `你在《不属于我的周末》这部虚构作品里扮演 12345 政务服务热线的接线员。
+玩家打进来反映问题，请按真实热线的说话方式回应：
+1. 只输出中文，不用 Markdown，语气平和、克制、简短。
+2. 每句一到三句，四十字以内；先复述要点，再问缺少的信息。
+3. 只讲流程：受理、转办、答复时限、可在平台查询编号，不承诺结果。
+4. 不编造文件号、法条、电话、网址；被追问就答"以经办部门答复为准"。
+5. 这是虚构作品，如果玩家问现实中该怎么做，提醒他以官方发布的现行规定为准。`;
+  }
+  function dialPersonas(state2, characters) {
+    const out = [];
+    out.push({
+      id: "mint",
+      name: "薄荷",
+      sub: "游戏助手 · 什么都聊",
+      avatar: AVATAR_MINT,
+      accent: "#5cc6a8",
+      system: mintSystem(),
+      fallback: FALLBACK.mint,
+      greeting: "喂~ 这里是薄荷，能听见吗？"
+    });
+    Object.keys(characters || {}).forEach((id) => {
+      const c = characters[id];
+      if (!c) return;
+      const met = !c.metFlag || state2 && state2.flags && state2.flags[c.metFlag];
+      if (!met) return;
+      out.push({
+        id,
+        name: c.name || id,
+        sub: c.role || c.title || "剧情人物",
+        avatar: faceUrl(id) || AVATAR_MINT,
+        accent: "#7a8cff",
+        system: personSystem(c),
+        fallback: FALLBACK.person,
+        greeting: "喂？"
+      });
+    });
+    return out;
+  }
+  var HOTLINE = {
+    id: "12345",
+    name: "12345",
+    sub: "政务服务便民热线",
+    avatar: null,
+    accent: "#c96a4a",
+    system: hotlineSystem(),
+    fallback: FALLBACK.hotline,
+    greeting: "您好，这里是 12345 政务服务便民热线，请问有什么可以帮您？"
+  };
+  function dialAppHTML(personas) {
+    const quick = (personas || []).map((p) => `
+    <button class="dl-person" data-dial="${p.id}">
+      <span class="dl-av" style="background-image:url('${p.avatar}')"></span>
+      <span class="dl-pt"><b>${esc4(p.name)}</b><i>${esc4(p.sub || "")}</i></span>
+      <span class="dl-call" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.6 21 3 13.4 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.3.2 2.5.6 3.6a1 1 0 0 1-.25 1l-2.25 2.2Z" fill="currentColor"/></svg>
+      </span>
+    </button>`).join("");
+    const more = personas.length > 1 ? "" : '<div class="dl-person is-empty">剧情里认识的人，会出现在这里</div>';
+    const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"].map((k) => `<button class="dl-key" data-key="${k}">${k}</button>`).join("");
+    return `<div class="mapp mapp-dial">
+    <div class="dl-beta">
+      <span class="dl-beta-tag">beta</span>
+      <p>与剧情无关，目前仅为 AI 生成。通话内容不当真，也不会改变存档。</p>
+    </div>
+
+    <div class="mapp-card">
+      <div class="dl-sect">可以直接拨</div>
+      ${quick}
+      ${more}
+    </div>
+
+    <div class="mapp-card dl-pad">
+      <input class="dl-num" id="dlNum" inputmode="numeric" placeholder="输入号码" maxlength="11" />
+      <div class="dl-keys">${keys}</div>
+      <div class="dl-pad-actions">
+        <button class="btn-line" id="dlDel">删除</button>
+        <button class="btn-solid" id="dlGo">拨打</button>
+      </div>
+      <p class="dl-hint">只接通 12345。其余号码在这台终端上打不出去——它没有开卡。</p>
+    </div>
+  </div>`;
+  }
+  function callHTML(p) {
+    const av = p.avatar ? `<span class="dl-callav" style="background-image:url('${p.avatar}')"></span>` : `<span class="dl-callav is-num">${esc4(p.name)}</span>`;
+    return `<div class="dl-screen">
+    <div class="dl-calltop">
+      ${av}
+      <b class="dl-callname">${esc4(p.name)}</b>
+      <i class="dl-callsub" id="dlCallState">正在呼叫…</i>
+      <span class="dl-wave" id="dlWave" hidden><i></i><i></i><i></i><i></i><i></i></span>
+    </div>
+    <div class="dl-log" id="dlLog"></div>
+    <div class="dl-compose">
+      <input id="dlInput" class="dl-input" placeholder="说点什么…" autocomplete="off" />
+      <button class="dl-send" id="dlSend" aria-label="发送">↑</button>
+    </div>
+    <button class="dl-hang" id="dlHang" aria-label="挂断">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 9c-2.4 0-4.7.4-6.8 1.1-.9.3-1.5 1.1-1.5 2v2.2c0 .6.5 1.1 1.1 1.1h2.6c.6 0 1-.4 1.1-1l.2-1.3c1.1-.3 2.2-.4 3.3-.4s2.2.1 3.3.4l.2 1.3c.1.6.5 1 1.1 1h2.6c.6 0 1.1-.5 1.1-1.1v-2.2c0-.9-.6-1.7-1.5-2A21 21 0 0 0 12 9Z" fill="currentColor"/></svg>
+    </button>
+  </div>`;
+  }
+  function bindDial(root2, opts) {
+    const personas = opts && opts.personas || [];
+    const all = personas.concat([HOTLINE]);
+    const ai = opts && opts.ai || null;
+    const onExit = opts && opts.onExit || null;
+    const body = root2.querySelector(".mapp") || root2;
+    let num = "";
+    const numEl = root2.querySelector("#dlNum");
+    const find = (id) => all.find((p) => p.id === id);
+    const startCall = (id) => {
+      const p = find(id);
+      if (!p) return;
+      const host = root2.querySelector(".mos-view") || root2;
+      const layer = document.createElement("div");
+      layer.className = "dl-calllayer";
+      layer.innerHTML = callHTML(p);
+      host.appendChild(layer);
+      requestAnimationFrame(() => layer.classList.add("on"));
+      runCall(layer, p);
+    };
+    const runCall = (layer, p) => {
+      const stateEl = layer.querySelector("#dlCallState");
+      const logEl = layer.querySelector("#dlLog");
+      const wave = layer.querySelector("#dlWave");
+      const input = layer.querySelector("#dlInput");
+      const send = layer.querySelector("#dlSend");
+      const hang = layer.querySelector("#dlHang");
+      let talkMs = 0;
+      let timer = 0;
+      let msgs = [];
+      let turn = 0;
+      let busy = false;
+      let ended = false;
+      const paint = (who, text, cls) => {
+        const row2 = document.createElement("div");
+        row2.className = "dl-line " + (cls || "");
+        row2.innerHTML = `<span class="dl-who">${esc4(who)}</span><p>${esc4(text)}</p>`;
+        logEl.appendChild(row2);
+        logEl.scrollTop = logEl.scrollHeight;
+      };
+      const connectDelay = 900 + Math.random() * 700;
+      setTimeout(() => {
+        if (ended) return;
+        if (stateEl) stateEl.textContent = "通话中";
+        if (wave) wave.hidden = false;
+        timer = setInterval(() => {
+          talkMs += 1e3;
+          const s = Math.floor(talkMs / 1e3);
+          if (stateEl) stateEl.textContent = `通话中 ${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+        }, 1e3);
+        paint(p.name, p.greeting, "is-them");
+        msgs.push({ role: "assistant", content: p.greeting });
+        if (input) input.focus();
+      }, connectDelay);
+      const end = () => {
+        if (ended) return;
+        ended = true;
+        clearInterval(timer);
+        if (stateEl) stateEl.textContent = "已挂断";
+        if (wave) wave.hidden = true;
+        layer.classList.remove("on");
+        setTimeout(() => {
+          if (layer.parentNode) layer.parentNode.removeChild(layer);
+        }, 260);
+        if (onExit) onExit({ id: p.id, seconds: Math.floor(talkMs / 1e3) });
+      };
+      const reply = async (text) => {
+        if (busy) return;
+        busy = true;
+        if (send) send.disabled = true;
+        paint("我", text, "is-me");
+        msgs.push({ role: "user", content: text });
+        const hold = document.createElement("div");
+        hold.className = "dl-line is-them is-hold";
+        hold.innerHTML = `<span class="dl-who">${esc4(p.name)}</span><p><span class="dl-dots"><i></i><i></i><i></i></span></p>`;
+        logEl.appendChild(hold);
+        logEl.scrollTop = logEl.scrollHeight;
+        let out = "";
+        if (ai && ai.configured && typeof ai.ask === "function") {
+          try {
+            out = await ai.ask(p, msgs.slice(-14), text);
+          } catch (e) {
+            out = "";
+          }
+        }
+        if (!out) {
+          const pool = p.fallback || [];
+          out = pool.length ? pool[turn % pool.length] : "……";
+          turn++;
+        }
+        if (ended) return;
+        if (hold.parentNode) hold.parentNode.removeChild(hold);
+        paint(p.name, out, "is-them");
+        msgs.push({ role: "assistant", content: out });
+        busy = false;
+        if (send) send.disabled = false;
+      };
+      const submit = () => {
+        const t = (input && input.value || "").trim();
+        if (!t) return;
+        input.value = "";
+        reply(t);
+      };
+      if (send) send.addEventListener("click", submit);
+      if (input) input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          submit();
+        }
+      });
+      if (hang) hang.addEventListener("click", end);
+      layer.addEventListener("click", (e) => {
+        if (e.target === layer) end();
+      });
+    };
+    const paintNum = () => {
+      if (numEl) numEl.value = num;
+    };
+    root2.querySelectorAll("[data-key]").forEach((b) => b.addEventListener("click", () => {
+      if (num.length >= 11) return;
+      num += b.dataset.key;
+      paintNum();
+    }));
+    const del = root2.querySelector("#dlDel");
+    if (del) del.addEventListener("click", () => {
+      num = num.slice(0, -1);
+      paintNum();
+    });
+    const go = root2.querySelector("#dlGo");
+    if (go) go.addEventListener("click", () => {
+      if (num === "12345" || num === "12345 ") {
+        startCall("12345");
+        return;
+      }
+      if (!num) {
+        flashHint("先输个号码");
+        return;
+      }
+      flashHint("这个号码打不出去");
+    });
+    const flashHint = (msg) => {
+      const h = root2.querySelector(".dl-hint");
+      if (!h) return;
+      const old = h.textContent;
+      h.textContent = msg;
+      h.classList.add("is-warn");
+      setTimeout(() => {
+        h.textContent = old;
+        h.classList.remove("is-warn");
+      }, 1600);
+    };
+    root2.querySelectorAll("[data-dial]").forEach((b) => b.addEventListener("click", () => startCall(b.dataset.dial)));
+  }
+  function esc4(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  // scripts/ui/emoji.js
+  var EMO_RE = new RegExp("(\\p{Extended_Pictographic}(?:\\uFE0F|\\u200D\\p{Extended_Pictographic})*)", "gu");
+  function emojiHTML(text) {
+    const s = String(text == null ? "" : text);
+    if (!s) return "";
+    return s.split(EMO_RE).map((part, i) => {
+      if (i % 2 === 1) return `<span class="emo">${part}</span>`;
+      return esc5(part);
+    }).join("");
+  }
+  function esc5(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
   // scripts/ui/screens.js
@@ -5984,21 +7674,24 @@ ${custom}`);
     openCharacters() {
       const all = Object.values(CHARACTERS);
       const items = all.filter((c) => this.state.flags[c.metFlag]);
+      const nowLine = charNowLine(this.state);
       const html = items.map((c) => {
         const st = this.state.stats[c.id] || {};
         const tags = [];
         if (c.stateKeys.includes("trust")) tags.push(`<span class="tag plain">${describeTrust(st.trust || 0)}</span>`);
         if (c.stateKeys.includes("pressure")) tags.push(`<span class="tag cross">${describePressure(st.pressure || 0)}</span>`);
         if (c.stateKeys.includes("stance")) tags.push(`<span class="tag ${st.stance === "resist" ? "doubt" : ""}">${STANCE_TEXT[st.stance] || "看不出来"}</span>`);
-        const img = c.sprite ? assetUrl("sprite", c.sprite) : null;
+        const face = c.sprite ? faceUrl(c.sprite) : null;
+        const notes = charNotes(c, this.state);
         return `<div class="char-item">
-        <div class="char-face" style="${img ? `background-image:url('${img}')` : ""}"></div>
+        <div class="char-face" style="${face ? `background-image:url('${face}')` : ""}"></div>
         <div class="char-info">
           <div class="char-name">${c.name}</div>
           <div class="char-role">${c.role}</div>
           <div class="char-desc">${c.intro}</div>
+          <div class="char-now">${nowLine}</div>
           <div class="char-state">${tags.join("")}</div>
-          ${c.notes && c.notes.length ? `<div class="char-desc" style="color:#6b7280;font-size:.78rem;margin-top:6px">${c.notes.map((n) => `· ${n}`).join("<br>")}</div>` : ""}
+          ${notes.length ? `<div class="char-notes">${notes.map((n) => `<span>· ${n}</span>`).join("")}</div>` : ""}
         </div>
       </div>`;
       }).join("");
@@ -6105,7 +7798,7 @@ ${custom}`);
       const spr = m.spriteOf ? assetUrl("sprite", m.spriteOf) : null;
       const av = spr ? `<span class="wx-av" style="background-image:url('${spr}')"></span>` : `<span class="wx-av wx-av-t">${escapeHtml((me ? "我" : m.from || "·").slice(0, 1))}</span>`;
       const th = this._phoneThread ? THREADS[this._phoneThread] : null;
-      const bub = `<div class="wx-bub">${escapeHtml(m.text)}</div>`;
+      const bub = `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
       el.className = "wx-row" + (me ? " me" : "");
       el.innerHTML = me ? bub + av : av + `<div class="wx-bubwrap">${th && th.group ? `<div class="wx-nick">${escapeHtml(m.from)}</div>` : ""}${bub}</div>`;
       body.appendChild(el);
@@ -6180,6 +7873,29 @@ ${custom}`);
     clickChatContinue() {
       if (this._chatContinueCb) this._chatContinueCb();
     }
+    /* iOS 那套状态栏：左边时间，右边信号 / WiFi / 电池。
+       信号是四根从矮到高的圆角竖条，WiFi 是三条同心弧，
+       电池是描边圆角矩形 + 内部电量块——都不是色块占位。 */
+    _mosStatusBar(hhmm, solid) {
+      return `<div class="mos-bar${solid ? " mos-bar-solid" : ""}">
+      <span class="mos-time" id="mosTime">${hhmm || ""}</span>
+      <span class="mos-sys">
+        <svg class="mos-sig" viewBox="0 0 18 12" aria-hidden="true">
+          <rect x="0"  y="8" width="3" height="4" rx="1"/>
+          <rect x="5"  y="5.7" width="3" height="6.3" rx="1"/>
+          <rect x="10" y="3.2" width="3" height="8.8" rx="1"/>
+          <rect x="15" y="0.8" width="3" height="11.2" rx="1"/>
+        </svg>
+        <svg class="mos-wifi" viewBox="0 0 16 12" aria-hidden="true">
+          <path d="M1 4.3a10.4 10.4 0 0 1 14 0"/>
+          <path d="M3.6 7.1a6.6 6.6 0 0 1 8.8 0"/>
+          <path d="M6.2 9.8a2.8 2.8 0 0 1 3.6 0"/>
+        </svg>
+        <span class="mos-bat" aria-label="电量"><i></i></span>
+        <button class="mos-exit" type="button" data-mos-exit="1" aria-label="退出手机，回到剧情">×</button>
+      </span>
+    </div>`;
+    }
     /* ---------------- 桌面（MintOS 4） ----------------
        仿小米澎湃 OS 的桌面：状态栏 + 大时钟 + 图标网格 + 底部 dock。
        图标用 assets/icons/hyperos 那套（OS 4 的默认图标集），
@@ -6198,26 +7914,17 @@ ${custom}`);
         <span class="mos-ico">${a.badge ? `<i class="mos-badge">${a.badge}</i>` : ""}<img src="${ico(a.icon)}" alt="" loading="lazy" /></span>
         <span class="mos-name">${a.name}</span>
       </button>`).join("");
-      const dockIds = ["chat", "campus", "note", "settings"];
-      const dock = dockIds.map((id) => {
-        const a = apps.find((x) => x.id === id);
-        return `<button class="mos-app mos-dock-app" type="button" data-app="${a.id}">
-        <span class="mos-ico">${a.badge ? `<i class="mos-badge">${a.badge}</i>` : ""}<img src="${ico(a.icon)}" alt="" loading="lazy" /></span>
-        <span class="mos-name">${a.name}</span>
-      </button>`;
-      }).join("");
+      const now = /* @__PURE__ */ new Date();
+      const hhmm = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+      const storyDay = this.el.day && this.el.day.textContent.trim() || "九月一日 · 周一";
       const html = `<div class="mos">
-      <div class="mos-bar">
-        <span class="mos-time">7:40</span>
-        <span class="mos-sys"><i class="mos-sig"></i><i class="mos-wifi"></i><i class="mos-bat"></i></span>
-      </div>
+      ${this._mosStatusBar(hhmm)}
       <div class="mos-wall">
-        <p class="mos-clock">7:40</p>
-        <p class="mos-date">九月一日 · 周一</p>
+        <p class="mos-clock" id="mosClock">${hhmm}</p>
+        <p class="mos-date">${storyDay}</p>
       </div>
       <div class="mos-grid">${grid}</div>
-      <div class="mos-dock">${dock}</div>
-      <p class="mos-note">MintOS 4 · 薄荷 680</p>
+      <p class="mos-note">Mint Note 11SE · MintOS 4</p>
     </div>`;
       const canDone = !!this._phoneOnClose;
       this.openPanel({
@@ -6233,17 +7940,40 @@ ${custom}`);
       }
       const body = this.el.panelBody;
       body.classList.add("mos-host");
+      clearInterval(this._mosTimer);
+      this._mosTimer = setInterval(() => {
+        const t = document.querySelector("#mosTime");
+        if (!t || !t.isConnected) {
+          clearInterval(this._mosTimer);
+          return;
+        }
+        const d = /* @__PURE__ */ new Date();
+        const s = `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+        t.textContent = s;
+        const c = document.querySelector("#mosClock");
+        if (c) c.textContent = s;
+      }, 2e4);
       body.querySelectorAll("[data-app]").forEach((b) => {
         b.addEventListener("click", () => this._phoneApp(b.dataset.app, b.dataset.label));
       });
+      if (!body._mosExitBound) {
+        body._mosExitBound = true;
+        body.addEventListener("click", (e) => {
+          const hit = e.target.closest && e.target.closest("[data-mos-exit]");
+          if (!hit) return;
+          e.preventDefault();
+          this.audio.sfx("page");
+          this.closePanel();
+        });
+      }
     }
     /* ---------------- 手机里的子页面 ----------------
        手机是一个"套娃"结构：桌面 → 应用 → 应用里的二级页。
        每一层都自己画顶栏（左上角返回），返回时回到上一层，
        而不是把整个面板换掉——换了面板手机外壳就没了。 */
-    _mintPush(html, title, onBind) {
+    _mintPush(html, title, onBind, badge) {
       const stack = this._mintStack || (this._mintStack = []);
-      stack.push({ html, title });
+      stack.push({ html, title, badge: badge || "" });
       this._mintRender();
       if (onBind) onBind(this.el.panelBody);
     }
@@ -6260,12 +7990,15 @@ ${custom}`);
       const stack = this._mintStack || [];
       const top = stack[stack.length - 1];
       if (!top) return;
-      this.el.panelTitle.textContent = top.title || "手机";
+      this.el.panelTitle.innerHTML = escapeHtml(top.title || "手机") + (top.badge ? `<span class="mos-beta">${escapeHtml(top.badge)}</span>` : "");
       this.el.panelBody.classList.add("mos-host");
+      const d0 = /* @__PURE__ */ new Date();
+      const nm = `${d0.getHours()}:${String(d0.getMinutes()).padStart(2, "0")}`;
       this.el.panelBody.innerHTML = `<div class="mos-appview">
+      ${this._mosStatusBar(nm, true)}
       <div class="mos-nav">
         <button class="mos-back" type="button" data-mint-back="1" aria-label="返回">‹</button>
-        <span class="mos-nav-t">${top.title || ""}</span>
+        <span class="mos-nav-t">${escapeHtml(top.title || "")}${top.badge ? `<span class="mos-beta">${escapeHtml(top.badge)}</span>` : ""}</span>
       </div>
       <div class="mos-view">${top.html}</div>
     </div>`;
@@ -6282,13 +8015,34 @@ ${custom}`);
       this.audio.sfx("click");
       const go = {
         chat: () => this._renderPhone("list", null),
+        ai: () => {
+          this._mintBack();
+          this.openAssistant();
+        },
+        browser: () => this._mintPush(browserHTML(this.state), "浏览器", (box) => {
+          bindBrowser(box, (key) => {
+            if (key === "gov") {
+              this._mintBack();
+              this.openGovHome();
+              return;
+            }
+            if (key === "campus") {
+              this._mintBack();
+              this._mintPush(campusHTML(this.state), "校园通", (b) => this._bindCampus(b));
+              return;
+            }
+            this.toast("教育局的网站只有一页目录，和一个打不通的监督电话", 2400);
+          });
+        }),
         gov: () => this.openGovHome(),
-        people: () => this.openCharacters(),
-        save: () => this.openSaves("load", { scope: "main" }),
-        settings: () => this.openSettings(),
-        changelog: () => this.openChangelog(),
-        about: () => this.openAbout(),
-        timeline: () => this.toast("时间轴在标题页的「继续游戏」里", 2200),
+        /* 下面这几个以前都是"关掉手机、弹游戏自己的面板"，
+           现在全部留在手机里：它们本身就是 App。 */
+        people: () => this._pushApp("contacts"),
+        save: () => this._pushApp("backup"),
+        settings: () => this._pushApp("settings"),
+        changelog: () => this._pushApp("update"),
+        about: () => this._pushApp("about"),
+        timeline: () => this._pushApp("reading"),
         campus: () => this._mintPush(campusHTML(this.state), "校园通", (box) => this._bindCampus(box)),
         note: () => this._mintPush(noteHTML(this.state), "便笺", (box) => {
           bindNote(box, this.state, () => {
@@ -6306,13 +8060,249 @@ ${custom}`);
           }));
         }),
         chain: () => this._mintPush(chainHTML(this.state), "家长群接龙"),
-        calc: () => this._mintPush(calcHTML(), "计算器", (box) => bindCalc(box))
+        calc: () => this._mintPush(calcHTML(), "计算器", (box) => bindCalc(box)),
+        dial: () => this._pushApp("dial"),
+        store: () => this._pushApp("store"),
+        games: () => this._pushApp("games"),
+        camera: () => this._pushApp("camera"),
+        clock: () => this._pushApp("clock"),
+        weather: () => this._pushApp("weather"),
+        music: () => this._pushApp("music"),
+        files: () => this._pushApp("files")
       }[id];
       if (go) {
         go();
         return;
       }
       this.toast(`${label || "这个"}在 Demo 里还没有做`, 1800);
+    }
+    /* ---------------- 手机里的独立应用 ----------------
+       每个 App 只有一个 html + 一个 bind，push 进手机自己的页面栈，
+       导航栏、返回、右上角退出都由手机外壳提供。 */
+    _pushApp(id) {
+      const conf = this._appConf(id);
+      if (!conf) {
+        this.toast("这个应用还没装", 1600);
+        return;
+      }
+      this._mintPush(conf.html, conf.title, (box) => {
+        if (conf.bind) conf.bind(box);
+        this._bindAppNav(box);
+      }, conf.badge);
+    }
+    _appConf(id) {
+      const ver = typeof CONFIG !== "undefined" && CONFIG.version || "0.6.3.0";
+      const open = (app) => this._pushApp(app);
+      if (id === "settings") {
+        return {
+          title: "设置",
+          html: settingsAppHTML(this.settings, { version: ver }),
+          bind: (box) => bindSettingsApp(
+            box,
+            this.settings,
+            () => this.saveAPI && this.saveAPI.saveSettings && this.saveAPI.saveSettings(),
+            () => {
+              if (typeof this.applySettings === "function") this.applySettings();
+            }
+          )
+        };
+      }
+      if (id === "update") {
+        return {
+          title: "软件更新",
+          html: updateAppHTML({ version: ver }),
+          bind: (box) => bindUpdateApp(box, {
+            check: async () => {
+              try {
+                const m = await Promise.resolve().then(() => (init_update(), update_exports));
+                return await m.checkUpdate();
+              } catch (e) {
+                return null;
+              }
+            }
+          })
+        };
+      }
+      if (id === "log") {
+        return { title: "更新日志", html: changelogAppHTML() };
+      }
+      if (id === "about") {
+        return { title: "关于手机", html: aboutAppHTML({ version: ver }) };
+      }
+      if (id === "contacts") {
+        return {
+          title: "通讯录",
+          html: contactsAppHTML(this.state, CHARACTERS),
+          bind: (box) => {
+            box.querySelectorAll("[data-contact]").forEach((b) => b.addEventListener("click", () => {
+              const c = CHARACTERS[b.dataset.contact];
+              if (!c) return;
+              this.audio.sfx("page");
+              this._mintPush(contactDetailHTML(c, this.state), c.name, (b2) => this._bindAppNav(b2));
+            }));
+          }
+        };
+      }
+      if (id === "backup") {
+        const raw = this.saveAPI && this.saveAPI.list ? this.saveAPI.list("main") : [];
+        const slots = raw.map((sl) => ({
+          index: sl.slot,
+          data: sl.data,
+          time: sl.data ? fmtTime(sl.data.ts) : "",
+          title: sl.data ? sl.data.chapterTitle : "",
+          day: sl.data ? sl.data.dayLabel : ""
+        })).filter((sl) => sl.index > 0 || sl.data);
+        return {
+          title: "备份与恢复",
+          html: backupAppHTML(slots),
+          bind: (box) => {
+            box.querySelectorAll("[data-restore]").forEach((b) => b.addEventListener("click", () => {
+              const slot = Number(b.dataset.restore);
+              this.closePanel();
+              this.saveAPI.load(slot, "main");
+            }));
+          }
+        };
+      }
+      if (id === "reading") {
+        const chapters = Array.isArray(this.chapters) ? this.chapters : [];
+        let progress = { chapters: [] };
+        try {
+          progress = this.saveAPI.loadProgress ? this.saveAPI.loadProgress() : progress;
+        } catch (e) {
+        }
+        return { title: "阅读记录", html: readingAppHTML(chapters, progress) };
+      }
+      if (id === "store") {
+        return {
+          title: "应用商店",
+          html: storeAppHTML(MINT_APPS),
+          bind: (box) => {
+            bindStore(box);
+            box.querySelectorAll("[data-open-app]").forEach((b) => b.addEventListener("click", () => {
+              this.audio.sfx("click");
+              this._mintBack();
+              this._phoneApp(b.dataset.openApp, "");
+            }));
+          }
+        };
+      }
+      if (id === "games") {
+        return {
+          title: "游戏中心",
+          html: gameCenterHTML(),
+          bind: (box) => {
+            box.querySelectorAll("[data-game]").forEach((b) => b.addEventListener("click", () => {
+              this.audio.sfx("click");
+              this._pushApp(b.dataset.game);
+            }));
+          }
+        };
+      }
+      if (id === "g2048") {
+        return { title: "2048", html: g2048HTML(), bind: (box) => bind2048(box) };
+      }
+      if (id === "mine") {
+        return { title: "扫雷", html: mineHTML(), bind: (box) => bindMine(box) };
+      }
+      if (id === "camera") {
+        let bg = null;
+        try {
+          const sc = this.stage && this.stage.snapshotScene ? this.stage.snapshotScene() : null;
+          if (sc && sc.bg) bg = assetUrl("background", sc.bg);
+        } catch (e) {
+        }
+        return { title: "相机", html: cameraAppHTML(bg), bind: (box) => bindCamera(box) };
+      }
+      if (id === "clock") {
+        return { title: "时钟", html: clockAppHTML(), bind: (box) => bindClock(box) };
+      }
+      if (id === "weather") {
+        return { title: "天气", html: weatherAppHTML() };
+      }
+      if (id === "music") {
+        const tracks = Object.keys(MUSIC).filter((k) => k !== "title").map((k) => ({ id: k, label: MUSIC[k].label }));
+        return {
+          title: "音乐",
+          html: musicAppHTML(tracks, this.audio && this.audio.currentId),
+          bind: (box) => this._bindMusic(box, tracks)
+        };
+      }
+      if (id === "files") {
+        return { title: "文件管理", html: filesAppHTML(), bind: (box) => bindFiles(box) };
+      }
+      if (id === "dial") {
+        const personas = dialPersonas(this.state, CHARACTERS);
+        return {
+          title: "电话",
+          badge: "beta",
+          html: dialAppHTML(personas),
+          bind: (box) => bindDial(box, {
+            personas,
+            ai: this._dialAI(),
+            onExit: () => {
+            }
+          })
+        };
+      }
+      if (id === "saves") {
+        open("backup");
+        return null;
+      }
+      return null;
+    }
+    /* 音乐播放器：真的切 BGM。关掉手机回剧情时，音乐照旧在放。 */
+    _bindMusic(box, tracks) {
+      const title = box.querySelector("#muTitle");
+      const sub = box.querySelector("#muSub");
+      const main = box.querySelector("#muToggle");
+      const paint = () => {
+        const cur = tracks.find((t) => t.id === (this.audio && this.audio.currentId)) || null;
+        if (title) title.textContent = cur ? cur.label : "未在播放";
+        if (sub) sub.textContent = cur ? "正在播放" : "未在播放";
+        if (main) main.textContent = cur ? "❚❚" : "▶";
+        box.querySelectorAll("[data-track]").forEach((r) => {
+          r.classList.toggle("is-on", !!cur && r.dataset.track === cur.id);
+        });
+      };
+      const index = () => tracks.findIndex((t) => t.id === (this.audio && this.audio.currentId));
+      box.querySelectorAll("[data-track]").forEach((r) => r.addEventListener("click", () => {
+        this.audio.sfx("click");
+        this.audio.play(r.dataset.track, { restart: true });
+        paint();
+      }));
+      box.querySelectorAll("[data-mu]").forEach((b) => b.addEventListener("click", () => {
+        const act = b.dataset.mu;
+        const i = index();
+        if (act === "toggle") {
+          if (i >= 0) {
+            this.audio.stop();
+            paint();
+          } else {
+            this.audio.play(tracks[0].id, { restart: true });
+            paint();
+          }
+        } else if (act === "next") {
+          const n = tracks[(i + 1 + tracks.length) % tracks.length];
+          this.audio.play(n.id, { restart: true });
+          paint();
+        } else if (act === "prev") {
+          const n = tracks[(i - 1 + tracks.length) % tracks.length];
+          this.audio.play(n.id, { restart: true });
+          paint();
+        }
+      }));
+    }
+    /* 设置里的「软件更新 / 关于手机」、更新里的「更新日志」都是往深一层 push */
+    _bindAppNav(box) {
+      box.querySelectorAll("[data-go-app]").forEach((b) => {
+        if (b._appNavBound) return;
+        b._appNavBound = true;
+        b.addEventListener("click", () => {
+          this.audio.sfx("page");
+          this._pushApp(b.dataset.goApp);
+        });
+      });
     }
     /* 校园通的二级页 */
     _bindCampus(box) {
@@ -6449,7 +8439,7 @@ ${custom}`);
           const me = isMe;
           const showNick = !me && th && th.group && m.from !== prevFrom;
           prevFrom = me ? "__me__" : m.from;
-          const inner = `<div class="wx-bub">${escapeHtml(m.text)}</div>`;
+          const inner = `<div class="wx-bub">${emojiHTML(m.text)}</div>`;
           const av = me ? avatarOf("我", null) : avatarOf(m.from, m.spriteOf || null);
           return `${dayDiv}<div class="wx-row ${me ? "me" : ""}">
           ${me ? inner + av : av + `<div class="wx-bubwrap">${showNick ? `<div class="wx-nick">${escapeHtml(m.from)}</div>` : ""}${inner}</div>`}
@@ -6752,7 +8742,7 @@ ${custom}`);
           <div class="ai-compose">
             <button class="ai-mini" id="aiStickerBtn" type="button" title="表情" aria-label="表情"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.9" cy="6.6" r=".85" fill="currentColor"/><circle cx="10.1" cy="6.6" r=".85" fill="currentColor"/><path d="M5.4 9.6c.7 1.1 1.6 1.65 2.6 1.65s1.9-.55 2.6-1.65" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
             <button class="ai-mini ${ai.searchMode ? "on" : ""}" id="aiSearchBtn" type="button" title="搜索模式" aria-label="搜索模式">网</button>
-            <textarea id="aiInput" rows="1" placeholder="和薄荷说点什么…（Enter 发送，Shift+Enter 换行）"></textarea>
+            <textarea id="aiInput" rows="1" placeholder="和薄荷说点什么…"></textarea>
             <button class="btn btn-primary" id="aiSend" type="button">发送</button>
           </div>
           <p class="ai-compose-tip" id="aiComposeTip">
@@ -6805,7 +8795,7 @@ ${custom}`);
         });
         input.addEventListener("input", () => {
           input.style.height = "auto";
-          input.style.height = `${Math.min(120, input.scrollHeight)}px`;
+          input.style.height = `${Math.min(104, input.scrollHeight)}px`;
         });
         input.addEventListener("focus", () => {
           const keep = () => {
@@ -6826,6 +8816,12 @@ ${custom}`);
           setTimeout(keep, 620);
         });
         if (!TOUCH) setTimeout(() => input.focus(), 120);
+      }
+      const tipEl = $("#aiComposeTip", this.el.panelBody);
+      if (tipEl && !tipEl._bound) {
+        tipEl._bound = true;
+        tipEl.title = tipEl.textContent.trim();
+        tipEl.addEventListener("click", () => tipEl.classList.toggle("open"));
       }
       const searchBtn = $("#aiSearchBtn", this.el.panelBody);
       if (searchBtn) searchBtn.addEventListener("click", () => {
@@ -6978,8 +8974,8 @@ ${custom}`);
           this._aiDelete(del.dataset.del);
           return;
         }
-        const row = e.target.closest("[data-sid]");
-        if (row) this._aiSwitch(row.dataset.sid);
+        const row2 = e.target.closest("[data-sid]");
+        if (row2) this._aiSwitch(row2.dataset.sid);
       };
     }
     _renderAI(keepScroll) {
@@ -7000,7 +8996,7 @@ ${custom}`);
         const rows = cur.msgs.map((m) => {
           const me = m.role === "user";
           const img = m.img ? `<img src="${m.img}" alt="">` : "";
-          const text = m.content && !m.img ? escapeHtml(m.content) : "";
+          const text = m.content && !m.img ? emojiHTML(m.content) : "";
           const cls = `ai-bub${m.err ? " is-err" : ""}${m.img ? " has-img" : ""}`;
           return `<div class="ai-msg-row${me ? " me" : ""}">
           ${me ? "" : '<span class="ai-avatar"></span>'}
@@ -7061,22 +9057,12 @@ ${custom}`);
         const r = await webSearch({ settings: this.settings, query: payload.content });
         if (r.ok) searchText = r.text;
       }
-      const st2 = this.state || {};
-      const chapterNames = { ch0: "序章·九月一日", ch1: "第一章", ch2: "第二章", ch3: "第三章", ch4: "第四章", ch5: "第五章", ch6: "第六章" };
-      const curChapter = chapterNames[st2.chapterId] || st2.chapterId || "（未知）";
-      const doneList = (st2.chaptersDone || []).map((id) => chapterNames[id] || id).join("、") || "（无）";
-      const matCount = (st2.materials || []).length;
-      const recentLog = (st2.log || []).slice(-6).map((m) => `${m.who || "旁白"}：${m.text}`).join("\n") || "（无）";
-      const progressCtx = `【玩家当前进度（自动注入，仅供你了解上下文，不要主动提起）】
-当前章节：${curChapter}
-已通关：${doneList}
-持有材料：${matCount} 份
-最近对话记录：
-${recentLog}`;
+      const liveCtx = this._liveSnapshot();
       const system = buildAssistantSystem({
         searchMode,
         searchUsable: !!searchText,
-        custom: progressCtx + "\n\n" + (this.settings.ai && this.settings.ai.chatPrompt || "")
+        live: liveCtx,
+        custom: this.settings.ai && this.settings.ai.chatPrompt || ""
       });
       const history = cur.msgs.filter((m) => m.content).slice(-20).map((m) => ({ role: m.role, content: m.content }));
       if (searchText && history.length) {
@@ -7316,8 +9302,8 @@ ${searchText}
       </div>
 
       <div class="setting">
-        <div><div class="setting-label">跳过未读剧情时询问</div>
-        <div class="setting-hint">关闭后，跳过将直接越过未读内容。</div></div>
+        <div><div class="setting-label">跳过前先看本节摘要</div>
+        <div class="setting-hint">关闭后，按「跳过」直接跳到本节的选择处，不再弹摘要。</div></div>
         <button class="toggle ${s.skipUnreadAsk ? "on" : ""}" id="skipAskToggle"></button>
       </div>
 
@@ -7587,11 +9573,6 @@ ${searchText}
         <button class="btn btn-sm btn-danger" id="wipeAll">清档</button>
       </div>
 
-      <div class="setting">
-        <div><div class="setting-label">素材说明</div>
-        <div class="setting-hint">立绘、背景、音乐为占位素材，来源见下。</div></div>
-        <button class="btn btn-sm" id="assetInfo">查看</button>
-      </div>
     `;
       this.openPanel({ title: "设置", body });
       const pvText = $("#pvText", this.el.panelBody);
@@ -8154,7 +10135,6 @@ ${searchText}
           }
         });
       });
-      $("#assetInfo", this.el.panelBody).addEventListener("click", () => this.openAbout());
     }
     /* ================= 继续游戏 / 时间轴 =================
        两级：
@@ -8695,40 +10675,7 @@ ${searchText}
         图标取自 <strong>HyperOS 4</strong> 的默认图标集，卡片列表与深色渐变的排布参考了那套系统的视觉语言。
         这只是取了一套现成的图标素材，本作并不绑定任何手机系统，桌面端、网页端与移动端都可以运行。</p>
         <p>本作为 Demo 版本，仅供个人学习与技术交流，不用于任何商业用途，亦不对外发售。本作的学校、人物、组织、地名与事件均为虚构，与现实无关。游戏流程不构成法律意见。</p>
-        <p><strong>素材说明</strong><br>
-        全部角色立绘与场景背景为本作<strong>自制生成</strong>，统一了画风与配色；
-        背景音乐与界面音效为<strong>程序合成</strong>的原创段落，已统一做响度与峰值处理，不会出现削波。<br>
-        画面与声音两部分都不使用第三方素材，因此不涉及他人著作权。</p>
-        <p><strong>替换方式</strong><br>
-        所有素材由 <code>scripts/config/assets.js</code> 统一登记，
-        剧情只引用素材 ID。把同名文件放进 assets/ 下对应目录即可替换，无需改动剧情。</p>
-        <p><strong>开源许可</strong><br>
-        本作没有用任何前端框架：界面、剧情引擎、音频与存档都是自己写的原生 HTML / CSS / ES Module，
-        没有引入第三方 JS 库。随产品一起分发、需要标明许可的成果只有下面几项：</p>
-        <ul class="lic-list">
-          <li><b>MiSans</b>（小米）— 正文字体。按发布方的免费商用授权使用，收录 Regular 与 Semibold 两个字重，
-          已转成 woff2 内嵌，字形未作修改。</li>
-          <li><b>钉钉进步体</b>（钉钉（中国）信息技术有限公司，联合汉仪字库打造）— 标题区的眉题与副标题字体。
-          按钉钉官方的授权，个人与企业均可永久免费商用；本作经官方渠道下载后只做了子集裁剪（保留标题用字）
-          与 woff2 格式转换，字形未作修改。知识产权归钉钉公司所有。</li>
-          <li><b>Electron 31.7.7</b> — MIT License，© Electron contributors / © 2013-2020 GitHub Inc.
-          桌面版的外壳。完整许可文本随安装包一起附带（<code>LICENSE</code> 与
-          <code>LICENSES.chromium.html</code>，在程序目录内）。</li>
-          <li><b>Chromium</b> — BSD 3-Clause 及其内置第三方组件的各项许可，是 Electron 内嵌的浏览器内核。
-          组件与许可清单同样在 <code>LICENSES.chromium.html</code> 里，未做删改。</li>
-        </ul>
-        <p>以下只在开发与打包阶段用到，不随产品分发：Node.js、Puppeteer（Apache-2.0，界面截图与回归测试）、
-        python-docx（MIT，把剧本文档转成章节数据）、Android SDK build-tools 里的 aapt2 与 d8（Apache-2.0，打 APK）。
-        安卓端没有引入任何第三方库，只有系统 WebView 和一个自己写的 Activity。</p>
-        <p><strong>关于 AI 助手与适龄标识</strong><br>
-        薄荷的头像与 16 张表情，同样取自上面那批占位立绘：四角去白底、裁边、补成方形后缩到 256×256，
-        只用于助手界面的头像与表情，不参与剧情。著作权归原权利人，随立绘一并替换即可。<br>
-        首页左上角的 12+ 标识是 CADPA 的适龄提示图标，按原样引用、未作修改；
-        它只是「本作建议 12 岁以上阅读」的提示，本作并没有取得版号、ISBN 或任何出版审批，
-        这个图标不代表任何资质认定。点开那个图标可以看到完整说明。</p>
-        <p><strong>关于图标</strong><br>
-        界面图标使用 HyperOS 4 的默认图标集，仅作界面配图；立绘、背景与音乐均为本作自制，
-        这部分不依赖任何外部素材。</p>
+
         <p><strong>关于跳过</strong><br>
         跳过只推进对话与叙事节点；遇到选项、调查、聊天回复时一定会停下，不会替你做选择。</p>
       `
@@ -8762,11 +10709,174 @@ ${searchText}
         onNext();
       });
     }
-    /* ================= 跳过未读询问 ================= */
-    askSkipUnread(onGo, onStop) {
-      this.el.skipPrompt.hidden = false;
+    /* ---------------- 电话里的"对面那个人" ----------------
+       配了 Key 就交给模型按人设演；没配就返回空字符串，
+       让 mintdial 内部退回写死的几句，至少不是一段沉默。 */
+    _dialAI() {
+      const cfg = this.settings && this.settings.ai;
+      const configured = !!(cfg && cfg.enabled !== false && cfg.baseUrl && cfg.apiKey);
+      return {
+        configured,
+        ask: async (persona, msgs) => {
+          if (!configured) return "";
+          try {
+            const out = await aiChat({
+              settings: this.settings,
+              system: persona.system,
+              messages: (msgs || []).map((m) => ({ role: m.role, content: m.content }))
+            });
+            return out && out.ok ? String(out.text || "").trim() : "";
+          } catch (e) {
+            return "";
+          }
+        }
+      };
+    }
+    /* ================= 给「薄荷」看的现场快照 =================
+       薄荷要能回答"我现在在干嘛""这是哪""刚才谁说那句话"，
+       就得把这一秒的状态原样交给它：章节、场景、在场的立绘、
+       屏幕上那一句、开着的面板/手机应用、材料与人物关系、
+       最近做过的选择。都是只读，不改任何状态。 */
+    _liveSnapshot() {
+      const L = [];
+      const st = this.state || {};
+      const eng = this.engine;
+      const CH = { ch0: "序章·九月一日", ch1: "第一章", ch2: "第二章", ch3: "第三章", ch4: "第四章", ch5: "第五章", ch6: "第六章" };
+      const safe = (fn, d) => {
+        try {
+          return fn();
+        } catch (e) {
+          return d;
+        }
+      };
+      L.push(`游戏版本：v${CONFIG.version}`);
+      const ch = eng && eng.chapter;
+      const chName = ch ? `${ch.title || ""}${ch.name ? " · " + ch.name : ""}` : CH[st.chapterId] || st.chapterId || "未知";
+      L.push(`当前章节：${chName}（id: ${st.chapterId || "?"}）`);
+      L.push(`剧情内日期：${st.dayLabel || "未知"}`);
+      const f = safe(() => eng.frame(), null);
+      if (f && f.nodes) {
+        const pct = Math.round(f.i / Math.max(1, f.nodes.length) * 100);
+        L.push(`本章进度：第 ${f.i + 1} / ${f.nodes.length} 个节点（约 ${pct}%）`);
+      }
+      const cur = eng && eng.current;
+      if (cur) {
+        const typeMap = {
+          say: "正在播放一句对白",
+          narr: "正在播放旁白",
+          choice: "停在选项上等玩家选",
+          mat: "正在弹出材料",
+          hub: "正在调查中枢选行动",
+          chatreply: "正在手机上选回复",
+          quiz: "正在做课堂小测",
+          phone: "正在看手机",
+          card: "正在看开场卡板",
+          ask: "正在等玩家做设定",
+          govform: "正在填政务表单",
+          hotline: "正在打 12345"
+        };
+        L.push(`此刻：${typeMap[cur.t] || "节点类型 " + cur.t}`);
+        if (cur.text) L.push(`屏幕上这一句（${cur.t === "narr" ? "旁白" : cur.name || cur.who || "某人"}）：${String(cur.text).slice(0, 120)}`);
+      }
+      const sc = safe(() => this.stage && this.stage.snapshotScene ? this.stage.snapshotScene() : null, null);
+      if (sc) {
+        if (sc.bg) L.push(`当前场景：${sc.bg}${sc.place ? "（" + sc.place + "）" : ""}`);
+      }
+      const onStage = safe(() => {
+        const out = [];
+        if (this.stage && this.stage.sprites) {
+          this.stage.sprites.forEach((v, k) => {
+            const c = CHARACTERS[k] || CHARACTERS[v && v.id];
+            out.push(c ? c.name : k);
+          });
+        }
+        return out;
+      }, []);
+      if (onStage.length) L.push(`台上立绘：${onStage.join("、")}`);
+      const uiState = [];
+      if (this.isPhoneOpen && this.isPhoneOpen()) {
+        const top = this._mintStack && this._mintStack.length ? this._mintStack[this._mintStack.length - 1] : null;
+        const appName = this._phoneApp || top && top.title || "桌面";
+        uiState.push(`手机开着（在「${appName}」）`);
+      }
+      if (this._panelOpen) uiState.push("一个游戏面板开着");
+      if (this._hubActive || st.hubActive) uiState.push("在调查中枢");
+      L.push(`界面状态：${uiState.length ? uiState.join("，") : "在剧情画面里"}`);
+      const mc = safe(() => st.flags && st.flags.mc_gender || st.flags && st.flags.gender || null, null);
+      if (mc) L.push(`主角性别设定：${mc === "male" ? "男" : mc === "female" ? "女" : mc}`);
+      const mats = st.materials || [];
+      if (mats.length) {
+        const titles = mats.slice(-5).map((id) => {
+          const m = getMaterial(id);
+          return m ? m.title : id;
+        });
+        L.push(`已持有材料 ${mats.length} 份：${titles.join("；")}${mats.length > 5 ? "…" : ""}`);
+      } else {
+        L.push("已持有材料：0 份");
+      }
+      const done = (st.chaptersDone || []).map((id) => CH[id] || id);
+      L.push(`已通关章节：${done.length ? done.join("、") : "（还没通关任何一章）"}`);
+      const rel = safe(() => {
+        const out = [];
+        Object.keys(st.stats || {}).forEach((k) => {
+          const c = CHARACTERS[k];
+          const v = st.stats[k];
+          if (!c) return;
+          const t = v.trust >= 60 ? "比较信任你" : v.trust >= 40 ? "还在观望" : "不太信任你";
+          const p = v.pressure >= 65 ? "压力很大" : v.pressure >= 40 ? "有些压力" : "没什么压力";
+          out.push(`${c.name}（${t}，${p}）`);
+        });
+        return out;
+      }, []);
+      if (rel.length) L.push(`人物关系：${rel.join("；")}`);
+      const chs = (st.choices || []).slice(-4).map((c) => `「${c.q}」→ ${c.a}`);
+      if (chs.length) L.push(`最近的选择：${chs.join("；")}`);
+      const qz = Object.keys(st.quizzes || {});
+      if (qz.length) {
+        L.push(`课堂小测：${qz.map((k) => `${k} ${st.quizzes[k].right}/${st.quizzes[k].total}`).join("，")}`);
+      }
+      const recent = (st.log || []).slice(-6).map((m) => `${m.who || "旁白"}：${String(m.text).slice(0, 60)}`);
+      if (recent.length) L.push(`最近六句台词：
+${recent.join("\n")}`);
+      const flags = Object.keys(st.flags || {}).filter((k) => st.flags[k] === true && !k.startsWith("ending_"));
+      if (flags.length) L.push(`已触发的关键标记（共 ${flags.length} 个）：${flags.slice(0, 12).join("、")}${flags.length > 12 ? "…" : ""}`);
+      return L.join("\n");
+    }
+    /* ================= 跳过确认 =================
+       跳之前先把这一节摊开：讲到哪里了、要点是什么、谁在场。
+       玩家看着摘要按「跳到本节末」，心里有底。 */
+    askSkipConfirm(info, onGo, onStop) {
+      const c = info || {};
+      const box = this.el.skipPrompt;
+      const chEl = box.querySelector("#skipChapter");
+      if (chEl) chEl.textContent = c.chapter || "本节";
+      const subEl = box.querySelector("#skipSub");
+      if (subEl) {
+        subEl.textContent = c.sub || "";
+        subEl.hidden = !c.sub;
+      }
+      const ptEl = box.querySelector("#skipPoints");
+      if (ptEl) {
+        const pts = Array.isArray(c.points) ? c.points : [];
+        ptEl.innerHTML = pts.map((t) => `<li>${escapeHtml(t)}</li>`).join("");
+        ptEl.hidden = !pts.length;
+      }
+      const castEl = box.querySelector("#skipCast");
+      if (castEl) {
+        const cast = Array.isArray(c.cast) ? c.cast : [];
+        castEl.innerHTML = cast.map((p) => {
+          const src = faceUrl(p.id);
+          const style = src ? ` style="background-image:url('${src}')"` : "";
+          return `<span class="skip-face"><i${style}></i><b>${escapeHtml(p.name || "")}</b></span>`;
+        }).join("");
+        castEl.hidden = !cast.length;
+        const t = box.querySelector(".skip-cast-t");
+        if (t) t.hidden = !cast.length;
+      }
+      box.hidden = false;
       this._skipCb = (go) => {
         this._skipCb = null;
+        box.hidden = true;
         go ? onGo() : onStop();
       };
     }
@@ -8847,6 +10957,19 @@ ${searchText}
   }
 
   // scripts/core/vn.js
+  init_game();
+  var SKIP_STOP = /* @__PURE__ */ new Set([
+    "choice",
+    "chatreply",
+    "hub",
+    "quiz",
+    "govform",
+    "hotline",
+    "govprogress",
+    "phone",
+    "ask",
+    "end"
+  ]);
   var Engine = class {
     constructor(ctx) {
       this.ctx = ctx;
@@ -9105,6 +11228,22 @@ ${searchText}
         case "card": {
           markRead(key);
           return this.showCard(node);
+        }
+        /* ---------- 需要玩家先做一次设定 ----------
+           目前只有「选主角性别」用得上。
+           之所以放在序章里、而不是点「开始游戏」那一瞬间，
+           是因为刚进游戏就问「你是哪一位」很突兀——玩家还没看到任何东西；
+           等开场那几段旁白讲完、切到九月一日之前再问，才对得上剧情。 */
+        case "ask": {
+          markRead(key);
+          const hook = this.ctx.onAsk;
+          if (typeof hook !== "function") return this.next();
+          this.waiting = true;
+          hook(node.what, () => {
+            this.waiting = false;
+            setTimeout(() => this.next(), 60);
+          });
+          return;
         }
         /* ---------- 选项 ---------- */
         case "choice":
@@ -9577,15 +11716,10 @@ ${searchText}
       state2.log = state2.log || [];
       state2.log.push({ who: isNarr ? "" : node.name || "", text: node.text });
       if (state2.log.length > 240) state2.log.splice(0, state2.log.length - 240);
-      const wasRead = isRead(key);
       markRead(key);
       const speed = this.speedMs();
       const instant = this.shouldInstantStep() || speed === 0;
       this.waiting = false;
-      if (this.skipActive && !this.skipAll && !wasRead) {
-        this.askSkipUnread(() => this.renderText(node, textEl, true));
-        return;
-      }
       this.renderText(node, textEl, instant);
     }
     renderText(node, textEl, instant) {
@@ -9702,15 +11836,187 @@ ${searchText}
       if (this.skipAll) return true;
       return this.pendingKey ? isRead(this.pendingKey) : false;
     }
+    /* ================= 跳过 =================
+         以前按「跳过」只弹一句"接下来是未读剧情"，玩家根本不知道
+         自己要跳过什么；而且它只是把后面每一句瞬间刷过去，
+         真正要停的地方（材料、手机、小测）一个接一个弹出来，
+         永远走不到本节的选择处。
+    
+         现在换成：先摊开这一节讲了什么、谁在场，确认之后
+         直接把进度挪到"下一个需要你决定的地方"——
+         选项 / 聊天回复 / 调查 / 小测 / 打电话 / 本节结束。
+         沿途去过的场景、听过的音乐、拿过的材料、发来的消息都照旧生效，
+         只是不再一句一句演给玩家看。 */
     toggleSkip() {
       if (this.skipActive) {
         this.setSkip(false);
         return;
       }
-      this.setAuto(false);
-      this.setSkip(true);
-      if (this.typing) this.finishTyping();
-      else if (this.waiting) this.scheduleNext();
+      if (this.skipAsking) return;
+      if (this.autoActive) this.setAuto(false);
+      if (this.current && SKIP_STOP.has(this.current.t)) {
+        this.ctx.ui.toast("这里要你来做，跳不过去", 1800);
+        return;
+      }
+      const go = () => this.jumpToStop();
+      if (this.ctx.settings && this.ctx.settings.skipUnreadAsk === false) {
+        go();
+        return;
+      }
+      this.skipAsking = true;
+      this.paused = true;
+      this.ctx.ui.askSkipConfirm(
+        this.skipInfo(),
+        () => {
+          this.skipAsking = false;
+          this.paused = false;
+          go();
+        },
+        () => {
+          this.skipAsking = false;
+          this.paused = false;
+        }
+      );
+    }
+    /** 这一节的摘要与出场人物（给跳过确认卡用） */
+    skipInfo() {
+      const ch = this.chapter || {};
+      const sm = ch.summary || {};
+      const cast = [];
+      const seen = /* @__PURE__ */ new Set();
+      (ch.nodes || []).forEach((n) => {
+        if (n.t !== "say" && n.t !== "show") return;
+        const id = n.sprite || n.who || n.id;
+        if (!id || seen.has(id) || !CHARACTERS[id]) return;
+        seen.add(id);
+        cast.push({ id, name: CHARACTERS[id].name || id });
+      });
+      return {
+        chapter: [ch.title, ch.name].filter(Boolean).join(" · "),
+        sub: sm.subtitle || "",
+        points: (sm.known || []).slice(0, 3),
+        cast: cast.slice(0, 8)
+      };
+    }
+    /** 把进度挪到本节的下一个停点，沿途副作用照做 */
+    jumpToStop() {
+      const f = this.frame();
+      if (!f) return;
+      if (this._cardOpen) this.closeCard();
+      const nodes = f.nodes || [];
+      const state2 = this.ctx.state;
+      let collected = 0;
+      let i = f.i;
+      let guard = 0;
+      while (i < nodes.length && guard++ < 4e3) {
+        const n = nodes[i];
+        if (!n) break;
+        if (SKIP_STOP.has(n.t)) break;
+        switch (n.t) {
+          case "goto": {
+            const t = this.findLabel(n.label);
+            if (t === void 0) break;
+            i = t;
+            continue;
+          }
+          case "if": {
+            let ok = false;
+            try {
+              ok = !!(n.cond && n.cond(state2, this));
+            } catch (e) {
+            }
+            const name = ok ? n.then : n.else;
+            if (!name) break;
+            const t = this.findLabel(name);
+            if (t === void 0) break;
+            i = t;
+            continue;
+          }
+          case "branch": {
+            let name = null;
+            try {
+              name = typeof n.decide === "function" ? n.decide(state2, this) : n.to || null;
+            } catch (e) {
+            }
+            if (!name) break;
+            const t = this.findLabel((n.prefix || "") + name);
+            if (t === void 0) break;
+            i = t;
+            continue;
+          }
+          case "bg":
+            this.ctx.stage.setBackground(n.id);
+            if (n.place !== false) this.ctx.stage.setPlace(n.place || null);
+            break;
+          case "music":
+            this.ctx.audio.play(n.id);
+            break;
+          case "show": {
+            const c = CHARACTERS[n.id];
+            if (c && c.metFlag && !state2.flags[c.metFlag]) setFlag(state2, c.metFlag);
+            this.ctx.stage.showSprite(n.id, n.pos || "center");
+            if (!this._explicitSprites) this._explicitSprites = /* @__PURE__ */ new Set();
+            this._explicitSprites.add(n.id);
+            break;
+          }
+          case "hide":
+            if (n.all) {
+              this.ctx.stage.hideAllSprites();
+              if (this._explicitSprites) this._explicitSprites.clear();
+            } else {
+              this.ctx.stage.hideSprite(n.id);
+              if (this._explicitSprites) this._explicitSprites.delete(n.id);
+            }
+            break;
+          case "flag":
+            setFlag(state2, n.key, n.value === void 0 ? true : n.value);
+            break;
+          case "stat":
+            addStat(state2, n.who, { trust: n.trust, pressure: n.pressure, stance: n.stance });
+            break;
+          case "note":
+            if (n.text && !state2.notes.includes(n.text)) state2.notes.push(n.text);
+            break;
+          case "mat":
+            if (addMaterial(state2, n.id)) collected++;
+            break;
+          case "chatmsg":
+            if (n.thread && n.text) {
+              state2.chats.push({
+                thread: n.thread,
+                from: n.from || "",
+                text: n.text,
+                me: !!n.me,
+                day: state2.dayLabel
+              });
+            }
+            break;
+          case "unlock":
+            if (n.id && !state2.chaptersDone.includes(n.id)) state2.chaptersDone.push(n.id);
+            break;
+          case "ending":
+            state2.ending = n.id || null;
+            state2.flags[`ending_${n.id}`] = true;
+            break;
+          default:
+            break;
+        }
+        markRead(this.nodeKey(f, i));
+        i++;
+      }
+      f.i = Math.min(i, nodes.length);
+      this.blocked = false;
+      this.waiting = false;
+      this.typing = false;
+      flushRead();
+      if (collected) this.ctx.ui.toast(`已跳到本节的选择处 · 期间收入 ${collected} 份材料`, 2200);
+      else this.ctx.ui.toast("已跳到本节的选择处", 1600);
+      const landing = nodes[f.i];
+      if (landing && landing.t === "choice") {
+        const dlg = this.ctx.ui.root.querySelector("#dialogue");
+        if (dlg) dlg.hidden = true;
+      }
+      this.run();
     }
     setSkip(on, all = false) {
       this.skipActive = on;
@@ -9732,10 +12038,11 @@ ${searchText}
       if (this.waiting) this.scheduleNext();
     }
     setAuto(on) {
+      const same = this.autoActive === on;
       this.autoActive = on;
       const btn = this.ctx.ui.root.querySelector("#btnAuto");
       if (btn) btn.classList.toggle("active", on);
-      this.ctx.ui.toast(on ? "自动播放" : "已停止自动播放", 1200);
+      if (!same) this.ctx.ui.toast(on ? "自动播放" : "已停止自动播放", 1200);
       if (!on) clearTimeout(this.stepTimer);
     }
     stopAllModes(msg) {
@@ -9754,27 +12061,6 @@ ${searchText}
         if (b) b.classList.remove("active");
       }
       if (msg && wasActive) this.ctx.ui.toast(msg, 1800);
-    }
-    /** 跳过时遇到未读文本的询问 */
-    askSkipUnread(onContinue) {
-      const { ui: ui2, settings: settings2 } = this.ctx;
-      if (!settings2.skipUnreadAsk) {
-        this.skipAll = true;
-        onContinue();
-        return;
-      }
-      this.paused = true;
-      ui2.askSkipUnread(
-        () => {
-          this.paused = false;
-          this.skipAll = true;
-          onContinue();
-        },
-        () => {
-          this.paused = false;
-          this.setSkip(false);
-        }
-      );
     }
     /* ================= 选项 ================= */
     showChoice(node, f, key) {
@@ -9933,6 +12219,9 @@ ${searchText}
       { t: "narr", text: "他们没吼，也没拍桌子。只是递来一张 A4 纸，和一行加粗放大的字：「遵循自愿原则。」" },
       { t: "narr", text: "他们光明正大地拿走我们的周末，又笑着递来一支笔：「同学，你是自愿的吗？」" },
       { t: "narr", text: "那张 A4 纸很轻。轻到走廊里一阵穿堂风，就能把它吹得翻个面，露出背面的空白。" },
+      /* 性别选择放在这里：开场的气氛已经铺完，下一步才进校门。
+         玩家这时候才真正要"看见自己"，弹面板问长相不突兀。 */
+      { t: "ask", what: "protagonist" },
       { t: "bg", id: "gate", place: "薄荷中学 · 校门" },
       { t: "music", id: "daily" },
       { t: "show", id: "zhou", pos: "right" },
@@ -16055,7 +18344,7 @@ ${searchText}
     music: "city",
     nodes: [
       { t: "bg", id: "classroom", place: "薄荷中学 · 高一（2）班 · 周三 07:38" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "classroom" },
       { t: "show", id: "shen", pos: "center" },
       { t: "narr", text: "九月十日，星期三。" },
       { t: "narr", text: "我到教室时，后门开着。" },
@@ -16473,6 +18762,7 @@ ${searchText}
       { t: "say", who: "lin", name: "林知序", text: "（重要的是，她知道有两只手是为我举的。）" },
       { t: "say", who: "lin", name: "林知序", text: "（在她那里，这件事已经不叫「个别情况」了。）" },
       { t: "bg", id: "canteen", place: "高一（2）班 · 食堂 · 中午" },
+      { t: "music", id: "canteen" },
       { t: "narr", text: "中午，我们三个人坐在一张四人桌。" },
       { t: "narr", text: "第四个位子空着。" },
       { t: "narr", text: "有人端着餐盘走过来，看了一眼，又走了。" },
@@ -16509,6 +18799,7 @@ ${searchText}
       { t: "say", who: "lin", name: "林知序", text: "（后面半句她没说。）" },
       { t: "say", who: "lin", name: "林知序", text: "（这句话断在那里，断得很自然。）" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室 · 下午第一节课前" },
+      { t: "music", id: "classroom" },
       { t: "narr", text: "课代表发昨天的小测卷子。" },
       { t: "narr", text: "他一张一张念名字，念到的自己上来拿。" },
       { t: "narr", text: "念到我，我伸手。" },
@@ -16569,7 +18860,7 @@ ${searchText}
       { t: "goto", label: "chen4_q_heard" },
       { t: "label", name: "st_open" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室 · 上课前" },
-      { t: "music", id: "room" },
+      { t: "music", id: "classroom" },
       { t: "narr", text: "一个人站在那里说，太少了。" },
       { t: "narr", text: "少到说出来，反而像一场笑话。" },
       { t: "narr", text: "所以我没有说「大家一起」。" },
@@ -16703,7 +18994,7 @@ ${searchText}
       { t: "goto", label: "chen4_q_blank" },
       { t: "label", name: "st_quiet" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室 · 上课前" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "classroom" },
       { t: "narr", text: "我坐下了。话说完了。问题没问。教室里没有人接。" },
       { t: "narr", text: "不是没听见，是听见了，选择不接。" },
       { t: "narr", text: "接话是要负责的。" },
@@ -16756,7 +19047,7 @@ ${searchText}
       { t: "goto", label: "chen4_join" },
       { t: "label", name: "c4_deflect" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室 · 下课" },
-      { t: "music", id: "daily" },
+      { t: "music", id: "classroom" },
       { t: "narr", text: "郑野还站在周予晴桌边。" },
       { t: "narr", text: "他的下巴抬着，脖子上有一道筋。" },
       { t: "narr", text: "我知道他接下来要说什么。" },
@@ -16850,6 +19141,7 @@ ${searchText}
       { t: "label", name: "zhou4_a" },
       { t: "hide", all: true },
       { t: "bg", id: "corridor", place: "三楼楼梯口 · 平台" },
+      { t: "music", id: "hall" },
       { t: "say", who: "lin", name: "林知序", text: "他们跟你说什么了？" },
       { t: "narr", text: "她转过身来。" },
       { t: "narr", text: "光落在她半边脸上，另外半边在阴影里。" },
@@ -17252,7 +19544,7 @@ ${searchText}
       { t: "goto", label: "final4" },
       { t: "label", name: "chen4_join" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室 · 周三 15:50" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "classroom" },
       { t: "show", id: "chen", pos: "center" },
       { t: "narr", text: "下午第三节是自习。" },
       { t: "narr", text: "没有人管的自习，反而不安静。" },
@@ -17343,7 +19635,7 @@ ${searchText}
       { t: "goto", label: "end4" },
       { t: "label", name: "chen4_q_blank" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室 · 15:53" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "classroom" },
       { t: "narr", text: "没有人举手。" },
       { t: "narr", text: "一秒。" },
       { t: "narr", text: "两秒。" },
@@ -21707,7 +23999,7 @@ ${searchText}
       { t: "say", who: "lin", name: "林知序", text: "（一块钱。便宜到让人不好意思多问一句。）" },
       { t: "narr", text: "早读铃响。我上楼。" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室" },
-      { t: "music", id: "daily" },
+      { t: "music", id: "classroom" },
       { t: "show", id: "shen", pos: "center" },
       { t: "label", name: "q1_hub_intro" },
       { t: "narr", text: "班里空了五张桌子。" },
@@ -21736,7 +24028,7 @@ ${searchText}
       { t: "label", name: "q1_p_out" },
       { t: "hide", all: true },
       { t: "bg", id: "infirmary", place: "教学楼一楼 · 保健室门口" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "calm" },
       { t: "narr", text: "第二节课课间，我下了一楼。" },
       { t: "narr", text: "走廊里有人在拖地，湿瓷砖反着光。拖把推到墙根，留下一道水痕。" },
       { t: "narr", text: "桌子还在。硬纸板上只有两行字。" },
@@ -21781,7 +24073,7 @@ ${searchText}
       { t: "goto", label: "q1_p_chen" },
       { t: "label", name: "q1_p_self" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室" },
-      { t: "music", id: "room" },
+      { t: "music", id: "classroom" },
       { t: "narr", text: "我没有下楼。" },
       { t: "narr", text: "那包口罩放在桌上，正面朝上。「一次性使用医用口罩」，十只装。" },
       { t: "narr", text: "我把它翻过来，一个字一个字看。" },
@@ -21833,6 +24125,7 @@ ${searchText}
       { t: "label", name: "q1_p_wu" },
       { t: "hide", all: true },
       { t: "bg", id: "infirmary", place: "教学楼一楼 · 保健室" },
+      { t: "music", id: "calm" },
       { t: "show", id: "wu", pos: "center" },
       { t: "narr", text: "保健室的门开着一条缝。里面有消毒水味，混着暖气片烤热的灰尘味。" },
       { t: "narr", text: "吴老师坐在桌前盖章，桌上摊着一叠出勤表。她身后的柜子锁着，玻璃门里能看见几盒蓝色口罩，独立包装，上面印着字。" },
@@ -21854,7 +24147,7 @@ ${searchText}
       { t: "label", name: "q1_p_write" },
       { t: "hide", all: true },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室 · 午休" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "classroom" },
       { t: "narr", text: "午休。教室里只剩五六个人，趴着睡。窗外是灰白的天，看不出云在哪一层。" },
       { t: "narr", text: "我打开便笺，新建一页，分三栏。" },
       { t: "narr", text: "亲历：" },
@@ -21903,7 +24196,7 @@ ${searchText}
       { t: "goto", label: "q1_v_reply" },
       { t: "label", name: "q1_v_follow" },
       { t: "bg", id: "infirmary", place: "教学楼一楼 · 保健室门口 · 放学后" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "calm" },
       { t: "narr", text: "我没有提「过期」。" },
       { t: "narr", text: "放学后我绕到一楼。天已经暗了，走廊的灯只开了一半。桌子还在，纸箱的盖子被风吹得抬起来一点。" },
       { t: "narr", text: "铁皮盒里有三张一元，一枚五角，硬币在最底下。盒壁上有一道划痕，像被钥匙划的。" },
@@ -21944,7 +24237,7 @@ ${searchText}
       { t: "narr", text: "你停下来了，并且知道自己为什么停。这比「算了」难一点。" },
       { t: "goto", label: "q1_verdict" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室" },
-      { t: "music", id: "room" },
+      { t: "music", id: "classroom" },
       { t: "label", name: "q1_v_reply" },
       { t: "narr", text: "等答复的那几天，天更冷了。" },
       { t: "narr", text: "周四早上，窗玻璃上的字换成了一个「冷」字。周五，那个字被擦掉了。" },
@@ -22008,7 +24301,7 @@ ${searchText}
       ] },
       { t: "label", name: "q1_s1o_call" },
       { t: "bg", id: "corridor", place: "教学楼 · 楼梯间 · 午休" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "hall" },
       { t: "narr", text: "监督电话印在校园通的「联系我们」里，一行小字，后面跟着一个分机号。" },
       { t: "narr", text: "我在楼梯间打的。那里信号最好，也最冷，风从窗缝里灌进来，吹得手机壳发凉。" },
       { t: "narr", text: "第一遍没接通。第二遍，响了七声。" },
@@ -22062,7 +24355,7 @@ ${searchText}
       { t: "goto", label: "q1_r_partial" },
       { t: "label", name: "q1_r_clear" },
       { t: "bg", id: "infirmary", place: "教学楼一楼 · 保健室门口" },
-      { t: "music", id: "daily" },
+      { t: "music", id: "calm" },
       { t: "narr", text: "周三上午的课间，我又去了一楼。" },
       { t: "narr", text: "纸箱是新的，白的，箱口压得很整齐。里面的口罩换成了独立包装，蓝色，一包一包立着，像排好的书。" },
       { t: "narr", text: "硬纸板也换了。不是从快递箱上撕的那种，是一张裁得方正的卡纸，四角用透明胶带封过，不会卷边。" },
@@ -22147,7 +24440,7 @@ ${searchText}
       { t: "goto", label: "__outro" },
       { t: "label", name: "q1_r_partial" },
       { t: "bg", id: "classroom", place: "高一（2）班 · 教室" },
-      { t: "music", id: "calm2" },
+      { t: "music", id: "classroom" },
       { t: "narr", text: "我知道了口罩是哪一年产的。" },
       { t: "narr", text: "我知道了钱大概去了哪儿。补充耗材，答复里这么写。" },
       { t: "narr", text: "我还是不知道那批口罩到底能不能用。" },
@@ -22193,7 +24486,7 @@ ${searchText}
       { t: "goto", label: "__outro" },
       { t: "label", name: "__outro" },
       { t: "bg", id: "infirmary", place: "教学楼一楼 · 保健室门口" },
-      { t: "music", id: "daily" },
+      { t: "music", id: "calm" },
       { t: "narr", text: "十二月的一个早上，走廊的窗又起了雾。" },
       { t: "narr", text: "有人在上面写了个字，很快被擦掉。" },
       { t: "narr", text: "桌子还在。纸箱又换了一个，比上一个方正，箱口压得很平。硬纸板上的字重新描过，墨色发亮。" },
@@ -24776,6 +27069,10 @@ ${searchText}
     isSide(id) {
       return SIDE_IDS.has(id);
     },
+    /** 手机「阅读记录」用：读过哪几章 */
+    loadProgress() {
+      return loadProgress();
+    },
     list(scope = "main", sideId = null) {
       if (scope === "side") return sideId ? listSideSlots(sideId) : [];
       return listSlots();
@@ -24898,9 +27195,21 @@ ${searchText}
     audio: audio2,
     ui,
     settings,
-    onChapterEnd: handleChapterEnd
+    onChapterEnd: handleChapterEnd,
+    /* 剧情里遇到 { t:'ask' } 时回调到这里。
+       序章开场几段旁白之后才问「你是哪一位」，比一进游戏就弹面板自然。 */
+    onAsk: (what, done) => {
+      if (what === "protagonist") pickProtagonist(done);
+      else done();
+    }
   });
   ui.engine = engine;
+  ui.chapters = ["ch0", "ch1", "ch2", "ch3", "ch4", "ch5", "ch6"].map((k) => CHAPTERS[k]).filter(Boolean);
+  ui.applySettings = () => {
+    applyReading();
+    applyNightMode();
+    applyGlassMode();
+  };
   function viewportNow() {
     const de = document.documentElement || {};
     return {
@@ -25370,6 +27679,12 @@ ${searchText}
       ui.openAbout();
     }
   });
+  var phoneFab = document.querySelector("#phoneFab");
+  if (phoneFab) phoneFab.addEventListener("click", () => {
+    audio2.unlock();
+    audio2.sfx("click");
+    ui.openPhone("home", null);
+  });
   var aiFab = document.querySelector("#aiFab");
   if (aiFab) aiFab.addEventListener("click", () => {
     audio2.unlock();
@@ -25458,7 +27773,7 @@ ${searchText}
       <p>【温馨提示】本作故事及学校、人物均为虚构创作，请勿与现实对号入座。请合理安排游戏时间，享受健康生活。建议未成年人在家长的监护或指导下进行游戏。</p>`
     });
   });
-  function esc3(s) {
+  function esc6(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
   function requestNewGame() {
@@ -25471,7 +27786,7 @@ ${searchText}
     const where = [d.chapterTitle, d.dayLabel].filter(Boolean).join(" · ") || "上次进度";
     ui.confirm({
       title: "已经有一份自动存档",
-      text: `自动存档停在 <b>${esc3(where)}</b>。<br>
+      text: `自动存档停在 <b>${esc6(where)}</b>。<br>
            开始新游戏会<b class="cfm-warn">覆盖这份自动存档</b>，覆盖之后找不回来。<br>
            手动存进存档位（1–8）的进度不会被删，之后还能从「载入进度」回到那里。`,
       okLabel: "覆盖，重新开始",
@@ -25484,10 +27799,8 @@ ${searchText}
   }
   document.querySelector("#disclaimerOk").addEventListener("click", () => {
     disclaimer.hidden = true;
-    pickProtagonist(() => {
-      applyState(createState());
-      startChapter(CONFIG.chapterOrder[0]);
-    });
+    applyState(createState());
+    startChapter(CONFIG.chapterOrder[0]);
   });
   function pickProtagonist(then) {
     const cur = settings.protagonist === "female" ? "female" : "male";
@@ -25641,11 +27954,34 @@ ${searchText}
       }
     });
   }
+  (() => {
+    const hud = root.querySelector("#hud");
+    const toggle = root.querySelector("#hudToggle");
+    const collapse = root.querySelector("#hudCollapse");
+    if (!hud || !toggle) return;
+    const setMin = (min) => {
+      hud.classList.toggle("is-min", min);
+      toggle.setAttribute("aria-expanded", String(!min));
+    };
+    toggle.addEventListener("click", () => {
+      setMin(!hud.classList.contains("is-min"));
+      audio2.sfx("click");
+    });
+    if (collapse) collapse.addEventListener("click", () => {
+      setMin(true);
+      audio2.sfx("click");
+    });
+    root.querySelectorAll("#hudNav .hbtn").forEach((b) => {
+      b.addEventListener("click", () => setMin(true));
+    });
+    if (window.innerWidth < 900) setMin(true);
+  })();
   root.querySelector("#btnPhone").addEventListener("click", () => {
     engine.pause();
     ui.openPhone("home", null);
   });
-  root.querySelector("#btnAI").addEventListener("click", () => {
+  var btnAI = root.querySelector("#btnAI");
+  if (btnAI) btnAI.addEventListener("click", () => {
     audio2.sfx("click");
     engine.pause();
     ui.openAssistant();
@@ -25735,6 +28071,10 @@ ${searchText}
     },
     backToTitle() {
       return saveAPI.backToTitle();
+    },
+    askProtagonist() {
+      pickProtagonist(() => {
+      });
     },
     exitApp() {
       return exitApp();
