@@ -79,7 +79,7 @@ export const SPRITES = {
    五声音阶内的和弦进行 + 长音 pad + 分解和弦，统一 -17dB RMS / -2dB 封顶。
    好处是不再依赖任何外部曲库，也就没有授权问题。 */
 export const MUSIC = {
-  title:   { src: 'assets/music/title_morning.mp3', label: '平常的一天' },
+  title:   { src: 'assets/music/title.mp3', label: '主题曲 · 不属于我的周末' },
   daily:   { src: 'assets/music/daily.mp3',       label: '日常' },
   calm:    { src: 'assets/music/calm.mp3',                label: '安静' },
   silent:  { src: 'assets/music/silent.mp3',              label: '沉默' },

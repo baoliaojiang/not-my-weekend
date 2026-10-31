@@ -34,6 +34,7 @@ public class MainActivity extends Activity {
     private static final String LOADER_URL = "file:///android_asset/boot/index.html";
 
     private WebView web;
+    private FrameLayout rootView;
     private long lastBackTime = 0L;
 
     @Override
@@ -50,6 +51,7 @@ public class MainActivity extends Activity {
 
         // 先把容器铺好：即使 WebView 初始化失败，也能把错误画在屏幕上，而不是直接闪退
         FrameLayout root = new FrameLayout(this);
+        rootView = root;
         root.setBackgroundColor(Color.parseColor("#0B0D10"));
         setContentView(root);
 
@@ -151,7 +153,70 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new AppBridge(), "ZBApp");
         // 热更新桥：网页问"我是什么外壳版本"、"帮我下载这个包"
         web.addJavascriptInterface(new UpdateBridge(), "ZBUpdate");
-        web.loadUrl(resolveStartUrl());
+        // 解包放在原生侧、loadUrl 之前完成：
+        // 之前把这一步交给网页（assets/boot 的解包页调 ZBApp.prepare），
+        // 结果在真机上 JS 桥没就绪，页面只能报「客户端接口未就绪」并卡住。
+        // 现在网页只负责«内容»，文件准备这种事交给原生，链路少一跳，坏了也能自己兜。
+        bootLoad(rootView);
+    }
+
+    /** 首次启动：先铺一张原生启动页，后台解包，好了再 loadUrl */
+    private void bootLoad(final FrameLayout root) {
+        if (!needUnpack()) {
+            web.loadUrl(resolveStartUrl());
+            return;
+        }
+
+        final android.widget.LinearLayout splash = new android.widget.LinearLayout(this);
+        splash.setOrientation(android.widget.LinearLayout.VERTICAL);
+        splash.setGravity(android.view.Gravity.CENTER);
+        splash.setBackgroundColor(Color.parseColor("#000000"));
+        splash.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+
+        final android.widget.TextView title = new android.widget.TextView(this);
+        title.setText("正在编译着色器");
+        title.setTextColor(Color.parseColor("#F4F1EA"));
+        title.setTextSize(18f);
+        title.setGravity(android.view.Gravity.CENTER);
+
+        final android.widget.TextView hint = new android.widget.TextView(this);
+        hint.setText("正在解包资源…");
+        hint.setTextColor(Color.parseColor("#8A8F98"));
+        hint.setTextSize(12f);
+        hint.setGravity(android.view.Gravity.CENTER);
+        hint.setPadding(0, 26, 0, 0);
+
+        splash.addView(title);
+        splash.addView(hint);
+        root.addView(splash);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String err = null;
+                try {
+                    unpackWww();
+                } catch (final Throwable t) {
+                    err = t.getMessage() == null ? "unknown" : t.getMessage();
+                }
+                final String fail = err;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (fail == null) {
+                            root.removeView(splash);
+                            web.loadUrl(resolveStartUrl());
+                        } else {
+                            // 解包失败就停在原生页上说清楚，别把玩家扔进黑屏
+                            hint.setText("资源解包失败：" + fail
+                                    + "\n请尝试重新安装；仍失败请在设置里导出日志反馈。");
+                            hint.setTextColor(Color.parseColor("#F0A89C"));
+                        }
+                    }
+                });
+            }
+        }).start();
     }
 
     /** 热更过的 www 目录（解压成功后才存在） */

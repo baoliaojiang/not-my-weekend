@@ -167,7 +167,7 @@
     fu: { src: "assets/characters/fu_yisheng.png", label: "傅医生" }
   };
   var MUSIC = {
-    title: { src: "assets/music/title_morning.mp3", label: "平常的一天" },
+    title: { src: "assets/music/title.mp3", label: "主题曲 · 不属于我的周末" },
     daily: { src: "assets/music/daily.mp3", label: "日常" },
     calm: { src: "assets/music/calm.mp3", label: "安静" },
     silent: { src: "assets/music/silent.mp3", label: "沉默" },
@@ -3584,7 +3584,15 @@
           ]
         },
         {
-          title: "三、兼容性",
+          title: "三、美术与音乐",
+          items: [
+            { type: "new", text: "主题曲换为由 AI 音乐模型生成的版本，时长约 2 分 30 秒，已做响度与峰值对齐。" },
+            { type: "opt", text: "其余 15 段场景音乐重做音色：改用加性合成的钢琴（非谐分音、高频先衰、琴槌噪声），替代原有的正弦与铃音，听感不再发电子。" },
+            { type: "opt", text: "旋律加入确定性的力度起伏与微小错位，避免每个音符都一模一样。" }
+          ]
+        },
+        {
+          title: "四、兼容性",
           items: [
             { type: "opt", text: "手机与 AI 面板不再依赖 :has() 选择器，老内核上布局不会塌。" },
             { type: "opt", text: "尺寸单位补上 vh 回退，老内核不支持 dvh 时也能撑满屏幕。" },

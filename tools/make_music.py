@@ -77,6 +77,34 @@ def voice(freq, dur, amp=0.2, kind='sine', a=0.02, d=0.5, s=0.6, r=0.9,
     return (w * adsr(n, a, d, s, r, sr) * amp).astype(np.float32)
 
 
+def piano(freq, dur, amp=0.2, vel=0.85):
+    """加性合成钢琴。
+    三件事决定了它像不像琴：
+      · 非谐分音 fk = f*k*sqrt(1+B*k^2)（B 是琴弦刚度）
+      · 高次分音衰减更快（敲下去那一瞬间亮，很快只剩基频）
+      · 起音处一小段噪声，模拟琴槌打在弦上
+    """
+    n = int((dur + 1.4) * SR)
+    if n <= 0:
+        return np.zeros(1, np.float32)
+    t = np.arange(n) / SR
+    out = np.zeros(n, np.float32)
+    B = 0.0004
+    for k in range(1, 9):
+        fk = freq * k * math.sqrt(1.0 + B * k * k)
+        if fk > SR * 0.45:
+            break
+        amp_k = 1.0 / (k ** 1.15)
+        decay = 2.0 + 1.4 * k
+        env_k = np.exp(-t * decay / (dur * 0.9 + 0.35))
+        out += (np.sin(2 * np.pi * fk * t + 0.35 * k) * amp_k * env_k).astype(np.float32)
+    # 锤击噪声：极短，只为了给起音一点"毛边"
+    rng = np.random.default_rng(int(freq) % 9973)
+    click = (rng.standard_normal(n).astype(np.float32) * np.exp(-t * 120) * 0.05)
+    env = adsr(n, 0.003, 0.4, 0.20, 1.1)
+    return ((out + click) * env * amp * vel).astype(np.float32)
+
+
 def add(buf, sig, at):
     """把 sig 叠加到 buf 的 at 秒处（越界自动截断）"""
     i = int(at * SR)
@@ -185,9 +213,9 @@ def build(spec):
 
     prog = spec['prog']
     pad_kind = spec.get('pad_kind', 'soft')
-    pad_amp = spec.get('pad_amp', 0.15)
-    arp_kind = spec.get('arp_kind', 'bell')
-    arp_amp = spec.get('arp_amp', 0.10)
+    pad_amp = spec.get('pad_amp', 0.11)
+    arp_kind = spec.get('arp_kind', 'piano')
+    arp_amp = spec.get('arp_amp', 0.13)
     arp_div = spec.get('arp_div', 2)   # 每拍几个音
     sparkle = spec.get('sparkle', 0.0)
     bass_amp = spec.get('bass_amp', 0.12)
@@ -219,9 +247,14 @@ def build(spec):
         for i in range(cnt):
             m = seq[i % len(seq)] + 12
             amp = arp_amp * (0.75 + 0.25 * ((i % 4) == 0))
-            add(buf, voice(midi_to_freq(m), step * 2.4, amp=amp, kind=arp_kind,
-                           a=0.008, d=0.35, s=0.25, r=1.1),
-                bar_t + i * step)
+            if arp_kind == 'piano':
+                vel = 0.78 + 0.22 * (((i * 7 + b * 3) % 5) / 4.0)   # 确定的力度起伏，不用随机数
+                add(buf, piano(midi_to_freq(m), step * 2.4, amp=amp, vel=vel),
+                    bar_t + i * step + (0.004 if i % 2 else 0.0))
+            else:
+                add(buf, voice(midi_to_freq(m), step * 2.4, amp=amp, kind=arp_kind,
+                               a=0.008, d=0.35, s=0.25, r=1.1),
+                    bar_t + i * step)
 
         # 点缀：很稀疏的几个高音
         if sparkle > 0 and b % 4 == 2:
@@ -282,6 +315,10 @@ SPECS = {
 }
 
 
+# 输出文件名：前两首早年叫过别的名字，表里已统一成 title / daily
+NAME_MAP = {'title_normalsociety': 'title', 'daily_richang': 'daily'}
+
+
 def main():
     want = sys.argv[1:]
     names = want if want else list(SPECS.keys())
@@ -292,7 +329,7 @@ def main():
             print(f'  跳过未知曲目 {name}')
             continue
         print(f'- {name}')
-        write_mp3(build(spec), name)
+        write_mp3(build(spec), NAME_MAP.get(name, name))
 
 
 if __name__ == '__main__':
