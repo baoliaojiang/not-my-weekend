@@ -1,0 +1,13 @@
+{
+  "content": "0.6.2",
+  "shell": "0.6.2",
+  "shellMin": "0.6.2",
+  "www": "./www-0.6.2.zip",
+  "sha256": "bdc0a530c6d7c0ec7d0c133d2f3c9af52784f16a3abe02f8ad520dc89cf089d6",
+  "size": 33423360,
+  "notes": [
+    "启动序列与解密资源",
+    "日志导出、双 APK"
+  ],
+  "releasedAt": "2026-10-31T11:27:48.024Z"
+}

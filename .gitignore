@@ -3,7 +3,6 @@ build/out/
 build/www/
 build/apk-work/
 build/_font/
-dist/
 
 # 素材生成过程中的中间图
 generated-images/
@@ -28,3 +27,5 @@ build/www-compat/
 build/android/assets/www/
 build/android/assets/www.pkg
 build/keystore.jks
+.deploy/
+build/_trash/

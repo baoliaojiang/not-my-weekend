@@ -10,6 +10,7 @@
         —— 和 AES 比不强，但它只是防"随手扒包"，不是防有备而来的逆向；
         重点是 Java / Node 两侧各二十行就能写得完全一致，不留移植 bug。
      3 包结构：[ZBW1][uint32 版本][uint32 原文长度][32B 原文 sha256][密文]
+     容器是 tar（不是 zip），理由见下面那段注释。
 
    产物：build/pkg/www.pkg
    ========================================================= */
@@ -24,7 +25,7 @@ const ROOT = 'D:/workbuddy/2026-10-23-16-33-10';
 const WWW = process.argv[2] ? join(ROOT, process.argv[2]) : join(ROOT, 'build/www');
 const OUT_PKG = process.argv[3] ? join(ROOT, process.argv[3]) : join(ROOT, 'build/pkg/www.pkg');
 const OUT_DIR = dirname(OUT_PKG);
-const TMP_ZIP = join(ROOT, '.tmp-pkg-www.zip');
+const TMP_ZIP = join(ROOT, '.tmp-pkg-www.tar');
 
 /* 密钥：改这里必须同步改 MainActivity.java 与 electron/main.js 的 KEY */
 const KEY = 'zb-weekend-2026-mint-os-4-key-32b';
@@ -48,14 +49,15 @@ function crypt(data) {
   return out;
 }
 
-/* 打 zip：Windows 用自带 bsdtar，Linux/CI 用 zip 命令 */
+/* 容器用 tar，不用 zip。
+   原因：aapt2 之后的 Java 侧只有 ZipInputStream，想解 zip 还得带压缩头细节；
+   而 tar 是定长 512 字节头，Java 里四十行能写对。
+   之前用 `tar -a -f x.zip` 想让 bsdtar 按扩展名出 zip，实测这台机器上仍然吐的是
+   ustar（-a 被忽略），于是 Java 侧解出来不是 zip —— 干脆统一成 tar，
+   三条语言同解一个格式，不留"看着像 zip 其实是 tar"这种坑。 */
 if (existsSync(TMP_ZIP)) rmSync(TMP_ZIP, { force: true });
-if (process.platform === 'win32') {
-  execFileSync('tar', ['-a', '-c', '-f', '.tmp-pkg-www.zip', '-C', relative(ROOT, WWW), '.'],
-    { cwd: ROOT, windowsHide: true });
-} else {
-  execFileSync('zip', ['-r', '-q', TMP_ZIP, '.'], { cwd: WWW });
-}
+execFileSync('tar', ['-c', '-f', '.tmp-pkg-www.tar', '-C', relative(ROOT, WWW), '.'],
+  { cwd: ROOT, windowsHide: true });
 
 const plain = readFileSync(TMP_ZIP);
 const cipher = crypt(plain);

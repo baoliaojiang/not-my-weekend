@@ -324,7 +324,7 @@ public class MainActivity extends Activity {
         java.io.File next = new java.io.File(getFilesDir(), "www_boot");
         deleteTree(next);
         next.mkdirs();
-        unzipBytes(plain, next);
+        untarBytes(plain, next);
         if (!new java.io.File(next, "index.html").isFile()) {
             deleteTree(next);
             throw new Exception("包里没有 index.html");
@@ -340,29 +340,77 @@ public class MainActivity extends Activity {
         writeStamp(String.valueOf(shellVerCode()));
     }
 
-    private static void unzipBytes(byte[] zip, java.io.File dir) throws Exception {
-        java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(
-                new java.io.ByteArrayInputStream(zip));
+    /* 解 tar：容器是 tar 而不是 zip——定长 512 字节头，读起来比 zip 的
+       本地头/中央目录两套结构简单得多，也不会因为压缩方法差异解不出来。
+       只处理普通文件与目录；遇到其它类型（符号链接等）直接跳过。 */
+    private static void untarBytes(byte[] tar, java.io.File dir) throws Exception {
         String root = dir.getCanonicalPath() + java.io.File.separator;
-        java.util.zip.ZipEntry e;
-        byte[] buf = new byte[16384];
-        while ((e = zis.getNextEntry()) != null) {
-            java.io.File dst = new java.io.File(dir, e.getName());
-            String canon = dst.getCanonicalPath();
-            if (!canon.startsWith(root)) continue;      // 挡路径穿越
-            if (e.isDirectory()) {
-                dst.mkdirs();
-            } else {
-                java.io.File parent = dst.getParentFile();
-                if (parent != null && !parent.exists()) parent.mkdirs();
-                java.io.FileOutputStream fo = new java.io.FileOutputStream(dst);
-                int n;
-                while ((n = zis.read(buf)) > 0) fo.write(buf, 0, n);
-                fo.close();
+        int pos = 0;
+        byte[] buf = new byte[8192];
+        while (pos + 512 <= tar.length) {
+            // 连续两个全零块表示归档结束；这里遇到第一个零块就停
+            boolean zero = true;
+            for (int i = 0; i < 512; i++) {
+                if (tar[pos + i] != 0) { zero = false; break; }
             }
-            zis.closeEntry();
+            if (zero) break;
+
+            String name = cstr(tar, pos, 100);
+            long size = octal(tar, pos + 124, 12);
+            char type = (char) (tar[pos + 156] & 0xff);
+            pos += 512;
+
+            if (name.startsWith("./")) name = name.substring(2);
+            if (name.startsWith("/")) name = name.substring(1);
+
+            long body = ((size + 511) / 512) * 512;
+
+            if (name.length() == 0) { pos += (int) body; continue; }
+            if (type == '5' || name.endsWith("/")) {
+                new java.io.File(dir, name).mkdirs();
+                pos += (int) body;
+                continue;
+            }
+            if (type != '0' && type != 0) { pos += (int) body; continue; }
+
+            java.io.File dst = new java.io.File(dir, name);
+            String canon = dst.getCanonicalPath();
+            if (!canon.startsWith(root)) { pos += (int) body; continue; }   // 挡路径穿越
+            java.io.File parent = dst.getParentFile();
+            if (parent != null && !parent.exists()) parent.mkdirs();
+
+            java.io.FileOutputStream fo = new java.io.FileOutputStream(dst);
+            long left = size;
+            int off = pos;
+            while (left > 0) {
+                int n = (int) Math.min(buf.length, left);
+                fo.write(tar, off, n);
+                off += n;
+                left -= n;
+            }
+            fo.close();
+            pos += (int) body;
         }
-        zis.close();
+    }
+
+    /** tar 头里的字符串字段：NUL 或空格结尾 */
+    private static String cstr(byte[] b, int off, int len) {
+        int end = off;
+        while (end < off + len && b[end] != 0) end++;
+        try { return new String(b, off, end - off, "UTF-8").trim(); }
+        catch (Throwable t) { return ""; }
+    }
+
+    /** tar 头里的八进制数字字段（可能是空格/NUL 结尾） */
+    private static long octal(byte[] b, int off, int len) {
+        long v = 0;
+        for (int i = off; i < off + len; i++) {
+            int c = b[i] & 0xff;
+            if (c == 0 || c == ' ') continue;
+            if (c < '0' || c > '7') continue;
+            v = v * 8 + (c - '0');
+        }
+        return v;
     }
 
     private static void copyTree(java.io.File from, java.io.File to) {

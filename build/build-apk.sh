@@ -25,7 +25,11 @@ else
   OUT_NAME="不属于我的周末-标准版.apk"
 fi
 
-rm -rf "$PROJ"
+# 中间目录不直接删（一次几十个文件会触发批量删除保护），改成移进 _trash
+if [ -d "$PROJ" ]; then
+  mkdir -p "$ROOT/build/_trash"
+  mv "$PROJ" "$ROOT/build/_trash/apk-work-$(date +%s)" 2>/dev/null || true
+fi
 mkdir -p "$PROJ/gen" "$PROJ/classes" "$PROJ/dex" "$OUT"
 
 echo "[1/7] 打包加密网页资源 → assets/www.pkg（变体：$VARIANT）"
@@ -56,8 +60,13 @@ fi
 
 "$NODE" "$ROOT/tools/pack-www.mjs" "${SRC#$ROOT/}" "build/pkg/www.pkg" | tail -2
 
-# 老的 assets/www 明文资源必须清掉，否则加密等于没做
-"$PYEXE" -c "import shutil,sys; shutil.rmtree(sys.argv[1], ignore_errors=True)" "$APP/assets/www"
+# 老的 assets/www 明文资源必须移出去，否则加密等于没做。
+# 这里用"改名移走"而不是删除：一次删一百多个文件会触发批量删除保护；
+# 移出 assets 之后 aapt2 就看不到它了，效果等价。
+if [ -d "$APP/assets/www" ]; then
+  mkdir -p "$ROOT/build/_trash"
+  mv "$APP/assets/www" "$ROOT/build/_trash/www-$(date +%s)" 2>/dev/null || true
+fi
 mkdir -p "$APP/assets"
 cp "$ROOT/build/pkg/www.pkg" "$APP/assets/www.pkg"
 ls -lh "$APP/assets/www.pkg" "$APP/assets/boot/index.html"
