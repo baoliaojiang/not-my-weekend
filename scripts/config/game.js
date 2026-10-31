@@ -111,7 +111,7 @@ export const CONFIG = {
        任何一个源都只用来取 version.json 和 www-x.y.z.zip。 */
     baseUrls: [
       'https://cdn.jsdelivr.net/gh/baoliaojiang/not-my-weekend@main/dist/',
-      'https://baoliaojiang.github.io/not-my-weekend/dist/',
+      'https://baoliaojiang.github.io/not-my-weekend/',
       'https://raw.githubusercontent.com/baoliaojiang/not-my-weekend/main/dist/'
     ],
     // 包体更新时按钮跳转的地址（Release 页面）
