@@ -5482,7 +5482,7 @@ ${ctx}
     { id: "about", name: "关于", icon: "about" }
   ];
   function mintIcon(name) {
-    return `${ICONS}/${name}.png`;
+    return `${ICONS}/${name}.webp`;
   }
   var NOTE_KEY = "zb_mint_note_v1";
   function loadNoteExtra() {
@@ -5864,7 +5864,7 @@ ${ctx}
     const hasGov = !!(state2 && state2.gov);
     const sites = BROWSER_SITES.map((s) => `
     <button class="br-site" type="button" data-br-go="${s.key}">
-      <img class="br-site-ico" src="assets/icons/hyperos/${s.icon}.png" alt="" />
+      <img class="br-site-ico" src="assets/icons/hyperos/${s.icon}.webp" alt="" />
       <span class="br-site-t">${s.name}</span>
       <span class="br-site-d">${s.url}</span>
     </button>`).join("");
@@ -8112,7 +8112,7 @@ ${custom}`);
       this._phoneThread = null;
       this.hideChatContinue();
       this._mintStack = [];
-      const ico = (id) => `assets/icons/hyperos/${id}.png`;
+      const ico = (id) => `assets/icons/hyperos/${id}.webp`;
       const apps = MINT_APPS;
       const grid = apps.map((a) => `
       <button class="mos-app" type="button" data-app="${a.id}">
@@ -11199,7 +11199,7 @@ ${recent.join("\n")}`);
     { id: "night", label: "晚安" },
     { id: "main", label: "薄荷" }
   ];
-  var aiArt = (id) => `assets/ai/${id}.png`;
+  var aiArt = (id) => `assets/ai/${id}.webp`;
   function relTime(ts) {
     const t = Number(ts) || 0;
     const d = new Date(t || Date.now());

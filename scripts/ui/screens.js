@@ -715,7 +715,7 @@ export class UI {
     this.hideChatContinue();
     this._mintStack = [];
 
-    const ico = (id) => `assets/icons/hyperos/${id}.png`;
+    const ico = (id) => `assets/icons/hyperos/${id}.webp`;
     const apps = MINT_APPS;
 
     const grid = apps.map(a => `
@@ -3860,7 +3860,7 @@ const AI_STICKERS = [
   { id: 'night', label: '晚安' },
   { id: 'main', label: '薄荷' }
 ];
-const aiArt = (id) => `assets/ai/${id}.png`;
+const aiArt = (id) => `assets/ai/${id}.webp`;
 
 /** 会话列表里的相对时间 */
 function relTime(ts) {

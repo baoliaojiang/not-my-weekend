@@ -43,7 +43,7 @@ export const MINT_APPS = [
   { id: 'about',   name: '关于',    icon: 'about' }
 ];
 
-export function mintIcon(name) { return `${ICONS}/${name}.png`; }
+export function mintIcon(name) { return `${ICONS}/${name}.webp`; }
 
 /* =========================================================
    便笺：玩家自己写的东西，存在本机
@@ -465,7 +465,7 @@ function browserHome(state) {
   const hasGov = !!(state && state.gov);
   const sites = BROWSER_SITES.map(s => `
     <button class="br-site" type="button" data-br-go="${s.key}">
-      <img class="br-site-ico" src="assets/icons/hyperos/${s.icon}.png" alt="" />
+      <img class="br-site-ico" src="assets/icons/hyperos/${s.icon}.webp" alt="" />
       <span class="br-site-t">${s.name}</span>
       <span class="br-site-d">${s.url}</span>
     </button>`).join('');
