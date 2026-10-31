@@ -3,10 +3,10 @@
   "shell": "0.6.2.3",
   "shellMin": "0.6.2.3",
   "www": "./www-0.6.2.3.zip",
-  "sha256": "3b00df810e5b0b281e3fc3a068c69aac5724df9ef8770b1d5b307600e15da343",
+  "sha256": "4b37d4d125be5802284429c2c2539c4b5eb3a34ffe5a48c2de70a558ed6c565d",
   "size": 33391140,
   "notes": [
     "自动构建发布（网页版 + 热更包）"
   ],
-  "releasedAt": "2026-10-31T13:27:23.061Z"
+  "releasedAt": "2026-10-31T13:36:07.909Z"
 }
