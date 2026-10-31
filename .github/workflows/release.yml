@@ -32,14 +32,11 @@ jobs:
           mkdir -p build/out/web
           node build/sync-dir.mjs build/www build/out/web
 
+      - name: 安装 zip（Linux 自带 tar 不写 zip，make-dist 在 Linux 走 zip 命令）
+        run: sudo apt-get update && sudo apt-get install -y zip
+
       - name: 生成 version.json 与热更包
-        run: |
-          # tar 在 ubuntu 上同样能写 zip（先打 tar 再用 zip 也行，这里直接用 zip 命令）
-          node -e "
-          const {execFileSync}=require('node:child_process');
-          " || true
-          # 不用 node 里的 tar 分支（Linux 的 tar 不写 zip），改用 zip
-          node tools/make-dist.mjs.ci
+        run: node tools/make-dist.mjs --notes "自动构建发布（网页版 + 热更包）"
 
       - name: 部署到 GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -55,5 +52,7 @@ jobs:
             dist/www-*.zip
             dist/version.json
           body: |
-            自动构建发布。网页版：https://<你的用户名>.github.io/<仓库名>/
-            APK / EXE 的热更新会从这里取的 version.json 读取新版本。
+            自动构建发布：网页版与热更新包。
+            网页版（免安装）：https://baoliaojiang.github.io/not-my-weekend/dist/
+            APK / EXE 的热更新会读取本 Release 里的 version.json 与 www-*.zip。
+            Android 双包与 Windows 便携版由作者在发布说明里手动附上。
