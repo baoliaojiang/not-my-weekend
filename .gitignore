@@ -17,3 +17,14 @@ node_modules/
 *.log
 .tmp-*
 tmp/
+
+# WorkBuddy 会话数据：完全不该进开源仓库（含备份、记忆、截图）
+.workbuddy/
+
+# 内部构建缓存与历史产物
+dist-old/
+build/pkg/
+build/www-compat/
+build/android/assets/www/
+build/android/assets/www.pkg
+build/keystore.jks

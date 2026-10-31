@@ -22,9 +22,11 @@ mkdir -p "$APP/resources/app"
 cp "$ROOT/build/electron/main.js" "$APP/resources/app/main.js"
 cp "$ROOT/build/electron/preload.js" "$APP/resources/app/preload.js"
 cp "$ROOT/build/electron/package.json" "$APP/resources/app/package.json"
-# 不再整目录删除旧的 www：那是一次删七八十个文件，会触发批量删除保护。
-# 改成原地覆盖 + 只删掉这次已经不存在的旧文件。
-node "$ROOT/build/sync-dir.mjs" "$ROOT/build/www" "$APP/resources/app/www"
+# 网页资源以加密包形式随程序发布：程序目录里只有 www.pkg，
+# 首次启动时由主进程解密到用户数据目录，再从那里加载。
+cp "$ROOT/build/pkg/www.pkg" "$APP/resources/app/www.pkg"
+# 清掉以前留在程序目录里的明文 www（加密后它不该再存在）
+"C:/Users/12821/.workbuddy/binaries/python/envs/default/Scripts/python.exe" -c "import shutil,sys; shutil.rmtree(sys.argv[1], ignore_errors=True)" "$APP/resources/app/www"
 
 echo "[3/4] 改名"
 if [ -f "$APP/electron.exe" ]; then mv "$APP/electron.exe" "$APP/$NAME.exe"; fi
@@ -39,7 +41,7 @@ for i in 1 2 3 4 5; do
       --set-icon "$ROOT/build/icon.ico" \
       --set-version-string ProductName "$NAME" \
       --set-version-string FileDescription "不属于我的周末 · 校园调查视觉小说 Demo" \
-      --set-version-string CompanyName "ZhouRi Demo" \
+      --set-version-string CompanyName "爆料酱" \
       --set-version-string LegalCopyright "Demo 版本，仅供个人学习与交流" \
       --set-version-string OriginalFilename "$NAME.exe" \
       --set-file-version "0.6.2.0" \

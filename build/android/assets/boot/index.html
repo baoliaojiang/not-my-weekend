@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>不属于我的周末</title>
+<style>
+  /* 这一个页面是唯一留在 APK 明处的文件，所以它必须自包含：
+     不引外部样式、不引外部脚本，几 KB 就够。
+     它的唯一职责是：在"编译着色器"这一屏里把加密资源解出来，然后跳转。 */
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #000; color: #e9e6df;
+    font-family: -apple-system, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; opacity: 0; transition: opacity .7s ease;
+  }
+  body.on { opacity: 1; }
+  .card {
+    width: min(420px, 84vw); padding: 22px 22px 20px;
+    border-radius: 22px; text-align: left;
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 18px 60px rgba(0,0,0,.5);
+  }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .kicker { font-size: .6rem; letter-spacing: .34em; color: rgba(233,230,223,.3); }
+  .ver { font-size: .66rem; letter-spacing: .1em; color: rgba(233,230,223,.34); font-variant-numeric: tabular-nums; }
+  h1 { margin: 0 0 6px; font-size: 1.08rem; font-weight: 500; letter-spacing: .02em; }
+  p { margin: 0 0 16px; font-size: .76rem; line-height: 1.7; color: rgba(233,230,223,.56); min-height: 1.7em; }
+  .bar { width: 100%; height: 4px; border-radius: 4px; background: rgba(255,255,255,.09); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 6%; border-radius: 4px;
+    background: linear-gradient(90deg, rgba(233,230,223,.5), rgba(233,230,223,.95));
+    transition: width .45s cubic-bezier(.3,.8,.3,1); }
+  .foot { margin: 14px 0 0; font-size: .64rem; letter-spacing: .04em; color: rgba(233,230,223,.26); }
+  .err { color: #f0a89c; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <span class="kicker">PREPARING</span>
+      <span class="ver" id="pct">0%</span>
+    </div>
+    <h1>正在编译着色器</h1>
+    <p id="msg">正在准备运行环境…</p>
+    <div class="bar"><i id="bar"></i></div>
+    <p class="foot" id="foot">首次启动会慢一些，之后不用再等</p>
+  </div>
+<script>
+(function () {
+  var bar = document.getElementById('bar');
+  var pct = document.getElementById('pct');
+  var msg = document.getElementById('msg');
+  var foot = document.getElementById('foot');
+
+  function paint(p, text) {
+    p = Math.max(4, Math.min(100, p | 0));
+    bar.style.width = p + '%';
+    pct.textContent = p + '%';
+    if (text) msg.textContent = text;
+  }
+
+  // 由 Java 侧在解包过程中回调
+  window.__zb_prep = function (p, text) { paint(p, text); };
+
+  // 解包完成：跳到真正的资源目录
+  window.__zb_prep_done = function (url) {
+    paint(100, '准备完成');
+    foot.textContent = '正在进入游戏…';
+    setTimeout(function () { location.replace(url); }, 420);
+  };
+
+  window.__zb_prep_fail = function (reason) {
+    msg.className = 'err';
+    msg.textContent = '资源解包失败：' + reason;
+    foot.textContent = '请尝试重新安装；如果仍然失败，请在设置里导出日志反馈。';
+    pct.textContent = '--';
+  };
+
+  setTimeout(function () { document.body.classList.add('on'); }, 40);
+
+  // 桥还没挂上时等一等，别一上来就报错
+  var tries = 0;
+  function start() {
+    if (window.ZBApp && typeof window.ZBApp.prepare === 'function') {
+      window.ZBApp.prepare();
+      return;
+    }
+    if (++tries > 60) { window.__zb_prep_fail('客户端接口未就绪'); return; }
+    setTimeout(start, 100);
+  }
+  start();
+})();
+</script>
+</body>
+</html>

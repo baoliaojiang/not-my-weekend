@@ -28,22 +28,20 @@ fi
 rm -rf "$PROJ"
 mkdir -p "$PROJ/gen" "$PROJ/classes" "$PROJ/dex" "$OUT"
 
-echo "[1/7] 同步网页资源到 assets/www（变体：$VARIANT）"
-# 产物文件名固定（index.html / bundle.js），直接覆盖即可；
-# 不再 rm -rf 整个 assets 目录——那会一次删 50 个文件，容易触发批量删除保护。
-mkdir -p "$APP/assets/www"
-cp -r "$ROOT/build/www/." "$APP/assets/www/"
+echo "[1/7] 打包加密网页资源 → assets/www.pkg（变体：$VARIANT）"
 
-# 兼容版：把 polyfill 与降级样式塞进资源，并在 index.html 里引上。
-# 标准版不引——多一个 <script> 就多一次解析，没必要。
-if [ "$VARIANT" != "compat" ]; then
-  # 上一次可能是兼容版，残留的 compat.* 会让 index.html 里还留着引用
-  rm -f "$APP/assets/www/compat.js" "$APP/assets/www/compat.css"
-fi
+# 资源不再以明文进安装包：先打成 zip，再流加密成 www.pkg。
+# 解包发生在客户端首次启动的「正在编译着色器」那一屏（见 assets/boot/index.html）。
+NODE="C:/Users/12821/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
+SRC="$ROOT/build/www"
+
 if [ "$VARIANT" = "compat" ]; then
-  cp "$ROOT/build/compat/compat.js" "$APP/assets/www/compat.js"
-  cp "$ROOT/build/compat/compat.css" "$APP/assets/www/compat.css"
-  "$PYEXE" - "$APP/assets/www/index.html" <<'PY'
+  # 兼容版：先复制一份 www，注入 polyfill 与降级样式，再打这个副本
+  SRC="$ROOT/build/www-compat"
+  "$NODE" "$ROOT/build/sync-dir.mjs" "$ROOT/build/www" "$SRC" >/dev/null 2>&1 || true
+  cp "$ROOT/build/compat/compat.js" "$SRC/compat.js"
+  cp "$ROOT/build/compat/compat.css" "$SRC/compat.css"
+  "$PYEXE" - "$SRC/index.html" <<'PY'
 import io, sys
 p = sys.argv[1]
 s = io.open(p, encoding='utf-8').read()
@@ -53,10 +51,16 @@ if 'compat.js' not in s:
     s = s.replace('</head>', tag + '</head>', 1)
     io.open(p, 'w', encoding='utf-8', newline='\n').write(s)
     print('  已注入兼容层')
-else:
-    print('  兼容层已存在')
 PY
 fi
+
+"$NODE" "$ROOT/tools/pack-www.mjs" "${SRC#$ROOT/}" "build/pkg/www.pkg" | tail -2
+
+# 老的 assets/www 明文资源必须清掉，否则加密等于没做
+"$PYEXE" -c "import shutil,sys; shutil.rmtree(sys.argv[1], ignore_errors=True)" "$APP/assets/www"
+mkdir -p "$APP/assets"
+cp "$ROOT/build/pkg/www.pkg" "$APP/assets/www.pkg"
+ls -lh "$APP/assets/www.pkg" "$APP/assets/boot/index.html"
 
 echo "[2/7] aapt2 编译资源"
 "$BT/aapt2.exe" compile --dir "$APP/res" -o "$PROJ/res.zip"
@@ -117,7 +121,7 @@ KS="$ROOT/build/keystore.jks"
 if [ ! -f "$KS" ]; then
   "$JAVA_HOME/bin/keytool" -genkeypair -v -keystore "$KS" -storepass zhouri2026 -keypass zhouri2026 \
     -alias zhouri -keyalg RSA -keysize 2048 -validity 10950 \
-    -dname "CN=ZhouRi, O=Demo, C=CN" >/dev/null 2>&1
+    -dname "CN=baoliaojiang, O=Demo, C=CN" >/dev/null 2>&1
   echo "  已生成调试签名"
 fi
 "$BT/apksigner.bat" sign --ks "$KS" --ks-pass pass:zhouri2026 --key-pass pass:zhouri2026 \

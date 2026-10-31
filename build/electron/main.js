@@ -4,6 +4,8 @@ const { pathToFileURL } = require('node:url');
 const fs = require('node:fs');
 const https = require('node:https');
 const crypto = require('node:crypto');
+const zlib = require('node:zlib');
+const os = require('node:os');
 const { execFile } = require('node:child_process');
 
 // 启动诊断：只有设了 ZB_LOG=<文件路径> 才会写，正常游玩不产生任何文件
@@ -13,6 +15,84 @@ const boot = (m) => {
   try { fs.appendFileSync(BOOT_LOG, `${new Date().toISOString().slice(11, 19)} ${m}\n`); } catch (e) { /* ignore */ }
 };
 boot('main.js loaded');
+
+/* =========================================================
+   随程序发布的是加密包 www.pkg，不是明文目录。
+   ---------------------------------------------------------
+   启动顺序：
+     1 程序目录里有 www.pkg → 解密到用户数据目录（首次或版本变化时）
+     2 热更新过的 www（userData/www + ":hot" 标记）优先
+     3 都没有 → 开发环境下的明文 www 目录
+   解密算法必须与 tools/pack-www.mjs、MainActivity.java 完全一致：
+     keystream = sha256(KEY || uint32BE(counter))，逐字节 XOR。
+   ========================================================= */
+const PKG_KEY = 'zb-weekend-2026-mint-os-4-key-32b';
+
+function pkgCrypt(data) {
+  const out = Buffer.allocUnsafe(data.length);
+  const blocks = Math.ceil(data.length / 32);
+  const seed = Buffer.alloc(PKG_KEY.length + 4);
+  seed.write(PKG_KEY, 0, 'utf8');
+  for (let i = 0; i < blocks; i++) {
+    seed.writeUInt32BE(i >>> 0, PKG_KEY.length);
+    const ks = crypto.createHash('sha256').update(seed).digest();
+    const off = i * 32;
+    const n = Math.min(32, data.length - off);
+    for (let j = 0; j < n; j++) out[off + j] = data[off + j] ^ ks[j];
+  }
+  return out;
+}
+
+function unpackBundled() {
+  try {
+    const pkgPath = path.join(__dirname, 'www.pkg');
+    if (!fs.existsSync(pkgPath)) return;            // 开发模式：直接用 www 目录
+
+    const ud = app.getPath('userData');
+    const stampPath = path.join(ud, 'www.stamp');
+    const want = app.getVersion();                   // 版本变了就重新解
+    let stamp = '';
+    try { stamp = fs.readFileSync(stampPath, 'utf8').trim(); } catch (e) { /* 首次 */ }
+
+    const live = path.join(ud, 'www', 'index.html');
+    if (fs.existsSync(live) && stamp.startsWith(want)) return;   // 已经解过
+
+    const raw = fs.readFileSync(pkgPath);
+    if (raw.length < 44 || raw.slice(0, 4).toString('ascii') !== 'ZBW1') {
+      boot('www.pkg 格式不对，跳过解包');
+      return;
+    }
+    const plainLen = raw.readUInt32LE(8);
+    const wantHash = raw.slice(12, 44);
+    const plain = pkgCrypt(raw.slice(44));
+
+    if (plain.length !== plainLen) { boot('www.pkg 长度不符，跳过解包'); return; }
+    const got = crypto.createHash('sha256').update(plain).digest();
+    if (!got.equals(wantHash)) { boot('www.pkg 校验失败，跳过解包'); return; }
+
+    // 写临时 zip，用系统自带 tar 解压（Windows 10 1803+ / macOS 都支持 zip）
+    const tmpZip = path.join(app.getPath('temp'), 'zb-www-boot.zip');
+    fs.writeFileSync(tmpZip, plain);
+    const next = path.join(ud, 'www_boot');
+    fs.rmSync(next, { recursive: true, force: true });
+    fs.mkdirSync(next, { recursive: true });
+    require('node:child_process').execFileSync('tar', ['-xf', tmpZip, '-C', next], { windowsHide: true });
+    fs.rmSync(tmpZip, { force: true });
+
+    if (!fs.existsSync(path.join(next, 'index.html'))) {
+      fs.rmSync(next, { recursive: true, force: true });
+      boot('解出来的包没有 index.html');
+      return;
+    }
+    const cur = path.join(ud, 'www');
+    fs.rmSync(cur, { recursive: true, force: true });
+    fs.renameSync(next, cur);
+    fs.writeFileSync(stampPath, want);
+    boot('已解包随包资源 → ' + cur);
+  } catch (e) {
+    boot('解包失败：' + (e && e.message));
+  }
+}
 
 /* 网页资源目录：热更过的优先，否则用安装包自带的。
    热更目录放在 userData 下——那里不会随覆盖安装被清掉，也不会被系统当程序目录锁权限。
@@ -29,8 +109,9 @@ function hotWww() {
   return null;
 }
 
-const WWW = hotWww() || BUNDLED_WWW;
-boot(`www dir: ${WWW}`);
+/* 资源目录在解包之后才能定，所以这里用 let。
+   顺序：whenReady → 解包（首次或版本变化）→ 选目录 → 建窗口。 */
+let WWW = BUNDLED_WWW;
 
 // 默认启用硬件加速（GPU 合成能明显减轻立绘/背景切换时的卡顿）；
 // 少数受限机器上 GPU 进程起不来时，设 ZB_SAFE=1 退回软件渲染。
@@ -79,7 +160,7 @@ function createWindow() {
     show: false,
     autoHideMenuBar: true,
     title: '不属于我的周末',
-    icon: path.join(__dirname, 'www/assets/app-icon.png'),
+    icon: path.join(WWW, 'assets/app-icon.png'),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -209,6 +290,8 @@ ipcMain.handle('zb:download', async (_e, remote) => {
     const cur = path.join(base, 'www');
     fs.rmSync(cur, { recursive: true, force: true });
     fs.renameSync(next, cur);
+    // 标记为热更内容：下次启动不再用随包资源覆盖它
+    try { fs.writeFileSync(path.join(base, 'www.stamp'), app.getVersion() + ':hot'); } catch (e) { /* 忽略 */ }
     return { ok: true };
   } catch (err) {
     try { fs.rmSync(zip, { force: true }); } catch (e) { /* 忽略 */ }
@@ -218,6 +301,10 @@ ipcMain.handle('zb:download', async (_e, remote) => {
 });
 
 app.whenReady().then(() => {
+  // 先把随包资源解到用户目录，再决定从哪儿加载
+  unpackBundled();
+  WWW = hotWww() || BUNDLED_WWW;
+  boot(`www dir: ${WWW}`);
   boot('app ready');
   try {
     protocol.handle('app', (request) => {

@@ -29,7 +29,9 @@ public class MainActivity extends Activity {
     /* 启动页解析：热更新过的资源优先。
        顺序是「应用私有目录 > 安装包内置 assets」：
        升级失败或从未升级时自动落回内置，玩家不会因为一次坏下载就开不了游戏。 */
-    private static final String BUNDLED_URL = "file:///android_asset/www/index.html";
+    /* 明文资源只剩这一个解包页；真正的网页资源是加密的 assets/www.pkg，
+       首次启动时由它解密到应用私有目录，再跳过去加载。 */
+    private static final String LOADER_URL = "file:///android_asset/boot/index.html";
 
     private WebView web;
     private long lastBackTime = 0L;
@@ -159,13 +161,14 @@ public class MainActivity extends Activity {
 
     /** 当前应该加载的入口：有热更资源就用它，否则用安装包内置的 */
     private String resolveStartUrl() {
+        // 已经解好包（或热更过）就直接进游戏，只有第一次才走解包页
         try {
             java.io.File idx = new java.io.File(hotWwwDir(), "index.html");
             if (idx.isFile() && idx.length() > 0) {
                 return "file://" + idx.getAbsolutePath();
             }
         } catch (Throwable ignored) { }
-        return BUNDLED_URL;
+        return LOADER_URL;
     }
 
     /** 当前外壳版本（就是安装包 versionName，BuildConfig 不一定生成，直接查系统） */
@@ -205,6 +208,214 @@ public class MainActivity extends Activity {
                 }
             }).start();
         }
+    }
+
+    /* =========================================================
+       资源解包
+       ---------------------------------------------------------
+       安装包里存的是 assets/www.pkg：zip 包再过一层流加密。
+       这里负责把它解到 files/www，之后 WebView 只从那里加载。
+       重不重要只有一条：任何一步失败都要能说清原因（回给解包页），
+       不能留一个黑屏让玩家猜。
+
+       版本判定用 files/www.stamp：
+         "18"      → 由 18 版安装包的 pkg 解出来的
+         "18:hot"  → 18 版内核 + 热更新内容
+       启动时比 stamp 的前缀和当前 versionCode：
+         一致   → 直接用现有 www
+         不一致 → 说明客户端换了安装包，重新解 pkg（热更内容作废，因为新包里更新）
+       ========================================================= */
+    private static final String PKG_KEY = "zb-weekend-2026-mint-os-4-key-32b";
+
+    private int shellVerCode() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+        } catch (Throwable t) { return 0; }
+    }
+
+    private java.io.File stampFile() { return new java.io.File(getFilesDir(), "www.stamp"); }
+
+    private void writeStamp(String v) {
+        try {
+            java.io.FileOutputStream fo = new java.io.FileOutputStream(stampFile());
+            fo.write(v.getBytes("UTF-8"));
+            fo.close();
+        } catch (Throwable ignored) { }
+    }
+
+    private String readStamp() {
+        try {
+            java.io.File f = stampFile();
+            if (!f.isFile()) return "";
+            java.io.FileInputStream in = new java.io.FileInputStream(f);
+            byte[] b = new byte[(int) f.length()];
+            int n = in.read(b);
+            in.close();
+            return n > 0 ? new String(b, 0, n, "UTF-8").trim() : "";
+        } catch (Throwable t) { return ""; }
+    }
+
+    /** 需要解包吗？已经解过且安装包没换，就不用 */
+    private boolean needUnpack() {
+        java.io.File idx = new java.io.File(hotWwwDir(), "index.html");
+        if (!idx.isFile() || idx.length() == 0) return true;
+        return !readStamp().startsWith(String.valueOf(shellVerCode()));
+    }
+
+    /** 流解密：keystream = sha256(KEY || counter)，与 tools/pack-www.mjs 一致 */
+    private static byte[] pkgCrypt(byte[] data) throws Exception {
+        byte[] key = PKG_KEY.getBytes("UTF-8");
+        byte[] out = new byte[data.length];
+        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+        int blocks = (data.length + 31) / 32;
+        byte[] seed = new byte[key.length + 4];
+        System.arraycopy(key, 0, seed, 0, key.length);
+        for (int i = 0; i < blocks; i++) {
+            seed[key.length]     = (byte) ((i >>> 24) & 0xff);
+            seed[key.length + 1] = (byte) ((i >>> 16) & 0xff);
+            seed[key.length + 2] = (byte) ((i >>> 8) & 0xff);
+            seed[key.length + 3] = (byte) (i & 0xff);
+            md.reset();
+            byte[] ks = md.digest(seed);
+            int off = i * 32;
+            int n = Math.min(32, data.length - off);
+            for (int j = 0; j < n; j++) out[off + j] = (byte) (data[off + j] ^ ks[j]);
+        }
+        return out;
+    }
+
+    private byte[] readAssetAll(String path) throws Exception {
+        java.io.InputStream in = getAssets().open(path);
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[16384];
+        int n;
+        while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+        in.close();
+        return bos.toByteArray();
+    }
+
+    /** 解包：读 pkg → 校验头 → 解密 → 解压到 files/www */
+    private void unpackWww() throws Exception {
+        byte[] raw = readAssetAll("www.pkg");
+        if (raw.length < 44) throw new Exception("pkg 太小");
+        String magic = new String(raw, 0, 4, "US-ASCII");
+        if (!"ZBW1".equals(magic)) throw new Exception("pkg 格式不对");
+
+        int ver = (raw[4] & 0xff) | ((raw[5] & 0xff) << 8) | ((raw[6] & 0xff) << 16) | ((raw[7] & 0xff) << 24);
+        if (ver != 1) throw new Exception("pkg 版本不支持: " + ver);
+
+        long plainLen = ((long) (raw[8] & 0xff)) | ((long) (raw[9] & 0xff) << 8)
+                | ((long) (raw[10] & 0xff) << 16) | ((long) (raw[11] & 0xff) << 24);
+        if (plainLen <= 0 || plainLen > raw.length) throw new Exception("pkg 长度异常");
+
+        byte[] wantHash = new byte[32];
+        System.arraycopy(raw, 12, wantHash, 0, 32);
+
+        byte[] cipher = new byte[raw.length - 44];
+        System.arraycopy(raw, 44, cipher, 0, cipher.length);
+        byte[] plain = pkgCrypt(cipher);
+
+        // 完整性校验：解出来不对就别动现有资源
+        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+        byte[] gotHash = md.digest(plain);
+        if (!java.util.Arrays.equals(gotHash, wantHash)) throw new Exception("内容校验失败");
+
+        java.io.File www = hotWwwDir();
+        java.io.File next = new java.io.File(getFilesDir(), "www_boot");
+        deleteTree(next);
+        next.mkdirs();
+        unzipBytes(plain, next);
+        if (!new java.io.File(next, "index.html").isFile()) {
+            deleteTree(next);
+            throw new Exception("包里没有 index.html");
+        }
+
+        deleteTree(www);
+        if (!next.renameTo(www)) {
+            // 改名失败（少数文件系统会拒绝），退一步逐层拷贝
+            copyTree(next, www);
+            deleteTree(next);
+            if (!new java.io.File(www, "index.html").isFile()) throw new Exception("资源落盘失败");
+        }
+        writeStamp(String.valueOf(shellVerCode()));
+    }
+
+    private static void unzipBytes(byte[] zip, java.io.File dir) throws Exception {
+        java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(
+                new java.io.ByteArrayInputStream(zip));
+        String root = dir.getCanonicalPath() + java.io.File.separator;
+        java.util.zip.ZipEntry e;
+        byte[] buf = new byte[16384];
+        while ((e = zis.getNextEntry()) != null) {
+            java.io.File dst = new java.io.File(dir, e.getName());
+            String canon = dst.getCanonicalPath();
+            if (!canon.startsWith(root)) continue;      // 挡路径穿越
+            if (e.isDirectory()) {
+                dst.mkdirs();
+            } else {
+                java.io.File parent = dst.getParentFile();
+                if (parent != null && !parent.exists()) parent.mkdirs();
+                java.io.FileOutputStream fo = new java.io.FileOutputStream(dst);
+                int n;
+                while ((n = zis.read(buf)) > 0) fo.write(buf, 0, n);
+                fo.close();
+            }
+            zis.closeEntry();
+        }
+        zis.close();
+    }
+
+    private static void copyTree(java.io.File from, java.io.File to) {
+        if (from == null || !from.exists()) return;
+        if (from.isDirectory()) {
+            to.mkdirs();
+            java.io.File[] kids = from.listFiles();
+            if (kids != null) for (int i = 0; i < kids.length; i++) copyTree(kids[i], new java.io.File(to, kids[i].getName()));
+        } else {
+            try {
+                java.io.FileInputStream in = new java.io.FileInputStream(from);
+                java.io.FileOutputStream out = new java.io.FileOutputStream(to);
+                byte[] buf = new byte[16384];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                in.close(); out.close();
+            } catch (Throwable ignored) { }
+        }
+    }
+
+    /** 解包页调用的入口：后台跑，进度回调给网页 */
+    private void startPrepare() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!needUnpack()) {
+                        final String url = "file://" + new java.io.File(hotWwwDir(), "index.html").getAbsolutePath();
+                        web.post(new Runnable() { public void run() {
+                            callWeb("window.__zb_prep && window.__zb_prep(100,'准备完成')");
+                            callWeb("window.__zb_prep_done && window.__zb_prep_done(" + jsString(url) + ")");
+                        }});
+                        return;
+                    }
+                    web.post(new Runnable() { public void run() {
+                        callWeb("window.__zb_prep && window.__zb_prep(26,'正在解包资源…')");
+                    }});
+                    unpackWww();
+                    web.post(new Runnable() { public void run() {
+                        callWeb("window.__zb_prep && window.__zb_prep(88,'正在载入界面…')");
+                    }});
+                    final String url = "file://" + new java.io.File(hotWwwDir(), "index.html").getAbsolutePath();
+                    web.post(new Runnable() { public void run() {
+                        callWeb("window.__zb_prep_done && window.__zb_prep_done(" + jsString(url) + ")");
+                    }});
+                } catch (final Throwable t) {
+                    final String why = (t.getMessage() == null ? "unknown" : t.getMessage());
+                    web.post(new Runnable() { public void run() {
+                        callWeb("window.__zb_prep_fail && window.__zb_prep_fail(" + jsString(why) + ")");
+                    }});
+                }
+            }
+        }).start();
     }
 
     /** 把字符串安全地放进 JS 调用里 */
@@ -258,6 +469,8 @@ public class MainActivity extends Activity {
                 deleteTree(next);
                 return "{\"ok\":false,\"reason\":\"rename-failed\"}";
             }
+            // 标记成热更内容：下次启动直接用，不要被安装包里的旧 pkg 覆盖
+            writeStamp(shellVerCode() + ":hot");
             return "{\"ok\":true}";
         } catch (Throwable t) {
             if (zip != null) zip.delete();
@@ -470,6 +683,11 @@ public class MainActivity extends Activity {
     /** 给网页用的键值存储（写入 SharedPreferences） */
     /** 应用级接口：退出 + 屏幕方向 */
     private class AppBridge {
+
+        /* 解包页在"编译着色器"这一步调用它：
+           首次启动解加密资源，之后基本是空跑（直接给地址）。 */
+        @android.webkit.JavascriptInterface
+        public void prepare() { startPrepare(); }
 
         /* 把一段文本写到系统的「下载」目录。
            为什么不用网页的 <a download>：WebView 没有注册 DownloadListener，
