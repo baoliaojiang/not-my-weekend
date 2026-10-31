@@ -1,7 +1,7 @@
 (() => {
   // scripts/config/game.js
   var CONFIG = {
-    version: "0.6.2",
+    version: "0.6.2.1",
     // 存储键（改这里不会影响旧存档兼容性，但会各存一份）
     keys: {
       save: "zbnx.save",
@@ -3616,6 +3616,28 @@
 
   // scripts/data/changelog.js
   var CHANGELOG = [
+    {
+      version: "v0.6.2.1",
+      date: "2026-10-31",
+      intro: "本次更新修复了客户端首次启动时的资源解包失败，并把热更新改成「先看内容、再决定要不要更新」。具体更新内容如下：",
+      sections: [
+        {
+          title: "一、修复",
+          items: [
+            { type: "fix", text: "修复首次启动卡在「正在编译着色器」并提示「客户端接口未就绪」：解包改到客户端原生侧完成，不再依赖网页与客户端之间的接口。" },
+            { type: "fix", text: "解包失败时不再停在黑屏，会在启动页写明失败原因。" }
+          ]
+        },
+        {
+          title: "二、更新方式",
+          items: [
+            { type: "opt", text: "启动时查到新资源，先列出本次改了什么、包有多大，再由你选择「立即更新」或「下次再说」。" },
+            { type: "opt", text: "不再自动下载和自动重载。" },
+            { type: "new", text: "发布页提供 Windows 便携版压缩包下载，解压即玩。" }
+          ]
+        }
+      ]
+    },
     {
       version: "v0.6.2",
       date: "2026-10-31",

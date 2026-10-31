@@ -1,7 +1,7 @@
 {
   "name": "not-my-weekend",
   "productName": "不属于我的周末",
-  "version": "0.6.2",
+  "version": "0.6.2.1",
   "description": "不属于我的周末 · 校园调查视觉小说 Demo",
   "main": "main.js",
   "private": true,

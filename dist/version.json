@@ -1,13 +1,13 @@
 {
-  "content": "0.6.2",
-  "shell": "0.6.2",
-  "shellMin": "0.6.2",
-  "www": "./www-0.6.2.zip",
-  "sha256": "b50cb1a08efb6605abab6d0b751ecc3d3a1f04efdd0111eff3720f1ef6e167fb",
+  "content": "0.6.2.1",
+  "shell": "0.6.2.1",
+  "shellMin": "0.6.2.1",
+  "www": "./www-0.6.2.1.zip",
+  "sha256": "7812259dfa142527f40eab3d4dd4e88c838c8fab6ff7dbbe5bb31a898976392f",
   "size": 35031040,
   "notes": [
-    "热更新前先列出更新内容并由玩家确认",
-    "主题曲换 AI 版，其余改为钢琴音色"
+    "修复解包失败，热更新改为先确认",
+    "Windows 便携版分卷下载"
   ],
-  "releasedAt": "2026-10-31T11:52:24.913Z"
+  "releasedAt": "2026-10-31T11:58:24.434Z"
 }

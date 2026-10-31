@@ -48,8 +48,8 @@ for i in 1 2 3 4 5; do
       --set-version-string CompanyName "爆料酱" \
       --set-version-string LegalCopyright "Demo 版本，仅供个人学习与交流" \
       --set-version-string OriginalFilename "$NAME.exe" \
-      --set-file-version "0.6.2.0" \
-      --set-product-version "0.6.2.0"; then
+      --set-file-version "0.6.2.1.0" \
+      --set-product-version "0.6.2.1.0"; then
     ok=1; break
   fi
   echo "  写入失败，第 $i 次重试…"
