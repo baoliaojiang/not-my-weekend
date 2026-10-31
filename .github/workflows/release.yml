@@ -59,9 +59,23 @@ jobs:
 
       - name: 放回 APK 与 Windows 分卷
         run: |
-          mkdir -p dist/apk dist/win
-          cp /tmp/rel/apk/* dist/apk/ 2>/dev/null || true
+          mkdir -p dist/win dist/rel
           cp /tmp/rel/win/* dist/win/ 2>/dev/null || true
+          # GitHub 会把非 ASCII 文件名压成同一串（两个中文 APK 都会变成 -0.6.2.3-.apk），
+          # 第二个就会撞名被当成「更新已存在附件」而 404。所以附件改用 ASCII 文件名。
+          cp /tmp/rel/apk/*标准版*.apk dist/rel/NotMyWeekend-0.6.2.3-standard.apk 2>/dev/null || true
+          cp /tmp/rel/apk/*兼容版*.apk dist/rel/NotMyWeekend-0.6.2.3-compat.apk 2>/dev/null || true
+          ls -lh dist/rel dist/win
+
+      - name: 清理旧附件（避免同名「更新附件」404）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" \
+            --json assets --jq '.assets[].name' 2>/dev/null | while IFS= read -r n; do
+              [ -n "$n" ] && gh release delete-asset "${{ github.ref_name }}" "$n" --repo "${{ github.repository }}" --yes
+            done
 
       - name: 发布 Release（附全部产物）
         uses: softprops/action-gh-release@v2
@@ -69,7 +83,7 @@ jobs:
           files: |
             dist/www-*.zip
             dist/version.json
-            dist/apk/*.apk
+            dist/rel/*.apk
             dist/win/*
           body: |
             校园调查题材的视觉小说 Demo。个人制作、非商业、免费。
@@ -88,7 +102,7 @@ jobs:
 
             ## 下载（见本发布下方附件）
 
-            - Android 标准版 / 兼容版：`不属于我的周末-0.6.2.3-标准版.apk` / `-兼容版.apk`（存档互通）
+            - Android 标准版 / 兼容版：`NotMyWeekend-0.6.2.3-standard.apk` / `NotMyWeekend-0.6.2.3-compat.apk`（存档互通）
             - Windows 便携版：因超过 GitHub 单文件 100MB，拆 3 段 + `合并.bat`；下载后运行 `合并.bat` 得到 zip 再解压
             - 网页版（免安装）：https://baoliaojiang.github.io/not-my-weekend/dist/
 
