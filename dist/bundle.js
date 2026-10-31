@@ -1,7 +1,7 @@
 (() => {
   // scripts/config/game.js
   var CONFIG = {
-    version: "0.6.2.1",
+    version: "0.6.2.2",
     // 存储键（改这里不会影响旧存档兼容性，但会各存一份）
     keys: {
       save: "zbnx.save",
@@ -1729,21 +1729,37 @@
         list.hidden = false;
       }
       if (foot) foot.textContent = `下载约 ${remote.size ? Math.round(remote.size / 1048576) + " MB" : "几 MB"} · 不会影响存档`;
-      if (!actions) {
-        waiting = false;
-        show(i + 1);
-        return;
-      }
-      actions.hidden = false;
-      actions.innerHTML = '<button class="boot-btn" id="updLater" type="button">下次再说</button><button class="boot-btn is-primary" id="updNow" type="button">立即更新</button>';
-      const later = actions.querySelector("#updLater");
-      const now = actions.querySelector("#updNow");
+      const overlay = document.createElement("div");
+      overlay.className = "boot-modal";
+      const noteHtml = notes.length ? notes.map((x) => `<li>${x}</li>`).join("") : "<li>本次更新包含剧情与素材调整</li>";
+      overlay.innerHTML = `
+      <div class="boot-modal-card">
+        <p class="boot-modal-k">UPDATE AVAILABLE</p>
+        <h3 class="boot-modal-h">有新版本 v${updateResult.content}</h3>
+        <p class="boot-modal-p">当前 v${version}，这次改了什么：</p>
+        <ul class="boot-modal-list">${noteHtml}</ul>
+        <p class="boot-modal-meta">${remote.size ? "下载约 " + Math.round(remote.size / 1048576) + " MB · " : ""}不会影响存档</p>
+        <div class="boot-upd-actions">
+          <button class="boot-btn" id="updLater" type="button">下次再说</button>
+          <button class="boot-btn is-primary" id="updNow" type="button">立即更新</button>
+        </div>
+      </div>`;
+      root2.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add("on"));
+      const later = overlay.querySelector("#updLater");
+      const now = overlay.querySelector("#updNow");
+      const closeOverlay = () => {
+        overlay.classList.remove("on");
+        setTimeout(() => {
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        }, 320);
+      };
       if (later) later.addEventListener("click", (e) => {
         e.stopPropagation();
         waiting = false;
+        closeOverlay();
         if (text) text.textContent = "已跳过本次更新";
-        if (actions) actions.hidden = true;
-        timer = setTimeout(() => show(i + 1), 500);
+        timer = setTimeout(() => show(i + 1), 520);
       });
       if (now) now.addEventListener("click", async (e) => {
         e.stopPropagation();
@@ -1753,6 +1769,7 @@
         if (text) text.textContent = "正在下载新资源…";
         const res = typeof applyUpdate === "function" ? await applyUpdate(remote) : { ok: false };
         if (res && res.ok) {
+          closeOverlay();
           if (text) text.textContent = "已更新，正在重新载入…";
           try {
             if (!sessionStorage.getItem("zb_updated_once")) {
@@ -3616,6 +3633,48 @@
 
   // scripts/data/changelog.js
   var CHANGELOG = [
+    {
+      version: "v0.6.2.2",
+      date: "2026-10-31",
+      intro: "本次更新把「发现新版本」做成启动时的弹窗，并在客户端里加了内核体检。具体内容如下：",
+      sections: [
+        {
+          title: "一、更新提示",
+          items: [
+            { type: "opt", text: "检测到新资源时弹出窗口，列出本次改动与包体积，由你选择「立即更新」或「下次再说」。" },
+            { type: "fix", text: "确认弹窗出现在「检查更新」这一步，早于编译着色器，不会等加载完才问。" }
+          ]
+        },
+        {
+          title: "二、客户端",
+          items: [
+            { type: "new", text: "启动时检查系统浏览器内核版本，低于 70 会在原生界面给出说明与更新入口。" },
+            { type: "note", text: "之所以不内嵌内核：Android 的 WebView 是系统签名组件，无法随安装包分发；自带内核需要换 GeckoView 这类库，属于单独的一次改造，未纳入本次更新。" }
+          ]
+        }
+      ]
+    },
+    {
+      version: "v0.6.2.2",
+      date: "2026-10-31",
+      intro: "本次更新把「发现新版本」做成启动时的弹窗，并在客户端里加了内核体检。具体内容如下：",
+      sections: [
+        {
+          title: "一、更新提示",
+          items: [
+            { type: "opt", text: "检测到新资源时弹出窗口，列出本次改动与包体积，由你选择「立即更新」或「下次再说」。" },
+            { type: "fix", text: "确认弹窗出现在「检查更新」这一步，早于编译着色器，不会等加载完才问。" }
+          ]
+        },
+        {
+          title: "二、客户端",
+          items: [
+            { type: "new", text: "启动时检查系统浏览器内核版本，低于 70 会在原生界面给出说明与更新入口。" },
+            { type: "note", text: "之所以不内嵌内核：Android 的 WebView 是系统签名组件，无法随安装包分发；自带内核需要换 GeckoView 这类库，属于单独的一次改造，未纳入本次更新。" }
+          ]
+        }
+      ]
+    },
     {
       version: "v0.6.2.1",
       date: "2026-10-31",

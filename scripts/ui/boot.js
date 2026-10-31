@@ -247,7 +247,8 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
     // 署名页那行 GitHub：没配仓库就留空，不显示 github.com/OWNER 这种占位
     const gitEl = stage.querySelector('#bootGit');
     if (gitEl) gitEl.textContent = github || '';
-    if (skipBtn) skipBtn.hidden = false;
+    // 「检查更新」与「编译着色器」是实际要干活的屏，跳过会让游戏带着旧资源/未准备的环境启动
+    if (skipBtn) skipBtn.hidden = (sc.key === 'update' || sc.key === 'shader');
 
     // 全黑停一小会儿，再淡入
     await new Promise((r) => setTimeout(r, n === 0 ? 0 : 450));
@@ -437,20 +438,42 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
     }
     if (foot) foot.textContent = `下载约 ${remote.size ? Math.round(remote.size / 1048576) + ' MB' : '几 MB'} · 不会影响存档`;
 
-    if (!actions) { waiting = false; show(i + 1); return; }
-    actions.hidden = false;
-    actions.innerHTML = '<button class="boot-btn" id="updLater" type="button">下次再说</button>'
-      + '<button class="boot-btn is-primary" id="updNow" type="button">立即更新</button>';
+    /* 做成浮层弹窗：盖在启动页之上，只有"更新/下次再说"两个出口。
+       玩家点掉之前不会继续启动，也就不会在不知情的情况下被换掉资源。 */
+    const overlay = document.createElement('div');
+    overlay.className = 'boot-modal';
+    const noteHtml = notes.length
+      ? notes.map((x) => `<li>${x}</li>`).join('')
+      : '<li>本次更新包含剧情与素材调整</li>';
+    overlay.innerHTML = `
+      <div class="boot-modal-card">
+        <p class="boot-modal-k">UPDATE AVAILABLE</p>
+        <h3 class="boot-modal-h">有新版本 v${updateResult.content}</h3>
+        <p class="boot-modal-p">当前 v${version}，这次改了什么：</p>
+        <ul class="boot-modal-list">${noteHtml}</ul>
+        <p class="boot-modal-meta">${remote.size ? '下载约 ' + Math.round(remote.size / 1048576) + ' MB · ' : ''}不会影响存档</p>
+        <div class="boot-upd-actions">
+          <button class="boot-btn" id="updLater" type="button">下次再说</button>
+          <button class="boot-btn is-primary" id="updNow" type="button">立即更新</button>
+        </div>
+      </div>`;
+    root.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('on'));
 
-    const later = actions.querySelector('#updLater');
-    const now = actions.querySelector('#updNow');
+    const later = overlay.querySelector('#updLater');
+    const now = overlay.querySelector('#updNow');
+
+    const closeOverlay = () => {
+      overlay.classList.remove('on');
+      setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 320);
+    };
 
     if (later) later.addEventListener('click', (e) => {
       e.stopPropagation();
       waiting = false;
+      closeOverlay();
       if (text) text.textContent = '已跳过本次更新';
-      if (actions) actions.hidden = true;
-      timer = setTimeout(() => show(i + 1), 500);
+      timer = setTimeout(() => show(i + 1), 520);
     });
 
     if (now) now.addEventListener('click', async (e) => {
@@ -463,6 +486,7 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
         ? await applyUpdate(remote)
         : { ok: false };
       if (res && res.ok) {
+        closeOverlay();
         if (text) text.textContent = '已更新，正在重新载入…';
         try {
           if (!sessionStorage.getItem('zb_updated_once')) {
@@ -489,6 +513,9 @@ export function runBootSequence({ root, version, checkUpdate, applyUpdate, githu
      要跳过只能用右下角那个显式的「跳过」按钮。 */
   if (skipBtn) skipBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    const cur = BOOT_SCREENS[i];
+    // 双保险：就算按钮被别的方式点到，这两屏也不响应
+    if (cur && (cur.key === 'update' || cur.key === 'shader')) return;
     finish();
   });
 

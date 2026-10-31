@@ -160,8 +160,104 @@ public class MainActivity extends Activity {
         bootLoad(rootView);
     }
 
+    /* =========================================================
+       内核体检
+       ---------------------------------------------------------
+       为什么不能"内嵌 Google WebView"：
+         WebView 在 Android 里是一个**系统签名的组件**（com.google.android.webview /
+         Trichrome），WebView 工厂只认系统里已安装的提供方。把它的 apk 塞进我们的
+         安装包，不会被加载，也不会被选中——这条路在平台层面就是不通的。
+         真要自带渲染内核，只能换 GeckoView 这类可嵌入的浏览器库（+60MB、需要
+         Gradle/AndroidX，本项目的 aapt2+javac 构建装不下），或者自带 Chromium 自编译。
+
+       所以兼容版能做的是：启动时查一次当前内核版本，太旧就明确告诉玩家去更新，
+       而不是让他在一个布局塌掉、按钮点不动的界面上猜。
+       阈值 70 是实践数字：:has() 需要 105，dvh 需要 108，但低于 70 连 ES2018 都吃力。
+       ========================================================= */
+    private String webViewPackageName() {
+        try {
+            if (Build.VERSION.SDK_INT >= 26) {
+                android.content.pm.PackageInfo pi = WebView.getCurrentWebViewPackage();
+                if (pi != null) return pi.packageName;
+            }
+        } catch (Throwable ignored) { }
+        return "com.google.android.webview";
+    }
+
+    private int webViewMajor() {
+        try {
+            android.content.pm.PackageInfo pi;
+            if (Build.VERSION.SDK_INT >= 26) {
+                pi = WebView.getCurrentWebViewPackage();
+            } else {
+                pi = getPackageManager().getPackageInfo(webViewPackageName(), 0);
+            }
+            if (pi == null || pi.versionName == null) return 0;
+            String v = pi.versionName;
+            int dot = v.indexOf('.');
+            return Integer.parseInt(dot > 0 ? v.substring(0, dot) : v);
+        } catch (Throwable t) {
+            return 0;   // 查不到就不拦，宁可放行也不误伤
+        }
+    }
+
+    /** 内核太旧时在原生层给一条明确的出路 */
+    private void warnOldWebView(final FrameLayout root) {
+        final int major = webViewMajor();
+        if (major == 0 || major >= 70) return;
+
+        final android.widget.LinearLayout box = new android.widget.LinearLayout(this);
+        box.setOrientation(android.widget.LinearLayout.VERTICAL);
+        box.setGravity(android.view.Gravity.CENTER);
+        box.setPadding(48, 48, 48, 48);
+        box.setBackgroundColor(Color.BLACK);
+
+        android.widget.TextView t = new android.widget.TextView(this);
+        t.setText("系统浏览器内核过旧");
+        t.setTextColor(Color.parseColor("#F4F1EA"));
+        t.setTextSize(18f);
+        t.setGravity(android.view.Gravity.CENTER);
+
+        android.widget.TextView d = new android.widget.TextView(this);
+        d.setText("当前内核版本 " + major + "，界面可能显示异常。\n"
+                + "游戏没有内嵌渲染内核——Android 的 WebView 是系统组件，无法随安装包分发。\n"
+                + "请更新「Android System WebView」或「Chrome」后重开游戏。");
+        d.setTextColor(Color.parseColor("#8A8F98"));
+        d.setTextSize(12f);
+        d.setGravity(android.view.Gravity.CENTER);
+        d.setPadding(0, 20, 0, 28);
+
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("去更新 WebView");
+        b.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    Intent i = new Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("market://details?id=" + webViewPackageName()));
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(i);
+                } catch (Throwable e) {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(
+                                "https://play.google.com/store/apps/details?id=" + webViewPackageName()));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Throwable ignored) { }
+                }
+            }
+        });
+
+        box.addView(t);
+        box.addView(d);
+        box.addView(b);
+        root.addView(box);
+    }
+
     /** 首次启动：先铺一张原生启动页，后台解包，好了再 loadUrl */
     private void bootLoad(final FrameLayout root) {
+        // 只提示，不阻断：内核版本查不到或本来就够新时什么都不做
+        try { warnOldWebView(root); } catch (Throwable ignored) { }
         if (!needUnpack()) {
             web.loadUrl(resolveStartUrl());
             return;

@@ -2064,11 +2064,6 @@ ${recentLog}`;
         <button class="btn btn-sm btn-danger" id="wipeAll">清档</button>
       </div>
 
-      <div class="setting">
-        <div><div class="setting-label">素材说明</div>
-        <div class="setting-hint">立绘、背景、音乐为占位素材，来源见下。</div></div>
-        <button class="btn btn-sm" id="assetInfo">查看</button>
-      </div>
     `;
 
     this.openPanel({ title: '设置', body });
@@ -2653,7 +2648,6 @@ ${recentLog}`;
       });
     });
 
-    $('#assetInfo', this.el.panelBody).addEventListener('click', () => this.openAbout());
   }
 
   /* ================= 继续游戏 / 时间轴 =================
@@ -3208,40 +3202,7 @@ ${recentLog}`;
         图标取自 <strong>HyperOS 4</strong> 的默认图标集，卡片列表与深色渐变的排布参考了那套系统的视觉语言。
         这只是取了一套现成的图标素材，本作并不绑定任何手机系统，桌面端、网页端与移动端都可以运行。</p>
         <p>本作为 Demo 版本，仅供个人学习与技术交流，不用于任何商业用途，亦不对外发售。本作的学校、人物、组织、地名与事件均为虚构，与现实无关。游戏流程不构成法律意见。</p>
-        <p><strong>素材说明</strong><br>
-        全部角色立绘与场景背景为本作<strong>自制生成</strong>，统一了画风与配色；
-        背景音乐与界面音效为<strong>程序合成</strong>的原创段落，已统一做响度与峰值处理，不会出现削波。<br>
-        画面与声音两部分都不使用第三方素材，因此不涉及他人著作权。</p>
-        <p><strong>替换方式</strong><br>
-        所有素材由 <code>scripts/config/assets.js</code> 统一登记，
-        剧情只引用素材 ID。把同名文件放进 assets/ 下对应目录即可替换，无需改动剧情。</p>
-        <p><strong>开源许可</strong><br>
-        本作没有用任何前端框架：界面、剧情引擎、音频与存档都是自己写的原生 HTML / CSS / ES Module，
-        没有引入第三方 JS 库。随产品一起分发、需要标明许可的成果只有下面几项：</p>
-        <ul class="lic-list">
-          <li><b>MiSans</b>（小米）— 正文字体。按发布方的免费商用授权使用，收录 Regular 与 Semibold 两个字重，
-          已转成 woff2 内嵌，字形未作修改。</li>
-          <li><b>钉钉进步体</b>（钉钉（中国）信息技术有限公司，联合汉仪字库打造）— 标题区的眉题与副标题字体。
-          按钉钉官方的授权，个人与企业均可永久免费商用；本作经官方渠道下载后只做了子集裁剪（保留标题用字）
-          与 woff2 格式转换，字形未作修改。知识产权归钉钉公司所有。</li>
-          <li><b>Electron 31.7.7</b> — MIT License，© Electron contributors / © 2013-2020 GitHub Inc.
-          桌面版的外壳。完整许可文本随安装包一起附带（<code>LICENSE</code> 与
-          <code>LICENSES.chromium.html</code>，在程序目录内）。</li>
-          <li><b>Chromium</b> — BSD 3-Clause 及其内置第三方组件的各项许可，是 Electron 内嵌的浏览器内核。
-          组件与许可清单同样在 <code>LICENSES.chromium.html</code> 里，未做删改。</li>
-        </ul>
-        <p>以下只在开发与打包阶段用到，不随产品分发：Node.js、Puppeteer（Apache-2.0，界面截图与回归测试）、
-        python-docx（MIT，把剧本文档转成章节数据）、Android SDK build-tools 里的 aapt2 与 d8（Apache-2.0，打 APK）。
-        安卓端没有引入任何第三方库，只有系统 WebView 和一个自己写的 Activity。</p>
-        <p><strong>关于 AI 助手与适龄标识</strong><br>
-        薄荷的头像与 16 张表情，同样取自上面那批占位立绘：四角去白底、裁边、补成方形后缩到 256×256，
-        只用于助手界面的头像与表情，不参与剧情。著作权归原权利人，随立绘一并替换即可。<br>
-        首页左上角的 12+ 标识是 CADPA 的适龄提示图标，按原样引用、未作修改；
-        它只是「本作建议 12 岁以上阅读」的提示，本作并没有取得版号、ISBN 或任何出版审批，
-        这个图标不代表任何资质认定。点开那个图标可以看到完整说明。</p>
-        <p><strong>关于图标</strong><br>
-        界面图标使用 HyperOS 4 的默认图标集，仅作界面配图；立绘、背景与音乐均为本作自制，
-        这部分不依赖任何外部素材。</p>
+
         <p><strong>关于跳过</strong><br>
         跳过只推进对话与叙事节点；遇到选项、调查、聊天回复时一定会停下，不会替你做选择。</p>
       `
