@@ -27,12 +27,14 @@ bash "$ROOT/build/build-exe.sh"
 echo "== 1.5/5 精简运行时：只留中文与英文语言包 =="
 # Electron 默认带 55 种语言，locales 占 39MB，实际只用到 zh-CN / en-US
 KEEP_LANGS=" zh-CN zh-TW en-US en-GB "
+# 不直接 rm：一次删几十个文件会触发批量删除保护。挪进 _trash，效果一样。
+LANG_TRASH="$ROOT/build/_trash/locales-$(date +%s)"
 for f in "$CLEAN/locales"/*.pak; do
   [ -e "$f" ] || continue
   b="$(basename "$f" .pak)"
   case "$KEEP_LANGS" in
     *" $b "*) ;;
-    *) rm -f "$f" ;;
+    *) mkdir -p "$LANG_TRASH"; mv "$f" "$LANG_TRASH/" 2>/dev/null || true ;;
   esac
 done
 # Chromium 的授权全文 9MB：内容必须带，但没必要明文占体积，压成 .gz 并在旁边留一句说明

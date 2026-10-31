@@ -84,6 +84,30 @@ jobs:
               [ -n "$id" ] && gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$id"
             done
 
+      # 发布说明不再手写：正文来自 dist/release-notes.md（由 make-dist 从游戏内
+      # 更新日志生成），这里只追加「兼容版」与「下载」两段固定说明，
+      # 保证玩家在游戏里和发布页看到的是同一套说法。
+      - name: 拼发布说明
+        run: |
+          {
+            cat dist/release-notes.md
+            cat <<'EOF'
+
+          ## 关于「兼容版」
+
+          兼容版**不内嵌任何浏览器内核**（Android WebView 是系统组件，无法随安装包分发），只解决布局 / API 缺失。内核真的太老，请用上面的「用浏览器打开网页版」，或更新 Android System WebView / Chrome。
+
+          ## 下载（见本发布下方附件）
+
+          - Android 标准版 / 兼容版：`NotMyWeekend-${{ steps.ver.outputs.v }}-standard.apk` / `NotMyWeekend-${{ steps.ver.outputs.v }}-compat.apk`（存档互通）
+          - Windows 便携版：因超过 GitHub 单文件 100MB，拆成多段 + `合并.bat`；下载后运行 `合并.bat` 得到 zip 再解压
+          - 网页版（免安装）：https://baoliaojiang.github.io/not-my-weekend/
+
+          存档保存在本地，覆盖安装不会丢。反馈：提 Issue，或游戏主界面右下角「反馈问题」填问卷。
+          EOF
+          } > dist/release-body.md
+          head -20 dist/release-body.md
+
       - name: 发布 Release（附全部产物）
         uses: softprops/action-gh-release@v2
         with:
@@ -92,27 +116,4 @@ jobs:
             dist/version.json
             dist/rel/*.apk
             dist/win/*
-          body: |
-            校园调查题材的视觉小说 Demo。个人制作、非商业、免费。
-
-            ## 本版更新
-
-            - 手机桌面图标全部换成澎湃 OS 4 的默认图标；校园通红点去掉。
-            - 「政务」换成「浏览器」：地址栏 + 政务平台 / 校园通 / 市教育局三个快捷入口；外部网址会明说打不开（这台终端只连校内网）。
-            - 桌面时间跟着设备时间走，不再写死 7:40。
-            - 人物页头像改成裁好的正脸图，整张脸都在框里；新增跟着章节变化的「此刻」一行，观察条目按进度解锁。
-            - 薄荷聊天窗重排：输入框与按钮对齐、消息区撑满、免责声明收成一行。
-            - 立绘：两人同场不再叠在一起；四人以上按人数均分一排；横屏「退出游戏」不再压住菜单。
-            - BGM 换成真实采样音源重编，收掉 60Hz 以下的轰鸣；每首统一 60 秒、首尾无缝循环。
-
-            ## 关于「兼容版」
-
-            兼容版**不内嵌任何浏览器内核**（Android WebView 是系统组件，无法随安装包分发），只解决布局 / API 缺失。内核真的太老，请用上面的「用浏览器打开网页版」，或更新 Android System WebView / Chrome。
-
-            ## 下载（见本发布下方附件）
-
-            - Android 标准版 / 兼容版：`NotMyWeekend-${{ steps.ver.outputs.v }}-standard.apk` / `NotMyWeekend-${{ steps.ver.outputs.v }}-compat.apk`（存档互通）
-            - Windows 便携版：因超过 GitHub 单文件 100MB，拆 3 段 + `合并.bat`；下载后运行 `合并.bat` 得到 zip 再解压
-            - 网页版（免安装）：https://baoliaojiang.github.io/not-my-weekend/
-
-            存档保存在本地，覆盖安装不会丢。反馈：提 Issue，或游戏主界面右下角「反馈问题」填问卷。
+          body_path: dist/release-body.md

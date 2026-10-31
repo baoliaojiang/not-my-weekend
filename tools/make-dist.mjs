@@ -40,12 +40,13 @@ const version = cfg.CONFIG.version;
 
 /* 没手给 --notes 时，直接用游戏内更新日志这一版的内容：
    发布页和游戏里必须是同一套说法，否则玩家在两边看到的东西对不上。 */
+let clTop = null;
 if (!notes.length) {
   try {
     const cl = await import(pathToFileURL(join(ROOT, 'scripts/data/changelog.js')).href);
-    const top = (cl.CHANGELOG || [])[0];
-    if (top) {
-      (top.sections || []).forEach(sec => {
+    clTop = (cl.CHANGELOG || [])[0] || null;
+    if (clTop) {
+      (clTop.sections || []).forEach(sec => {
         (sec.items || []).forEach(it => notes.push(`${sec.title}：${it.text}`));
       });
     }
@@ -112,6 +113,28 @@ const manifest = {
   releasedAt: new Date().toISOString()
 };
 writeFileSync(join(DIST, 'version.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+
+/* 发布页的更新说明：和游戏内更新日志同源同格式（分区 + 「做了什么，有什么用」）。
+   CI 会把它拼上「关于兼容版 / 下载」的固定段落，作为 Release 正文。 */
+const mdNotes = [];
+mdNotes.push('校园调查题材的视觉小说 Demo。个人制作、非商业、免费。');
+mdNotes.push('');
+mdNotes.push(`## 本版更新（v${version}）`);
+if (clTop && clTop.intro) {
+  mdNotes.push('');
+  mdNotes.push(`> ${clTop.intro}`);
+}
+if (clTop) {
+  for (const sec of clTop.sections || []) {
+    mdNotes.push('');
+    mdNotes.push(`### ${sec.title}`);
+    for (const it of sec.items || []) mdNotes.push(`- ${it.text}`);
+  }
+} else {
+  mdNotes.push('');
+  for (const n of manifest.notes) mdNotes.push(`- ${n}`);
+}
+writeFileSync(join(DIST, 'release-notes.md'), mdNotes.join('\n') + '\n', 'utf8');
 
 // 6) 报告
 const count = (d) => readdirSync(d, { withFileTypes: true })
