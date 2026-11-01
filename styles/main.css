@@ -671,6 +671,29 @@ body.motion-off .bg-layer.on{ animation:none; transform:scale(1.015); }
 /* 旁白再淡一点：三种文本（旁白 / 心声 / 对白）层次分明 */
 body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
 
+/* 浅色模式：对话区原本是「深底浅字」的一套，
+   压在浅色场景图上就像贴了块黑。整块换成浅底深字。 */
+body:not(.night) .dlg-body{
+  background:rgba(246,243,236,.94);
+  border-top-color:rgba(30,34,40,.18);
+  box-shadow:0 -8px 26px rgba(30,34,40,.14);
+}
+body:not(.night) .dlg-name{
+  color:#4a4234; background:rgba(240,236,226,.96);
+  border-top-color:rgba(30,34,40,.16);
+}
+body:not(.night) .dlg-text{ color:#23272e; }
+body:not(.night) .dlg-text .em{ color:#8a6a22; }
+body:not(.night) .dlg-text .quote{ color:#3c5866; }
+body:not(.night) .dlg-next{ border-color:rgba(30,34,40,.55); }
+body:not(.night) .dialogue.narration .dlg-body{ border-top-color:rgba(30,34,40,.12); }
+body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
+body:not(.night) .dialogue.letter .dlg-body{ border-top-color:rgba(30,34,40,.18); }
+body:not(.night) .dialogue.letter .dlg-text{ color:#2c3038; }
+body:not(.night) .dialogue.letter .dlg-name{ color:#7a5f22; }
+body:not(.night) .dialogue.letter.generating .dlg-text:empty::before{ color:rgba(44,48,56,.45); }
+body:not(.night) .dialogue.letter.generating .dlg-text::after{ color:rgba(122,95,34,.85); }
+
 .dlg-body{
   position:relative; background:rgba(20,23,28,.93);
   border-top:1px solid rgba(240,230,207,.28);
@@ -718,7 +741,9 @@ body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
 .choice-prompt{
   font-family:var(--serif); color:rgba(247,244,236,.72); font-size:.82rem;
   letter-spacing:.16em; text-align:center; margin-bottom:6px;
+  text-shadow:0 1px 6px rgba(0,0,0,.5);
 }
+body:not(.night) .choice-prompt{ color:#3a4048; text-shadow:none; }
 .choice-item{
   text-align:left; padding:16px 20px; font-family:var(--serif); font-size:1rem; line-height:1.6;
   color:#f0ece1; background:rgba(20,23,28,.94);
@@ -729,6 +754,16 @@ body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
   background:rgba(38,42,49,.97); border-left-color:#d9b98a; transform:translateX(3px);
 }
 .choice-item .idx{color:rgba(217,185,138,.8); margin-right:10px; font-size:.86em;}
+/* 浅色模式：选项也是深底浅字的一套，改成浅底深字 */
+body:not(.night) .choice-item{
+  color:#23272e; background:rgba(246,243,236,.94);
+  border-color:rgba(30,34,40,.16); border-left-color:rgba(30,34,40,.26);
+  box-shadow:0 6px 20px rgba(30,34,40,.14);
+}
+body:not(.night) .choice-item:hover{
+  background:#fffdf8; border-left-color:#a97f36;
+}
+body:not(.night) .choice-item .idx{ color:#a97f36; }
 
 /* 选项界面也能存档 / 开菜单：不再只有自由活动时才能存 */
 .choice-tools{
@@ -863,6 +898,9 @@ body.kb-open .ai-compose-tip{ display:none; }
   position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
   padding:clamp(10px,3vw,36px); background:rgba(6,8,11,.78);
 }
+/* 浅色模式：遮罩别用黑幕，否则整屏压暗像蒙了层灰 */
+body:not(.night) .panel-layer{ background:rgba(60,58,52,.42); }
+body.glass:not(.night) .panel-layer{ background:rgba(60,58,52,.30); }
 
 /* ---- 面板开关的动效 ----
    anim-in / anim-out 由 openPanel() / closePanel() 加，关掉时等动画走完再 hidden。
@@ -3016,9 +3054,6 @@ body.glass .hub-panel,
 body.glass .dialog-card,
 body.glass .dlg-body,
 body.glass .dlg-name,
-body.glass .hud,
-body.glass .ap-bar,
-body.glass .place-tag,
 body.glass .toast,
 body.glass .choice-item,
 body.glass .mat-card,
@@ -3040,6 +3075,12 @@ body.glass .hub-grid{
   -webkit-backdrop-filter:blur(22px) saturate(1.6);
   backdrop-filter:blur(22px) saturate(1.6);
 }
+
+/* 叠在场景图上的几块（顶栏、场景标签、底部操作条、标题页卡片）
+   本来就是深底浅字。玻璃模式下如果把它们也改成浅色玻璃，
+   浅色文字就压在浅色玻璃上，再叠一层黑色 text-shadow，
+   看上去就是「字底下自己有一层黑」。
+   所以这几块不进玻璃列表，保持深底浅字。 */
 
 /* 内层控件薄一点，避免整屏都是厚玻璃 */
 body.glass .btn,
@@ -3067,12 +3108,10 @@ body.glass .panel-foot{ border-color:var(--glass-line); }
 /* 弹层遮罩：玻璃模式下压暗更深，边界更清楚 */
 body.glass .panel-layer,
 body.glass .hub-layer{ background:rgba(6,8,11,.52); }
-body.glass:not(.night) .panel-layer,
-body.glass:not(.night) .hub-layer{ background:rgba(30,34,40,.24); }
 
-/* 标题页的主体卡片不要被玻璃糊住 */
+/* 标题页的主体卡片不要被玻璃糊住：
+   它是深底浅字的一套，玻璃化成浅色后字就看不清了。 */
 body.glass .tcard{ background:rgba(18,22,29,.42); }
-body.glass:not(.night) .tcard{ background:rgba(247,244,237,.52); }
 
 /* 低端兜底：不支持 backdrop-filter 时退回半透明实色，仍是可读的 */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
@@ -3408,13 +3447,13 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 }
 .mos-app:active .mos-ico{ transform:scale(.92); }
 .mos-ico{
-  width:52px; height:52px; border-radius:14px; overflow:hidden;
+  width:52px; height:52px; border-radius:34%; overflow:hidden;
   display:flex; align-items:center; justify-content:center;
-  background:rgba(255,255,255,.12); backdrop-filter:blur(2px);
+  background:#fff; backdrop-filter:blur(2px);
   transition:transform .15s ease;
   box-shadow:0 2px 10px rgba(0,0,0,.25);
 }
-.mos-ico img{ width:100%; height:100%; object-fit:cover; border-radius:14px; }
+.mos-ico img{ width:100%; height:100%; object-fit:cover; border-radius:34%; }
 .mos-art{
   width:100%; height:100%; display:flex; align-items:center; justify-content:center;
 }
@@ -3828,6 +3867,21 @@ body.glass .tk-opt{ background:var(--glass-bg-2); border-color:var(--glass-line)
   border:1px solid var(--line-strong);
 }
 body.night .pv-box{ background:rgba(0,0,0,.66); }
+/* 浅色模式：试读框原本是半透明黑底，落在浅色面板上像贴了一块黑。
+   改成浅底深字，跟其它面板一致。 */
+body:not(.night) .pv-box{ background:#efeade; border-color:rgba(30,34,40,.14); }
+body:not(.night) .pv-name{ color:#6b5a35; background:rgba(232,220,196,.42); }
+body:not(.night) .pv-text{ color:#242830; }
+/* 通透模式：试读框跟着走玻璃，不能还挂着黑底 */
+body.glass .pv-box{
+  background:var(--glass-bg);
+  background-image:var(--glass-sheen);
+  border-color:var(--glass-line);
+  -webkit-backdrop-filter:blur(22px) saturate(1.6);
+  backdrop-filter:blur(22px) saturate(1.6);
+}
+body.glass:not(.night) .pv-text{ color:#242830; }
+body.glass:not(.night) .pv-name{ color:#5d4d2c; background:rgba(232,220,196,.5); }
 .pv-name{
   display:inline-block; margin-bottom:7px; padding:2px 11px;
   border-radius:var(--r-pill);
@@ -4830,8 +4884,8 @@ body.motion-off .boot-avatar{ animation:none; }
     gap:10px 4px; padding:6px 10px;
     align-content:start;
   }
-  .mos-ico{ width:46px; height:46px; border-radius:12px; }
-  .mos-ico img{ border-radius:12px; }
+  .mos-ico{ width:46px; height:46px; border-radius:30%; }
+  .mos-ico img{ border-radius:30%; }
   .mos-name{ font-size:.6rem; }
   .mos-app{ gap:4px; padding:2px 0; }
   .mos-dock{ padding:6px 0 4px; gap:10px; flex:0 0 auto; }
@@ -5011,10 +5065,10 @@ body.motion-off .boot-avatar{ animation:none; }
 }
 .mapp-row:last-child{ border-bottom:none; }
 .mapp-ri{
-  flex:0 0 auto; width:26px; height:26px; border-radius:8px; overflow:hidden;
+  flex:0 0 auto; width:26px; height:26px; border-radius:34%; overflow:hidden;
   background:#eef1f6; display:grid; place-items:center;
 }
-.mapp-ri img{ width:100%; height:100%; object-fit:cover; display:block; }
+.mapp-ri img{ width:100%; height:100%; object-fit:cover; display:block; border-radius:34%; }
 .mapp-rt{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .mapp-rl{ font-size:.86rem; color:var(--m-ink); line-height:1.35; }
 .mapp-rs{ font-size:.66rem; color:var(--m-ink2); line-height:1.45; }
@@ -5439,8 +5493,8 @@ body.night .mos-appview .mos-exit{ background:rgba(255,255,255,.12); }
 }
 .st-row:last-child{ border-bottom:none; }
 .st-row:active{ background:#f7f8fa; }
-.st-ico{ flex:0 0 auto; width:38px; height:38px; border-radius:11px; overflow:hidden; }
-.st-ico img{ width:100%; height:100%; display:block; object-fit:cover; }
+.st-ico{ flex:0 0 auto; width:38px; height:38px; border-radius:34%; overflow:hidden; background:#fff; }
+.st-ico img{ width:100%; height:100%; display:block; object-fit:cover; border-radius:34%; }
 .st-t{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .st-t b{ font-size:.84rem; font-weight:500; }
 .st-t i{ font-style:normal; font-size:.64rem; color:var(--m-ink2); }
@@ -5915,6 +5969,14 @@ body.night .dl-beta-tag{
 }
 .dl-person:last-child{ border-bottom:none; }
 .dl-person:active{ background:#f7f8fa; }
+/* 还没在剧情里见过的人：头像压淡，但仍然能拨 */
+.dl-person.is-unmet .dl-av{ opacity:.5; filter:grayscale(.5); }
+.dl-person.is-unmet .dl-pt b{ color:var(--m-ink2); }
+.dl-note{
+  margin:0; padding:10px 14px 12px;
+  font-size:.64rem; line-height:1.6; color:var(--m-ink2);
+  border-top:1px solid var(--m-line);
+}
 .dl-av{
   flex:0 0 auto; width:38px; height:38px; border-radius:50%;
   background-position:center 20%; background-size:cover; background-repeat:no-repeat;
