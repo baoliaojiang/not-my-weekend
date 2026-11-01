@@ -61,6 +61,14 @@ export class Stage {
       next.classList.add('on');
       prev.classList.remove('on');
       this.activeBg = nextIndex;
+      /* 淡出结束后把旧背景的图释放掉。
+         背景是全屏大图（解码后每张几 MB），两张同时留着等于白白多占一份。
+         淡出有 0.6s，所以延迟释放，不会看到中间闪一下。 */
+      const old = prev;
+      setTimeout(() => {
+        if (old.classList.contains('on')) return;   // 期间又被切回来了，别动
+        old.style.backgroundImage = '';
+      }, 700);
     };
 
     if (!url) {
@@ -71,6 +79,9 @@ export class Stage {
       next.classList.add('on');
       prev.classList.remove('on');
       this.activeBg = nextIndex;
+      setTimeout(() => {
+        if (!prev.classList.contains('on')) prev.style.backgroundImage = '';
+      }, 700);
       return;
     }
 

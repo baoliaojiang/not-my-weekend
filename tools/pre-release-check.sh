@@ -68,6 +68,8 @@ run "HUD 收起/展开"   tools/test-hud.mjs
 run "校园通功能"      tools/test-campus.mjs
 run "深浅色对比度"   tools/audit-contrast.mjs
 run "手机功能点击"    tools/audit-mint.mjs
+run "版本切换/回滚"   tools/test-versions.mjs
+run "更新日志配图"    tools/test-clog-shots.mjs
 
 # ---------------------------------------------------------
 printf '\n'

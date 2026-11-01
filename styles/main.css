@@ -1253,6 +1253,37 @@ input[type=range]::-webkit-slider-thumb{
   padding:8px 10px; background:var(--paper-2); border-left:2px solid var(--line-strong);
 }
 
+/* 更新日志配图 —— 小米澎湃 OS 的更新公告样式
+   ---------------------------------------------------------
+   澎湃的做法是：正文一条条往下排，图**插在对应的文字条目中间**，
+   图是圆角大图、不带边框，说明文字压在图下面，用很淡的灰。
+   不是微信那种整块图集，也不是单独开一个"配图区"。
+   --------------------------------------------------------- */
+.clog-shots{
+  margin-top:14px;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:12px;
+}
+.clog-shot{
+  margin:10px 0 12px;      /* 混在条目中间：上下留白跟正文行距一致 */
+  overflow:hidden;
+  border-radius:14px;
+  background:var(--paper-2);
+  box-shadow:0 2px 10px -4px rgba(20,25,40,.18);
+}
+.clog-shot img{
+  display:block; width:100%; height:auto;
+  background:#0d1016;
+}
+/* 说明文字压在图下面，不是图里的角标 */
+.clog-shot figcaption{
+  padding:8px 12px 10px;
+  font-size:.7rem; line-height:1.7; color:var(--ink-3);
+  background:var(--paper);
+}
+/* 动效帧：等宽等高，居中，不拉伸 */
+.clog-shot.is-gif img{ object-fit:contain; }
+
 .about-head{display:flex; align-items:center; gap:13px; margin:2px 0 14px;}
 .about-logo{width:44px; height:44px; border-radius:13px; display:block; box-shadow:0 4px 14px rgba(0,0,0,.45);}
 .about-title{font-size:1.02rem; letter-spacing:.06em; color:var(--ink);}
@@ -5096,6 +5127,77 @@ body.motion-off .boot-avatar{ animation:none; }
 }
 
 /* =========================================================
+   版本管理：可更新也可回滚
+   ========================================================= */
+.mapp-vp{ padding-top:12px; }
+.vp-hero{
+  position:relative; overflow:hidden;
+  padding:20px 18px 18px; border-radius:20px;
+  background:linear-gradient(135deg,#1f5f8b 0%,#2b6ea8 46%,#3f8f86 100%);
+  color:#fff;
+  box-shadow:0 8px 22px -10px rgba(30,90,120,.5);
+}
+.vp-hero-top{ position:relative; display:flex; align-items:center; gap:14px; }
+.vp-hero-ico{
+  width:52px; height:52px; border-radius:15px; flex:0 0 auto;
+  box-shadow:0 3px 10px rgba(0,0,0,.28);
+}
+.vp-hero-tt{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:5px; }
+.vp-hero-tt b{ font-size:1.02rem; letter-spacing:.02em; }
+.vp-hero-tt i{ font-style:normal; font-size:.68rem; line-height:1.6; color:rgba(255,255,255,.86); }
+.vp-refresh{
+  position:relative; margin-top:16px;
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height:36px; padding:0 22px; border-radius:999px;
+  background:rgba(255,255,255,.94); color:#1f5f8b;
+  font-size:.8rem; letter-spacing:.04em; font-weight:600;
+  border:none; cursor:pointer;
+  transition:background .18s ease, transform .12s ease;
+}
+.vp-refresh:active{ background:#fff; transform:scale(.97); }
+.vp-refresh.is-busy{ opacity:.72; pointer-events:none; }
+
+.vp-card{ padding:0; overflow:hidden; }
+.vp-item{
+  padding:13px 15px;
+  border-bottom:1px solid var(--m-line);
+}
+.vp-item:last-child{ border-bottom:none; }
+.vp-item.is-cur{ background:rgba(91,124,240,.07); }
+.vp-item.is-busy{ opacity:.6; }
+.vp-head{ display:flex; align-items:center; gap:9px; }
+.vp-ver{ font-size:.86rem; font-weight:700; font-family:var(--serif); letter-spacing:.04em; }
+.vp-date{ font-size:.66rem; color:var(--m-ink2); }
+.vp-cur{
+  margin-left:auto; flex:0 0 auto;
+  font-size:.64rem; padding:3px 9px; border-radius:999px;
+  background:rgba(91,124,240,.14); color:#3f5ad0;
+}
+.vp-btn{
+  margin-left:auto; flex:0 0 auto;
+  min-height:28px; padding:0 14px; border-radius:999px;
+  font-size:.72rem; font-weight:600; cursor:pointer;
+  border:1px solid transparent;
+  transition:transform .12s ease, opacity .18s ease;
+}
+.vp-btn:active{ transform:scale(.96); }
+.vp-btn:disabled{ opacity:.6; cursor:default; }
+.vp-btn-up{ background:#3f5ad0; color:#fff; }
+.vp-btn-down{ background:transparent; color:#8a5a20; border-color:rgba(180,130,60,.45); }
+.vp-title{ margin-top:5px; font-size:.74rem; line-height:1.7; color:var(--m-ink); }
+.vp-notes{
+  margin:6px 0 0; padding-left:1.15em;
+  font-size:.68rem; line-height:1.85; color:var(--m-ink2);
+}
+.vp-empty{
+  padding:26px 16px; text-align:center;
+  font-size:.74rem; line-height:1.8; color:var(--m-ink2);
+}
+body.night .vp-cur{ background:rgba(140,165,255,.2); color:#a8bcff; }
+body.night .vp-btn-down{ color:#e0b070; border-color:rgba(224,176,112,.5); }
+body.night .vp-item.is-cur{ background:rgba(140,165,255,.1); }
+
+/* =========================================================
    关于手机
    ========================================================= */
 .ab-top{
@@ -5206,6 +5308,23 @@ body.night .rd-no{ color:#9aa2ae; }
 .lg-head i{ font-style:normal; font-size:.64rem; color:var(--m-ink2); }
 .lg-intro{ margin:7px 0 4px; font-size:.74rem; line-height:1.85; color:#454c56; }
 .lg-sec{ margin:12px 0 6px; font-size:.68rem; letter-spacing:.08em; color:var(--m-ink2); }
+.lg-sub{
+  margin:11px 0 5px; font-size:.68rem; letter-spacing:.1em; color:var(--m-ink2);
+  border-left:2px solid var(--m-line); padding-left:7px;
+}
+.lg-ver-game{ margin-top:10px; }
+/* 手机里的配图：卡片内的截图，边框跟着手机的浅灰走 */
+.lg-ver-game .clog-shots{ margin-top:10px; display:grid; grid-template-columns:1fr; gap:8px; }
+.lg-ver-game .clog-shot{ border-radius:12px; background:#f2f4f8; border-color:rgba(20,30,50,.1); }
+.lg-ver-game .clog-shot figcaption{
+  padding:6px 9px; font-size:.66rem; line-height:1.7; color:#5b6472;
+  border-top-color:rgba(20,30,50,.08);
+}
+/* 手机里的分节标题（沿用手机自己的 .lg-sub，不套游戏内那套） */
+.lg-ver-game .clog-shot{ border:none; box-shadow:0 2px 10px -5px rgba(20,25,40,.22); }
+.lg-ver-game .clog-shot figcaption{ background:transparent; padding:7px 2px 0; }
+body.night .lg-ver-game .clog-shot{ background:#2a2f36; border-color:rgba(255,255,255,.1); }
+body.night .lg-ver-game .clog-shot figcaption{ color:#a8b0bb; border-top-color:rgba(255,255,255,.1); }
 .lg-item{ display:flex; gap:8px; align-items:flex-start; padding:4px 0; font-size:.75rem; line-height:1.8; color:#3a4048; }
 .lg-tag{
   flex:0 0 auto; margin-top:3px; padding:1px 6px; border-radius:5px;

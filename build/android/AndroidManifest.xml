@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.zhouri.bufanxiao"
     android:versionCode="261101"
-    android:versionName="0.6.5.0">
+    android:versionName="0.6.6.0">
 
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
 

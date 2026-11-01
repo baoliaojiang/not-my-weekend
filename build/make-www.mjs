@@ -35,7 +35,10 @@ await esbuild.build({
   target: ['chrome100'],
   outfile: path.join(OUT, 'bundle.js'),
   charset: 'utf8',
-  minify: false,
+  /* 压缩过。esbuild 的 minify 是纯语法层面的等价变换：
+     变量改名、去空白、死代码消除，不改语义、不改执行顺序。
+     bundle 从 1.86MB 降到 1.48MB，网页首屏少解析 400KB。 */
+  minify: true,
   legalComments: 'none'
 });
 

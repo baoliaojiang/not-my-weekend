@@ -47,7 +47,13 @@ if (!notes.length) {
     clTop = (cl.CHANGELOG || [])[0] || null;
     if (clTop) {
       (clTop.sections || []).forEach(sec => {
-        (sec.items || []).forEach(it => notes.push(`${sec.title}：${it.text}`));
+        /* 配图条目没有 text，只有 src/cap；
+           取 caption 当说明，取不到就跳过，别把 undefined 写进发布说明。 */
+        (sec.items || []).forEach(it => {
+          const body = it.text || it.cap || '';
+          if (!body) return;
+          notes.push(`${sec.title}：${body}`);
+        });
       });
     }
   } catch (e) { /* 读不到就不写 notes，后面有兜底 */ }
@@ -114,6 +120,63 @@ const manifest = {
 };
 writeFileSync(join(DIST, 'version.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
 
+/* 6) 版本清单：让玩家能在设置里手动更新 / 回滚
+   ---------------------------------------------------------
+   真源是 releases/versions.json（每版发布时追加一条）。
+   这里把它和本次发布的信息合并，写出 dist/versions.json，
+   客户端从三个源里抢着读，谁先回用谁。
+
+   老版本的热更包不在 Pages 上（Pages 只放最新版），
+   所以老条目的 www 指向 GitHub Release 附件的完整 URL；
+   只有本次发布的这一条是相对名，跟着版本.json 一起走 CDN。 */
+const HISTORY = join(ROOT, 'releases', 'versions.json');
+let hist = { latest: version, versions: [] };
+if (existsSync(HISTORY)) {
+  try { hist = JSON.parse(readFileSync(HISTORY, 'utf8')); } catch (e) { /* 用默认 */ }
+}
+const releaseTag = `v${version}`;
+const releaseAsset = `https://github.com/${(cfg.CONFIG.update || {}).repo || 'baoliaojiang/not-my-weekend'}/releases/download/${releaseTag}/${zipName}`;
+
+/* 把本次发布写进历史（已存在就更新） */
+const entry = {
+  v: version,
+  date: (hist.versions.find(x => x.v === version) || {}).date || new Date().toISOString().slice(0, 10),
+  shell,
+  www: zipName,
+  sha256,
+  size: buf.length,
+  title: (clTop && clTop.intro ? String(clTop.intro).slice(0, 40) : `${version}`),
+  notes: notes.slice(0, 6)
+};
+const histList = hist.versions.filter(x => x.v !== version);
+histList.unshift(entry);
+histList.sort((a, b) => {
+  const pa = String(a.v).split('.').map(Number);
+  const pb = String(b.v).split('.').map(Number);
+  for (let i = 0; i < 4; i++) { const d = (pb[i] || 0) - (pa[i] || 0); if (d) return d; }
+  return 0;
+});
+writeFileSync(HISTORY, JSON.stringify({
+  _note: hist._note || '版本历史真源。每次发布由 tools/make-dist.mjs 自动追加一条；旧条目保留，供客户端「切换版本」回滚。www 指向同目录下的热更包文件名。',
+  latest: version,
+  versions: histList
+}, null, 2) + '\n', 'utf8');
+
+/* 输出的清单：本次这条走相对名，老版本走 Release 附件完整地址 */
+const outList = histList.map(x => {
+  const cur = x.v === version;
+  const copy = { ...x };
+  if (!cur) {
+    copy.www = `https://github.com/${(cfg.CONFIG.update || {}).repo || 'baoliaojiang/not-my-weekend'}/releases/download/v${x.v}/www-${x.v}.zip`;
+    if (!copy.sha256) copy.sha256 = '';
+  }
+  return copy;
+});
+writeFileSync(join(DIST, 'versions.json'), JSON.stringify({
+  latest: version,
+  versions: outList
+}, null, 2) + '\n', 'utf8');
+
 /* 发布页的更新说明：和游戏内更新日志同源同格式（分区 + 「做了什么，有什么用」）。
    CI 会把它拼上「关于兼容版 / 下载」的固定段落，作为 Release 正文。 */
 const mdNotes = [];
@@ -128,7 +191,12 @@ if (clTop) {
   for (const sec of clTop.sections || []) {
     mdNotes.push('');
     mdNotes.push(`### ${sec.title}`);
-    for (const it of sec.items || []) mdNotes.push(`- ${it.text}`);
+    /* 配图条目在发布页里只留说明文字（图片本身在游戏里看），
+       直接写 it.text 会得到 undefined。 */
+    for (const it of sec.items || []) {
+      const body = it.text || it.cap || '';
+      if (body) mdNotes.push(`- ${body}`);
+    }
   }
 } else {
   mdNotes.push('');

@@ -20,6 +20,25 @@ else
 fi
 rm -f "$APP/resources/default_app.asar"
 
+# 精简 Electron 运行时（只减体积，不动行为）
+#   · locales：Electron 自带几十种语言的界面资源，游戏界面全是中文，
+#     只留 zh-CN / zh-TW / en-US / en-GB，其余移走（每个 locale 约 500KB）
+#   · LICENSES.chromium.html：几百 KB 的纯文本许可证，压缩后放包里即可
+#     （按 MIT 要求仍需随包附带，gzip 之后几乎不占体积）
+if [ -d "$APP/locales" ]; then
+  mkdir -p "$ROOT/build/_trash/exe-locales-$(date +%s)"
+  for f in "$APP"/locales/*.pak; do
+    base="$(basename "$f")"
+    case "$base" in
+      zh-CN.pak|zh-TW.pak|en-US.pak|en-GB.pak) ;;
+      *) mv "$f" "$ROOT/build/_trash/exe-locales-$(date +%s)-$base" 2>/dev/null || true ;;
+    esac
+  done
+fi
+if [ -f "$APP/LICENSES.chromium.html" ] && command -v gzip >/dev/null 2>&1; then
+  gzip -9 -f "$APP/LICENSES.chromium.html" && echo "    许可证已压缩"
+fi
+
 echo "[2/4] 放入应用文件"
 mkdir -p "$APP/resources/app"
 cp "$ROOT/build/electron/main.js" "$APP/resources/app/main.js"

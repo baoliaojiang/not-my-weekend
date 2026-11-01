@@ -13,8 +13,8 @@
   同时抗锯齿的柔和过渡还在，不会变硬。
 
 用法：
-  python tools/sprite_edge_clean.py <图.png> [--out 输出.png]
-  python tools/sprite_edge_clean.py assets/characters        # 整个目录原地处理
+  python tools/sprite_edge_clean.py <图.png|webp> [--out 输出]
+  python tools/sprite_edge_clean.py assets/characters            # 整个目录原地处理
 """
 import os
 import sys
@@ -119,7 +119,11 @@ def clean_file(src, dst=None):
     arr = clean_array(arr)
     arr = tint_white_rim(arr)
     out = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), 'RGBA')
-    out.save(dst or src, optimize=True)
+    save_to = dst or src
+    if save_to.lower().endswith('.webp'):
+        out.save(save_to, 'WEBP', quality=100, method=6)
+    else:
+        out.save(save_to, optimize=True)
     return out
 
 
@@ -135,7 +139,7 @@ def main():
 
     if os.path.isdir(target):
         for f in sorted(os.listdir(target)):
-            if f.lower().endswith('.png'):
+            if f.lower().endswith(('.png', '.webp')):
                 p = os.path.join(target, f)
                 clean_file(p)
                 print('cleaned', p)

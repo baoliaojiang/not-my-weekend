@@ -26,6 +26,7 @@ import {
 } from './mintos.js';
 import {
   settingsAppHTML, bindSettingsApp, updateAppHTML, bindUpdateApp,
+  versionsAppHTML, versionListHTML, bindVersionsApp,
   aboutAppHTML, contactsAppHTML, contactDetailHTML, backupAppHTML,
   readingAppHTML, changelogAppHTML, DEVICE,
   storeAppHTML, bindStore, cameraAppHTML, bindCamera, clockAppHTML, bindClock,
@@ -36,6 +37,7 @@ import { gameCenterHTML, g2048HTML, bind2048, mineHTML, bindMine } from './mintg
 import { dialAppHTML, bindDial, dialPersonas } from './mintdial.js';
 import { emojiHTML, EMOJI_ALL } from './emoji.js';
 import { describeTrust, describePressure, STANCE_TEXT } from '../core/state.js';
+import { shotsHTML, sectionItemsHTML } from './chlogshots.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -918,6 +920,30 @@ export class UI {
               return await m.checkUpdate();
             } catch (e) { return null; }
           }
+        })
+      };
+    }
+
+    if (id === 'versions') {
+      return {
+        title: '版本管理',
+        html: versionsAppHTML({ version: ver }),
+        bind: (box) => bindVersionsApp(box, {
+          version: ver,
+          fetch: async () => {
+            try {
+              const m = await import('../core/versions.js');
+              return await m.fetchVersions();
+            } catch (e) { return { ok: false, versions: [] }; }
+          },
+          switch: async (entry, base) => {
+            try {
+              const m = await import('../core/versions.js');
+              return await m.switchVersion(entry, base);
+            } catch (e) { return { ok: false, reason: 'exception' }; }
+          },
+          toast: (t, ms) => this.toast(t, ms),
+          onFail: (msg) => this.toast(msg, 3200)
         })
       };
     }
@@ -3316,15 +3342,11 @@ export class UI {
           <time>${v.date}</time>
         </header>
         ${v.intro ? `<p class="clog-intro">${v.intro}</p>` : ''}
-        ${v.sections.map(sec => `
-          <div class="clog-sec">
-            <h4 class="clog-sec-t">${sec.title}</h4>
-            ${sec.items.map(it => `
-              <div class="clog-item">
-                <span class="k ${it.type}">${TAG[it.type] || ''}</span>
-                <span class="clog-text">${it.text}</span>
-              </div>`).join('')}
-          </div>`).join('')}
+        ${sectionItemsHTML(v.sections, it => `
+          <div class="clog-item">
+            <span class="k ${it.type}">${TAG[it.type] || ''}</span>
+            <span class="clog-text">${it.text}</span>
+          </div>`)}
         ${v.note ? `<p class="clog-note">${v.note}</p>` : ''}
       </section>`).join('');
 

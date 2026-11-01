@@ -123,6 +123,7 @@ jobs:
           files: |
             dist/www-*.zip
             dist/version.json
+            dist/versions.json
             dist/rel/*.apk
             dist/win/*
             releases/hotfix-*/*.zip

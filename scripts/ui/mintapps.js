@@ -162,6 +162,13 @@ export function settingsAppHTML(s, opts = {}) {
         <span class="mapp-rv">${esc(ver)}</span>
         <span class="mapp-ar" aria-hidden="true">›</span>
       </div>
+      <div class="mapp-row mapp-row-nav" data-go-app="versions">
+        <span class="mapp-rt">
+          <span class="mapp-rl">切换版本</span>
+          <span class="mapp-rs">可更新到最新版，也能回滚到旧版本</span>
+        </span>
+        <span class="mapp-ar" aria-hidden="true">›</span>
+      </div>
       <div class="mapp-row mapp-row-nav" data-go-app="about">
         <span class="mapp-rt"><span class="mapp-rl">关于手机</span></span>
         <span class="mapp-rv">${DEVICE.model}</span>
@@ -282,6 +289,13 @@ export function updateAppHTML(opts = {}) {
         <span class="mapp-rt"><span class="mapp-rl">查看完整更新日志</span></span>
         <span class="mapp-ar" aria-hidden="true">›</span>
       </div>
+      <div class="mapp-row mapp-row-nav" data-go-app="versions">
+        <span class="mapp-rt">
+          <span class="mapp-rl">切换版本</span>
+          <span class="mapp-rs">更新到最新版，或回滚到旧版本</span>
+        </span>
+        <span class="mapp-ar" aria-hidden="true">›</span>
+      </div>
     </div>
 
     <p class="mapp-foot">更新由学校信息中心统一推送，连接校园网时才能下载。</p>
@@ -327,6 +341,147 @@ export function bindUpdateApp(root, opts = {}) {
     busy = false;
     if (btn.textContent === old) btn.textContent = '检查更新';
   });
+}
+
+/* =========================================================
+   版本管理 —— 列出所有可用版本，可更新也可回滚
+   ---------------------------------------------------------
+   状态分三种：
+     当前版本 —— 正在用的，不给按钮
+     比当前新 —— 「更新」按钮
+     比当前旧 —— 「回滚」按钮（点之前要确认，存档可能被旧版读不懂）
+   ========================================================= */
+export function versionsAppHTML(opts = {}) {
+  const cur = opts.version || '0.6.3.0';
+  const list = opts.versions || [];
+
+  return `<div class="mapp mapp-vp">
+    <div class="vp-hero">
+      <div class="vp-hero-top">
+        <img class="vp-hero-ico" src="${mintIcon('changelog')}" alt="" />
+        <div class="vp-hero-tt">
+          <b>版本管理</b>
+          <i>当前 v${esc(cur)} · 可更新，也能回滚</i>
+        </div>
+      </div>
+      <button class="vp-refresh" type="button" id="vpRefresh">刷新列表</button>
+    </div>
+
+    <p class="mapp-gt">可用版本</p>
+    <div class="mapp-card vp-card" id="vpList">${versionListHTML(cur, list)}</div>
+
+    <p class="mapp-foot">切换版本会重新下载整套网页资源（约 38MB），完成后需要重启游戏。
+    <br>回滚到旧版本后，新版存档可能无法被旧版读取；建议先到「存档」里备份。</p>
+  </div>`;
+}
+
+/* 版本列表的每一行 */
+export function versionListHTML(cur, list) {
+  if (!list || !list.length) return `<div class="vp-empty">正在读取版本列表…</div>`;
+  return list.map(v => {
+    const isCur = v.v === cur;
+    const newer = cmpVer(v.v, cur) > 0;
+    const older = cmpVer(v.v, cur) < 0;
+    const action = isCur
+      ? '<span class="vp-cur">当前版本</span>'
+      : newer
+        ? `<button class="vp-btn vp-btn-up" type="button" data-vp="${esc(v.v)}">更新</button>`
+        : `<button class="vp-btn vp-btn-down" type="button" data-vp="${esc(v.v)}">回滚</button>`;
+    const notes = (v.notes || []).slice(0, 3)
+      .map(t => `<li>${esc(t)}</li>`).join('');
+    return `<div class="vp-item${isCur ? ' is-cur' : ''}" data-vrow="${esc(v.v)}">
+      <div class="vp-head">
+        <span class="vp-ver">v${esc(v.v)}</span>
+        ${v.date ? `<span class="vp-date">${esc(v.date)}</span>` : ''}
+        ${action}
+      </div>
+      ${v.title ? `<div class="vp-title">${esc(v.title)}</div>` : ''}
+      ${notes ? `<ul class="vp-notes">${notes}</ul>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* 轻量版本号比较（只比数字段，够用） */
+function cmpVer(a, b) {
+  const pa = String(a || '0').split(/[.\-+]/).map(x => parseInt(x, 10) || 0);
+  const pb = String(b || '0').split(/[.\-+]/).map(x => parseInt(x, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d) return d;
+  }
+  return 0;
+}
+
+/**
+ * 绑定版本管理页。
+ * opts.fetch  取版本列表的函数，返回 { ok, versions, base }
+ * opts.switch 切换版本的函数 (entry, base) => { ok, reason }
+ */
+export function bindVersionsApp(root, opts = {}) {
+  const listEl = root.querySelector('#vpList');
+  const refresh = root.querySelector('#vpRefresh');
+  const cur = opts.version || '0.6.3.0';
+  let busy = false;
+
+  async function load() {
+    if (!listEl || busy) return;
+    busy = true;
+    if (refresh) { refresh.textContent = '正在读取…'; refresh.classList.add('is-busy'); }
+    let res = null;
+    try { res = opts.fetch ? await opts.fetch() : null; } catch (e) { res = null; }
+    if (listEl) {
+      listEl.innerHTML = (res && res.ok && res.versions && res.versions.length)
+        ? versionListHTML(cur, res.versions)
+        : `<div class="vp-empty">没有连上更新服务器，暂时看不到版本列表</div>`;
+    }
+    if (refresh) { refresh.textContent = '刷新列表'; refresh.classList.remove('is-busy'); }
+    busy = false;
+    bindRows(res);
+  }
+
+  async function bindRows(res) {
+    const rows = listEl ? listEl.querySelectorAll('[data-vrow]') : [];
+    rows.forEach(r => {
+      const btn = r.querySelector('[data-vp]');
+      if (!btn) return;
+      btn.addEventListener('click', async () => {
+        if (busy) return;
+        const v = btn.dataset.vp;
+        const entry = (res && res.versions || []).find(x => x.v === v);
+        if (!entry) return;
+        const isRollback = cmpVer(v, cur) < 0;
+        /* 回滚要先确认：旧版可能读不懂新版存档 */
+        if (isRollback && !window.confirm(`确定回滚到 v${v} 吗？\n新版本新增的存档内容可能无法在旧版本里读取。`)) return;
+        busy = true;
+        const old = btn.textContent;
+        btn.textContent = '正在下载…';
+        btn.disabled = true;
+        r.classList.add('is-busy');
+        let out = null;
+        try { out = opts.switch ? await opts.switch(entry, res && res.base) : null; } catch (e) { out = null; }
+        r.classList.remove('is-busy');
+        if (out && out.ok) {
+          btn.textContent = '已完成，重启生效';
+          btn.disabled = true;
+          if (opts.onDone) opts.onDone(entry, out);
+        } else if (out && out.reason === 'no-shell') {
+          btn.textContent = old;
+          btn.disabled = false;
+          if (opts.onFail) opts.onFail('网页版无法直接切换版本，请到发布页下载对应版本的安装包。');
+          else if (opts.toast) opts.toast('网页版无法直接切换版本，请下载客户端', 3200);
+        } else {
+          btn.textContent = old;
+          btn.disabled = false;
+          if (opts.onFail) opts.onFail('下载没有成功（网络或存储问题），可以重试。');
+          else if (opts.toast) opts.toast('下载没有成功，可以重试', 2800);
+        }
+        busy = false;
+      });
+    });
+  }
+
+  if (refresh) refresh.addEventListener('click', load);
+  load();
 }
 
 /* =========================================================
@@ -473,6 +628,9 @@ export { esc as escapeApp };
    更新日志（从「软件更新」里点进去的那一层）
    ========================================================= */
 export function changelogAppHTML() {
+  /* 这一页是 **MintOS 系统更新**：学校信息中心推送的安全补丁与管控策略，
+     和游戏本身的版本无关。所以这里只放 MINTOS_LOG，
+     原样保留它模拟真实系统的风格，不掺任何游戏内容。 */
   const body = MINTOS_LOG.map(v => `
     <div class="lg-ver">
       <div class="lg-head"><b>${esc(v.version)}</b><i>${esc(v.date)}</i></div>

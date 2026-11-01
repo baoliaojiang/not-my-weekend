@@ -9,6 +9,10 @@ import * as store from './core/store.js';
 import { AudioManager } from './core/audio.js';
 import { Stage } from './core/stage.js';
 import { checkUpdate, applyContentUpdate, shouldAutoCheck, markChecked } from './core/update.js';
+import * as versionsCore from './core/versions.js';
+import * as versionsUI from './ui/mintapps.js';
+import { CHANGELOG } from './data/changelog.js';
+import { shotsHTML, collectShots } from './ui/chlogshots.js';
 import { log, dumpLog } from './core/log.js';
 import { runBootSequence } from './ui/boot.js';
 import { UI } from './ui/screens.js';
@@ -1067,6 +1071,10 @@ function showUpdateNotice(r) {
   const hasContent = r.kind === 'content' || r.kind === 'both';
   const notes = (remote.notes ? String(remote.notes).split('\n').filter(Boolean) : [])
     .map(t => `<li>${t}</li>`).join('');
+  /* 配图：取游戏内更新日志里最新一版的图，
+     按澎湃的样式插在说明条目中间，让"有新版本"的弹窗
+     也能一眼看出这次改了什么。 */
+  const shots = shotsHTML(collectShots(CHANGELOG[0]));
 
   const body = `
     <p>当前网页资源 <b>v${r.curContent}</b>，远端 <b>v${r.content}</b>；
@@ -1074,6 +1082,7 @@ function showUpdateNotice(r) {
     ${hasContent ? '<p>新的剧情、立绘、背景或界面可以<strong>直接热更新</strong>，不用重装。</p>' : ''}
     ${needShell ? `<p class="up-warn"><b>这次还改了客户端程序本身</b>，热更新装不了这一部分——
         请到发布页下载新的安装包覆盖安装。存档在应用数据里，覆盖安装不会丢。</p>` : ''}
+    ${shots}
     ${notes ? `<div class="up-notes"><b>这次改了什么</b><ul>${notes}</ul></div>` : ''}
     <p class="up-meta">检查时间：${new Date().toLocaleString()}</p>
   `;
@@ -1246,7 +1255,10 @@ window.__ZBNX = {
   load(slot = 0) { return saveAPI.load(slot); },
   backToTitle() { return saveAPI.backToTitle(); },
   askProtagonist() { pickProtagonist(() => {}); },
-  exitApp() { return exitApp(); }
+  exitApp() { return exitApp(); },
+  // 版本管理相关模块，挂出来给自动化测试用
+  __versionsCore: versionsCore,
+  __versionsUI: versionsUI
 };
 
 /* ---------------- 退出 ----------------

@@ -45,7 +45,13 @@ export class AudioManager {
   _makeTrack() {
     const el = new Audio();
     el.loop = true;
-    el.preload = 'auto';
+    /* preload 用 'metadata' 而不是 'auto'：
+       'auto' 会在元素刚建好、还没开始播的时候就把整首歌拉下来，
+       两条音轨就是两首曲子常驻内存。'metadata' 只取时长与基本信息，
+       真正开始播时浏览器才会拉数据——省下的正是那部分。
+       切歌本来就有 0.9s 交叉淡入，拉数据的时间被淡入盖住了，
+       听感上没有区别。 */
+    el.preload = 'metadata';
     el.volume = 0;
     return el;
   }
@@ -333,6 +339,13 @@ export class AudioManager {
     const p = el.play();
     if (p && p.catch) p.catch(() => {});
     this.sfxPool.push(el);
-    if (this.sfxPool.length > 12) this.sfxPool.shift();
+    /* 池子满了就把最旧的踢掉，并且断掉它的数据源：
+       光 shift() 只是把元素从数组里挪走，元素本身还在解码器里占着地方，
+       短音效不多，但长时间游玩累积起来是白占内存。 */
+    while (this.sfxPool.length > 12) {
+      const old = this.sfxPool.shift();
+      if (!old) break;
+      try { old.pause(); old.removeAttribute('src'); old.load(); } catch (e) { /* 忽略 */ }
+    }
   }
 }
