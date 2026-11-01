@@ -106,10 +106,22 @@ jobs:
         run: |
           set +e
           # 按 asset id 删除，避免中文名在 shell 里被转义弄丢导致删不掉
+          #
+          # 删不掉的（404）不能让这一步失败：
+          # 附件可能已经被上一次运行删掉了，或者 Release 刚建还没有附件。
+          # 之前这里只写了 set +e，但管道里 gh api 的非零退出码照样把 step 标成失败，
+          # 于是明明附件都传好了，Release 流水线仍然显示 Failed（run #19 就是这么挂的）。
+          # 所以显式判断 HTTP 状态：404 视为「本来就没有」，跳过即可。
           gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" \
             --jq '.assets[] | "\(.id)"' 2>/dev/null | while IFS= read -r id; do
-              [ -n "$id" ] && gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$id"
+              [ -z "$id" ] && continue
+              code=$(gh api -o /dev/null -w '%{http_code}' \
+                -X DELETE "repos/${{ github.repository }}/releases/assets/$id" 2>/dev/null)
+              if [ "$code" != "204" ] && [ "$code" != "404" ]; then
+                echo "::warning::删附件 $id 失败（HTTP $code）"
+              fi
             done
+          echo "旧附件清理完毕"
 
       # 发布说明不再手写：正文来自 dist/release-notes.md（由 make-dist 从游戏内
       # 更新日志生成），这里只追加「兼容版」与「下载」两段固定说明，
