@@ -77,6 +77,21 @@ if (existsSync(DIST)) {
 }
 mkdirSync(DIST, { recursive: true });
 
+/* 旧 dist 里已经放好了 APK 与 Windows 分卷（这两样不由本脚本生成，
+   是打包脚本的产物，且已经提交进仓库）。重建目录时把它们搬回来，
+   不然这一版就只剩网页资源了。 */
+const carry = ['apk', 'win'];
+for (const sub of carry) {
+  const src = join(DIST + '-old', sub);
+  if (!existsSync(src)) continue;
+  const dst = join(DIST, sub);
+  try {
+    mkdirSync(dst, { recursive: true });
+    cpSync(src, dst, { recursive: true });
+    console.log(`  已带回 dist/${sub}`);
+  } catch (e) { /* 忽略 */ }
+}
+
 // 2) 网页版 = dist 根目录
 cpSync(WWW, DIST, { recursive: true });
 console.log('  网页版文件已就位');
