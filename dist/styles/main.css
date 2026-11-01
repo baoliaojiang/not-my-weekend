@@ -671,6 +671,29 @@ body.motion-off .bg-layer.on{ animation:none; transform:scale(1.015); }
 /* 旁白再淡一点：三种文本（旁白 / 心声 / 对白）层次分明 */
 body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
 
+/* 浅色模式：对话区原本是「深底浅字」的一套，
+   压在浅色场景图上就像贴了块黑。整块换成浅底深字。 */
+body:not(.night) .dlg-body{
+  background:rgba(246,243,236,.94);
+  border-top-color:rgba(30,34,40,.18);
+  box-shadow:0 -8px 26px rgba(30,34,40,.14);
+}
+body:not(.night) .dlg-name{
+  color:#4a4234; background:rgba(240,236,226,.96);
+  border-top-color:rgba(30,34,40,.16);
+}
+body:not(.night) .dlg-text{ color:#23272e; }
+body:not(.night) .dlg-text .em{ color:#8a6a22; }
+body:not(.night) .dlg-text .quote{ color:#3c5866; }
+body:not(.night) .dlg-next{ border-color:rgba(30,34,40,.55); }
+body:not(.night) .dialogue.narration .dlg-body{ border-top-color:rgba(30,34,40,.12); }
+body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
+body:not(.night) .dialogue.letter .dlg-body{ border-top-color:rgba(30,34,40,.18); }
+body:not(.night) .dialogue.letter .dlg-text{ color:#2c3038; }
+body:not(.night) .dialogue.letter .dlg-name{ color:#7a5f22; }
+body:not(.night) .dialogue.letter.generating .dlg-text:empty::before{ color:rgba(44,48,56,.45); }
+body:not(.night) .dialogue.letter.generating .dlg-text::after{ color:rgba(122,95,34,.85); }
+
 .dlg-body{
   position:relative; background:rgba(20,23,28,.93);
   border-top:1px solid rgba(240,230,207,.28);
@@ -718,7 +741,9 @@ body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
 .choice-prompt{
   font-family:var(--serif); color:rgba(247,244,236,.72); font-size:.82rem;
   letter-spacing:.16em; text-align:center; margin-bottom:6px;
+  text-shadow:0 1px 6px rgba(0,0,0,.5);
 }
+body:not(.night) .choice-prompt{ color:#3a4048; text-shadow:none; }
 .choice-item{
   text-align:left; padding:16px 20px; font-family:var(--serif); font-size:1rem; line-height:1.6;
   color:#f0ece1; background:rgba(20,23,28,.94);
@@ -729,6 +754,16 @@ body:not(.night) .dialogue.narration .dlg-text{ color:#4a4f58; }
   background:rgba(38,42,49,.97); border-left-color:#d9b98a; transform:translateX(3px);
 }
 .choice-item .idx{color:rgba(217,185,138,.8); margin-right:10px; font-size:.86em;}
+/* 浅色模式：选项也是深底浅字的一套，改成浅底深字 */
+body:not(.night) .choice-item{
+  color:#23272e; background:rgba(246,243,236,.94);
+  border-color:rgba(30,34,40,.16); border-left-color:rgba(30,34,40,.26);
+  box-shadow:0 6px 20px rgba(30,34,40,.14);
+}
+body:not(.night) .choice-item:hover{
+  background:#fffdf8; border-left-color:#a97f36;
+}
+body:not(.night) .choice-item .idx{ color:#a97f36; }
 
 /* 选项界面也能存档 / 开菜单：不再只有自由活动时才能存 */
 .choice-tools{
@@ -863,6 +898,9 @@ body.kb-open .ai-compose-tip{ display:none; }
   position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
   padding:clamp(10px,3vw,36px); background:rgba(6,8,11,.78);
 }
+/* 浅色模式：遮罩别用黑幕，否则整屏压暗像蒙了层灰 */
+body:not(.night) .panel-layer{ background:rgba(60,58,52,.42); }
+body.glass:not(.night) .panel-layer{ background:rgba(60,58,52,.30); }
 
 /* ---- 面板开关的动效 ----
    anim-in / anim-out 由 openPanel() / closePanel() 加，关掉时等动画走完再 hidden。
@@ -1252,6 +1290,37 @@ input[type=range]::-webkit-slider-thumb{
   margin-top:14px; font-size:.76rem; color:var(--ink-3); line-height:1.8;
   padding:8px 10px; background:var(--paper-2); border-left:2px solid var(--line-strong);
 }
+
+/* 更新日志配图 —— 小米澎湃 OS 的更新公告样式
+   ---------------------------------------------------------
+   澎湃的做法是：正文一条条往下排，图**插在对应的文字条目中间**，
+   图是圆角大图、不带边框，说明文字压在图下面，用很淡的灰。
+   不是微信那种整块图集，也不是单独开一个"配图区"。
+   --------------------------------------------------------- */
+.clog-shots{
+  margin-top:14px;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:12px;
+}
+.clog-shot{
+  margin:10px 0 12px;      /* 混在条目中间：上下留白跟正文行距一致 */
+  overflow:hidden;
+  border-radius:14px;
+  background:var(--paper-2);
+  box-shadow:0 2px 10px -4px rgba(20,25,40,.18);
+}
+.clog-shot img{
+  display:block; width:100%; height:auto;
+  background:#0d1016;
+}
+/* 说明文字压在图下面，不是图里的角标 */
+.clog-shot figcaption{
+  padding:8px 12px 10px;
+  font-size:.7rem; line-height:1.7; color:var(--ink-3);
+  background:var(--paper);
+}
+/* 动效帧：等宽等高，居中，不拉伸 */
+.clog-shot.is-gif img{ object-fit:contain; }
 
 .about-head{display:flex; align-items:center; gap:13px; margin:2px 0 14px;}
 .about-logo{width:44px; height:44px; border-radius:13px; display:block; box-shadow:0 4px 14px rgba(0,0,0,.45);}
@@ -2985,9 +3054,6 @@ body.glass .hub-panel,
 body.glass .dialog-card,
 body.glass .dlg-body,
 body.glass .dlg-name,
-body.glass .hud,
-body.glass .ap-bar,
-body.glass .place-tag,
 body.glass .toast,
 body.glass .choice-item,
 body.glass .mat-card,
@@ -3009,6 +3075,12 @@ body.glass .hub-grid{
   -webkit-backdrop-filter:blur(22px) saturate(1.6);
   backdrop-filter:blur(22px) saturate(1.6);
 }
+
+/* 叠在场景图上的几块（顶栏、场景标签、底部操作条、标题页卡片）
+   本来就是深底浅字。玻璃模式下如果把它们也改成浅色玻璃，
+   浅色文字就压在浅色玻璃上，再叠一层黑色 text-shadow，
+   看上去就是「字底下自己有一层黑」。
+   所以这几块不进玻璃列表，保持深底浅字。 */
 
 /* 内层控件薄一点，避免整屏都是厚玻璃 */
 body.glass .btn,
@@ -3036,12 +3108,10 @@ body.glass .panel-foot{ border-color:var(--glass-line); }
 /* 弹层遮罩：玻璃模式下压暗更深，边界更清楚 */
 body.glass .panel-layer,
 body.glass .hub-layer{ background:rgba(6,8,11,.52); }
-body.glass:not(.night) .panel-layer,
-body.glass:not(.night) .hub-layer{ background:rgba(30,34,40,.24); }
 
-/* 标题页的主体卡片不要被玻璃糊住 */
+/* 标题页的主体卡片不要被玻璃糊住：
+   它是深底浅字的一套，玻璃化成浅色后字就看不清了。 */
 body.glass .tcard{ background:rgba(18,22,29,.42); }
-body.glass:not(.night) .tcard{ background:rgba(247,244,237,.52); }
 
 /* 低端兜底：不支持 backdrop-filter 时退回半透明实色，仍是可读的 */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
@@ -3377,13 +3447,13 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 }
 .mos-app:active .mos-ico{ transform:scale(.92); }
 .mos-ico{
-  width:52px; height:52px; border-radius:14px; overflow:hidden;
+  width:52px; height:52px; border-radius:34%; overflow:hidden;
   display:flex; align-items:center; justify-content:center;
-  background:rgba(255,255,255,.12); backdrop-filter:blur(2px);
+  background:#fff; backdrop-filter:blur(2px);
   transition:transform .15s ease;
   box-shadow:0 2px 10px rgba(0,0,0,.25);
 }
-.mos-ico img{ width:100%; height:100%; object-fit:cover; border-radius:14px; }
+.mos-ico img{ width:100%; height:100%; object-fit:cover; border-radius:34%; }
 .mos-art{
   width:100%; height:100%; display:flex; align-items:center; justify-content:center;
 }
@@ -3797,6 +3867,21 @@ body.glass .tk-opt{ background:var(--glass-bg-2); border-color:var(--glass-line)
   border:1px solid var(--line-strong);
 }
 body.night .pv-box{ background:rgba(0,0,0,.66); }
+/* 浅色模式：试读框原本是半透明黑底，落在浅色面板上像贴了一块黑。
+   改成浅底深字，跟其它面板一致。 */
+body:not(.night) .pv-box{ background:#efeade; border-color:rgba(30,34,40,.14); }
+body:not(.night) .pv-name{ color:#6b5a35; background:rgba(232,220,196,.42); }
+body:not(.night) .pv-text{ color:#242830; }
+/* 通透模式：试读框跟着走玻璃，不能还挂着黑底 */
+body.glass .pv-box{
+  background:var(--glass-bg);
+  background-image:var(--glass-sheen);
+  border-color:var(--glass-line);
+  -webkit-backdrop-filter:blur(22px) saturate(1.6);
+  backdrop-filter:blur(22px) saturate(1.6);
+}
+body.glass:not(.night) .pv-text{ color:#242830; }
+body.glass:not(.night) .pv-name{ color:#5d4d2c; background:rgba(232,220,196,.5); }
 .pv-name{
   display:inline-block; margin-bottom:7px; padding:2px 11px;
   border-radius:var(--r-pill);
@@ -4799,8 +4884,8 @@ body.motion-off .boot-avatar{ animation:none; }
     gap:10px 4px; padding:6px 10px;
     align-content:start;
   }
-  .mos-ico{ width:46px; height:46px; border-radius:12px; }
-  .mos-ico img{ border-radius:12px; }
+  .mos-ico{ width:46px; height:46px; border-radius:30%; }
+  .mos-ico img{ border-radius:30%; }
   .mos-name{ font-size:.6rem; }
   .mos-app{ gap:4px; padding:2px 0; }
   .mos-dock{ padding:6px 0 4px; gap:10px; flex:0 0 auto; }
@@ -4980,10 +5065,10 @@ body.motion-off .boot-avatar{ animation:none; }
 }
 .mapp-row:last-child{ border-bottom:none; }
 .mapp-ri{
-  flex:0 0 auto; width:26px; height:26px; border-radius:8px; overflow:hidden;
+  flex:0 0 auto; width:26px; height:26px; border-radius:34%; overflow:hidden;
   background:#eef1f6; display:grid; place-items:center;
 }
-.mapp-ri img{ width:100%; height:100%; object-fit:cover; display:block; }
+.mapp-ri img{ width:100%; height:100%; object-fit:cover; display:block; border-radius:34%; }
 .mapp-rt{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .mapp-rl{ font-size:.86rem; color:var(--m-ink); line-height:1.35; }
 .mapp-rs{ font-size:.66rem; color:var(--m-ink2); line-height:1.45; }
@@ -5096,6 +5181,77 @@ body.motion-off .boot-avatar{ animation:none; }
 }
 
 /* =========================================================
+   版本管理：可更新也可回滚
+   ========================================================= */
+.mapp-vp{ padding-top:12px; }
+.vp-hero{
+  position:relative; overflow:hidden;
+  padding:20px 18px 18px; border-radius:20px;
+  background:linear-gradient(135deg,#1f5f8b 0%,#2b6ea8 46%,#3f8f86 100%);
+  color:#fff;
+  box-shadow:0 8px 22px -10px rgba(30,90,120,.5);
+}
+.vp-hero-top{ position:relative; display:flex; align-items:center; gap:14px; }
+.vp-hero-ico{
+  width:52px; height:52px; border-radius:15px; flex:0 0 auto;
+  box-shadow:0 3px 10px rgba(0,0,0,.28);
+}
+.vp-hero-tt{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:5px; }
+.vp-hero-tt b{ font-size:1.02rem; letter-spacing:.02em; }
+.vp-hero-tt i{ font-style:normal; font-size:.68rem; line-height:1.6; color:rgba(255,255,255,.86); }
+.vp-refresh{
+  position:relative; margin-top:16px;
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height:36px; padding:0 22px; border-radius:999px;
+  background:rgba(255,255,255,.94); color:#1f5f8b;
+  font-size:.8rem; letter-spacing:.04em; font-weight:600;
+  border:none; cursor:pointer;
+  transition:background .18s ease, transform .12s ease;
+}
+.vp-refresh:active{ background:#fff; transform:scale(.97); }
+.vp-refresh.is-busy{ opacity:.72; pointer-events:none; }
+
+.vp-card{ padding:0; overflow:hidden; }
+.vp-item{
+  padding:13px 15px;
+  border-bottom:1px solid var(--m-line);
+}
+.vp-item:last-child{ border-bottom:none; }
+.vp-item.is-cur{ background:rgba(91,124,240,.07); }
+.vp-item.is-busy{ opacity:.6; }
+.vp-head{ display:flex; align-items:center; gap:9px; }
+.vp-ver{ font-size:.86rem; font-weight:700; font-family:var(--serif); letter-spacing:.04em; }
+.vp-date{ font-size:.66rem; color:var(--m-ink2); }
+.vp-cur{
+  margin-left:auto; flex:0 0 auto;
+  font-size:.64rem; padding:3px 9px; border-radius:999px;
+  background:rgba(91,124,240,.14); color:#3f5ad0;
+}
+.vp-btn{
+  margin-left:auto; flex:0 0 auto;
+  min-height:28px; padding:0 14px; border-radius:999px;
+  font-size:.72rem; font-weight:600; cursor:pointer;
+  border:1px solid transparent;
+  transition:transform .12s ease, opacity .18s ease;
+}
+.vp-btn:active{ transform:scale(.96); }
+.vp-btn:disabled{ opacity:.6; cursor:default; }
+.vp-btn-up{ background:#3f5ad0; color:#fff; }
+.vp-btn-down{ background:transparent; color:#8a5a20; border-color:rgba(180,130,60,.45); }
+.vp-title{ margin-top:5px; font-size:.74rem; line-height:1.7; color:var(--m-ink); }
+.vp-notes{
+  margin:6px 0 0; padding-left:1.15em;
+  font-size:.68rem; line-height:1.85; color:var(--m-ink2);
+}
+.vp-empty{
+  padding:26px 16px; text-align:center;
+  font-size:.74rem; line-height:1.8; color:var(--m-ink2);
+}
+body.night .vp-cur{ background:rgba(140,165,255,.2); color:#a8bcff; }
+body.night .vp-btn-down{ color:#e0b070; border-color:rgba(224,176,112,.5); }
+body.night .vp-item.is-cur{ background:rgba(140,165,255,.1); }
+
+/* =========================================================
    关于手机
    ========================================================= */
 .ab-top{
@@ -5206,6 +5362,23 @@ body.night .rd-no{ color:#9aa2ae; }
 .lg-head i{ font-style:normal; font-size:.64rem; color:var(--m-ink2); }
 .lg-intro{ margin:7px 0 4px; font-size:.74rem; line-height:1.85; color:#454c56; }
 .lg-sec{ margin:12px 0 6px; font-size:.68rem; letter-spacing:.08em; color:var(--m-ink2); }
+.lg-sub{
+  margin:11px 0 5px; font-size:.68rem; letter-spacing:.1em; color:var(--m-ink2);
+  border-left:2px solid var(--m-line); padding-left:7px;
+}
+.lg-ver-game{ margin-top:10px; }
+/* 手机里的配图：卡片内的截图，边框跟着手机的浅灰走 */
+.lg-ver-game .clog-shots{ margin-top:10px; display:grid; grid-template-columns:1fr; gap:8px; }
+.lg-ver-game .clog-shot{ border-radius:12px; background:#f2f4f8; border-color:rgba(20,30,50,.1); }
+.lg-ver-game .clog-shot figcaption{
+  padding:6px 9px; font-size:.66rem; line-height:1.7; color:#5b6472;
+  border-top-color:rgba(20,30,50,.08);
+}
+/* 手机里的分节标题（沿用手机自己的 .lg-sub，不套游戏内那套） */
+.lg-ver-game .clog-shot{ border:none; box-shadow:0 2px 10px -5px rgba(20,25,40,.22); }
+.lg-ver-game .clog-shot figcaption{ background:transparent; padding:7px 2px 0; }
+body.night .lg-ver-game .clog-shot{ background:#2a2f36; border-color:rgba(255,255,255,.1); }
+body.night .lg-ver-game .clog-shot figcaption{ color:#a8b0bb; border-top-color:rgba(255,255,255,.1); }
 .lg-item{ display:flex; gap:8px; align-items:flex-start; padding:4px 0; font-size:.75rem; line-height:1.8; color:#3a4048; }
 .lg-tag{
   flex:0 0 auto; margin-top:3px; padding:1px 6px; border-radius:5px;
@@ -5320,8 +5493,8 @@ body.night .mos-appview .mos-exit{ background:rgba(255,255,255,.12); }
 }
 .st-row:last-child{ border-bottom:none; }
 .st-row:active{ background:#f7f8fa; }
-.st-ico{ flex:0 0 auto; width:38px; height:38px; border-radius:11px; overflow:hidden; }
-.st-ico img{ width:100%; height:100%; display:block; object-fit:cover; }
+.st-ico{ flex:0 0 auto; width:38px; height:38px; border-radius:34%; overflow:hidden; background:#fff; }
+.st-ico img{ width:100%; height:100%; display:block; object-fit:cover; border-radius:34%; }
 .st-t{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .st-t b{ font-size:.84rem; font-weight:500; }
 .st-t i{ font-style:normal; font-size:.64rem; color:var(--m-ink2); }
@@ -5796,6 +5969,14 @@ body.night .dl-beta-tag{
 }
 .dl-person:last-child{ border-bottom:none; }
 .dl-person:active{ background:#f7f8fa; }
+/* 还没在剧情里见过的人：头像压淡，但仍然能拨 */
+.dl-person.is-unmet .dl-av{ opacity:.5; filter:grayscale(.5); }
+.dl-person.is-unmet .dl-pt b{ color:var(--m-ink2); }
+.dl-note{
+  margin:0; padding:10px 14px 12px;
+  font-size:.64rem; line-height:1.6; color:var(--m-ink2);
+  border-top:1px solid var(--m-line);
+}
 .dl-av{
   flex:0 0 auto; width:38px; height:38px; border-radius:50%;
   background-position:center 20%; background-size:cover; background-repeat:no-repeat;

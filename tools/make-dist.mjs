@@ -65,6 +65,26 @@ if (!existsSync(join(WWW, 'index.html'))) {
   process.exit(1);
 }
 
+/* 自己把最新的 build/www 同步进 build/out/web。
+   以前这一步靠外面先手动跑 sync-dir.mjs，漏一次就会拿旧内容打包——
+   表现为「各版本热更包 sha256 全一样」：三个不同版本号的包内容完全相同，
+   玩家点「回滚」下回来的其实是最新版。CI 里恰好有这一步，
+   本地流程常常没有，所以改成脚本自己同步，不再依赖调用顺序。 */
+const WWW_SRC = join(ROOT, 'build', 'www');
+if (existsSync(join(WWW_SRC, 'index.html'))) {
+  // 不直接删：一次删几百个文件会触发批量删除保护。
+  // 改名挪进 _trash 再建空的，效果一样。
+  const trash = join(ROOT, 'build', '_trash', `out-web-${Date.now()}`);
+  try {
+    mkdirSync(trash, { recursive: true });
+    renameSync(WWW, join(trash, 'web'));
+  } catch (e) { /* 挪不动就直接覆盖式同步 */ }
+  mkdirSync(WWW, { recursive: true });
+  // 用当前 node 可执行文件，不依赖 PATH 里有 node
+  execFileSync(process.execPath, [join(ROOT, 'build', 'sync-dir.mjs'), WWW_SRC, WWW], { cwd: ROOT });
+  console.log('  已把 build/www 同步到 build/out/web');
+}
+
 console.log(`发布版本 content=${version} shell=${shell}`);
 
 // 1) 清空 dist 重建

@@ -1,1 +1,1 @@
-821d1acffb0c73c97ca7f4ebd0d139dee9bd14f7cd137dee13f99c7de9883816  www-0.6.7.0.zip
+6cc01bd311fda92a9cbc3974a089f80fdfa24654a307f5ec4dc8f114ba4b9fb0  www-0.6.7.0.zip

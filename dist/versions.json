@@ -6,8 +6,8 @@
       "date": "2026-11-01",
       "shell": "0.6.7.0",
       "www": "www-0.6.7.0.zip",
-      "sha256": "821d1acffb0c73c97ca7f4ebd0d139dee9bd14f7cd137dee13f99c7de9883816",
-      "size": 38799360,
+      "sha256": "6cc01bd311fda92a9cbc3974a089f80fdfa24654a307f5ec4dc8f114ba4b9fb0",
+      "size": 40693760,
       "title": "本次更新修掉了几个用着不顺手的地方：手机端存档能正常导入了，说话带表情不会再卡住",
       "notes": [
         "一、修复：手机端导入存档拉不起文件管理器，现在能正常选文件并导入。",
@@ -23,8 +23,8 @@
       "date": "2026-11-01",
       "shell": "0.6.6.0",
       "www": "https://github.com/baoliaojiang/not-my-weekend/releases/download/v0.6.6.0/www-0.6.6.0.zip",
-      "sha256": "821d1acffb0c73c97ca7f4ebd0d139dee9bd14f7cd137dee13f99c7de9883816",
-      "size": 38799360,
+      "sha256": "ef31744501b9ba9adccb8810da9ff9af027bc73954dd7c693d61e2878939cd9b",
+      "size": 40683520,
       "title": "版本自己说了算：想更新就更新，想回旧版就回旧版；更新日志也终于有图了。",
       "notes": [
         "版本管理：设置里新加了「切换版本」：能看所有已经发布过的版本，随时手动更新或回滚。",
@@ -40,8 +40,8 @@
       "date": "2026-10-23",
       "shell": "0.6.5.0",
       "www": "https://github.com/baoliaojiang/not-my-weekend/releases/download/v0.6.5.0/www-0.6.5.0.zip",
-      "sha256": "",
-      "size": 0,
+      "sha256": "cf931deacf8fa59d84c44e01c52a83e2430a2a8fea88bac911c9dc17190e541a",
+      "size": 38799360,
       "title": "看得清 · 校园通 · 更新与安装",
       "notes": [
         "全站深浅色模式可读性重做：浅灰次要文字整体加深，HUD 展开条加深底色，手机浅色模式不再白字压浅底",

@@ -59,6 +59,25 @@ await new Promise(r => setTimeout(r, 1200));
 console.log('\n[1] 游戏内更新日志面板');
 await page.evaluate(() => window.__ZBNX.ui.openChangelog());
 await new Promise(r => setTimeout(r, 1200));
+/* 配图是 loading="lazy" 的：视口外的图浏览器压根不下载，
+   naturalWidth 恒为 0，但那是设计如此（省流量），不是加载失败。
+   所以先滚一遍面板把懒加载全部触发，再等它们解码完。 */
+await page.evaluate(async () => {
+  const body = document.querySelector('.panel-body') || document.body;
+  const H = body.scrollHeight;
+  for (let y = 0; y < H; y += 300) {
+    body.scrollTop = y;
+    await new Promise(r => setTimeout(r, 60));
+  }
+  body.scrollTop = 0;
+  await Promise.all([...document.querySelectorAll('.clog-shot img')].map(im =>
+    im.complete ? Promise.resolve() : new Promise(r => {
+      im.addEventListener('load', r, { once: true });
+      im.addEventListener('error', r, { once: true });
+    })
+  ));
+});
+await new Promise(r => setTimeout(r, 600));
 const panel = await page.evaluate(() => {
   const shots = [...document.querySelectorAll('.clog-shot')];
   return {
