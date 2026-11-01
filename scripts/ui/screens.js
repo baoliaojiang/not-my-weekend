@@ -15,7 +15,7 @@ import { CHANGELOG } from '../data/changelog.js';
 import { SIDES } from '../data/sides.js';
 import { complaintHTML, bindComplaint, receiptHTML, progressHTML, bindProgress, buildCaseProgress, typeText, hotlineHTML, bindHotline } from './gov.js';
 import { quizHTML, bindQuiz, quizResultHTML } from './quiz.js';
-import { aiComplete, aiListModels, aiChat, webSearch } from '../core/ai.js';
+import { aiComplete, aiListModels, aiChat, webSearch, aiConfigured } from '../core/ai.js';
 import {
   MINT_APPS, campusHTML, campusNoticeHTML, campusNoticeDetail,
   campusScoreHTML, campusScoreDetail, campusLeaveHTML, campusLeaveReceipt,
@@ -35,7 +35,7 @@ import {
 import { buildAssistantSystem, assistantGreeting } from '../data/assistant.js';
 import { gameCenterHTML, g2048HTML, bind2048, mineHTML, bindMine } from './mintgames.js';
 import { dialAppHTML, bindDial, dialPersonas } from './mintdial.js';
-import { emojiHTML, EMOJI_ALL } from './emoji.js';
+import { emojiHTML, EMOJI_ALL, stripEmojiForAPI } from './emoji.js';
 import { describeTrust, describePressure, STANCE_TEXT } from '../core/state.js';
 import { shotsHTML, sectionItemsHTML } from './chlogshots.js';
 
@@ -914,12 +914,10 @@ export class UI {
         title: '软件更新',
         html: updateAppHTML({ version: ver }),
         bind: (box) => bindUpdateApp(box, {
-          check: async () => {
-            try {
-              const m = await import('../core/update.js');
-              return await m.checkUpdate();
-            } catch (e) { return null; }
-          }
+          /* 这一页是 MintOS 系统自己的更新页。
+             游戏本体的「检查更新 / 切换版本」在游戏主界面的设置面板里，
+             不在这里混着，免得玩家分不清更新的是手机还是游戏。 */
+          check: async () => ({ ok: true, kind: 'none' })
         })
       };
     }
@@ -2011,45 +2009,70 @@ export class UI {
     this._aiSave();
     this._renderAI();
 
-    const searchMode = !!(this.settings.ai && this.settings.ai.searchMode);
-    let searchText = '';
-    if (searchMode && payload.content) {
-      const r = await webSearch({ settings: this.settings, query: payload.content });
-      if (r.ok) searchText = r.text;
-    }
+    /* 整个流程包在 try 里：
+       任何一步抛错（接口返回怪格式、快照取状态时炸了……），
+       都要把 busy 放下来、把错误摆到对话里，
+       否则面板会一直停在"正在输入"，发送按钮再也不响应——
+       玩家看到的就是"崩了"。 */
+    try {
+      const searchMode = !!(this.settings.ai && this.settings.ai.searchMode);
+      let searchText = '';
+      if (searchMode && payload.content) {
+        const r = await webSearch({ settings: this.settings, query: payload.content });
+        if (r.ok) searchText = r.text;
+      }
 
-    // 现场快照：不只是"进度"，而是玩家这一秒在干什么
-    const liveCtx = this._liveSnapshot();
+      // 现场快照：不只是"进度"，而是玩家这一秒在干什么
+      const liveCtx = this._liveSnapshot();
 
-    const system = buildAssistantSystem({
-      searchMode,
-      searchUsable: !!searchText,
-      live: liveCtx,
-      custom: (this.settings.ai && this.settings.ai.chatPrompt) || ''
-    });
-    const history = cur.msgs
-      .filter(m => m.content)
-      .slice(-20)
-      .map(m => ({ role: m.role, content: m.content }));
-    if (searchText && history.length) {
-      const last = history[history.length - 1];
-      last.content = `${last.content}\n\n【检索到的资料】\n${searchText}\n\n（以上是检索结果，可能不完整也不一定准确，不确定就直说。）`;
-    }
+      const system = buildAssistantSystem({
+        searchMode,
+        searchUsable: !!searchText,
+        live: liveCtx,
+        custom: (this.settings.ai && this.settings.ai.chatPrompt) || ''
+      });
+      const history = cur.msgs
+        .filter(m => m.content)
+        .slice(-20)
+        /* 发给模型的正文里把 emoji 换成 [xx] 短标签：
+           部分国产接口遇到含 emoji 的请求会直接返回 429，
+           玩家发一句带表情的话就彻底聊不下去了。 */
+        .map(m => ({ role: m.role, content: stripEmojiForAPI(m.content) }));
+      if (searchText && history.length) {
+        const last = history[history.length - 1];
+        last.content = `${last.content}\n\n【检索到的资料】\n${searchText}\n\n（以上是检索结果，可能不完整也不一定准确，不确定就直说。）`;
+      }
 
-    const out = await aiChat({ settings: this.settings, system, messages: history });
-    st.busy = false;
-    if (out.ok) {
-      cur.msgs.push({ role: 'assistant', content: out.text });
-    } else {
+      const out = await aiChat({ settings: this.settings, system, messages: history });
+      if (out.ok) {
+        cur.msgs.push({ role: 'assistant', content: out.text });
+      } else if (out.kind === 'rate') {
+        /* 限流：说清楚是被限流，不让人以为是 Key 或地址填错了。
+           也顺带把「等多久」写出来，省得盯着屏幕干着急。 */
+        cur.msgs.push({
+          role: 'assistant',
+          content: `（${out.error}）\n${out.retryAfter ? `大约 ${out.retryAfter} 秒后再试一次就行。` : '过一两分钟再试一次通常就好了。'}\n要是每次都这样，多半是免费额度的频率限制，换个接口会稳一些。`,
+          err: true
+        });
+      } else {
+        cur.msgs.push({
+          role: 'assistant',
+          content: `（薄荷这边没接通：${out.error}）\n可以到设置里点一次「测试连接」，看看是地址、Key 还是跨域的问题。`,
+          err: true
+        });
+      }
+    } catch (e) {
       cur.msgs.push({
         role: 'assistant',
-        content: `（薄荷这边没接通：${out.error}）\n可以到设置里点一次「测试连接」，看看是地址、Key 还是跨域的问题。`,
+        content: `（薄荷这边出了点问题：${(e && e.message) || '未知错误'}）\n再发一次试试，还是不行就去设置里点「测试连接」看看接口通不通。`,
         err: true
       });
+    } finally {
+      st.busy = false;
+      cur.at = Date.now();
+      try { this._aiSave(); } catch (e2) { /* 存不下就算了 */ }
+      this._renderAI();
     }
-    cur.at = Date.now();
-    this._aiSave();
-    this._renderAI();
   }
 
   /* ================= 设置 =================
@@ -2428,6 +2451,32 @@ export class UI {
 
       <h4 class="set-group-t">存档与设置</h4>
 
+      <h4 class="set-group-t">更新</h4>
+
+      <div class="setting">
+        <div><div class="setting-label">检查更新</div>
+        <div class="setting-hint">当前游戏版本 <b>v${escapeHtml(CONFIG.version)}</b>。点这里立刻查一次远端有没有新版本，有的话会列出这次改了什么，由你决定要不要装。</div></div>
+        <div class="setting-ctl io-row">
+          <button class="btn btn-sm" id="checkUpdateBtn">检查更新</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">切换版本</div>
+        <div class="setting-hint">能看所有已经发布过的版本。想更新就更新，想回旧版就回旧版——回滚前会先确认一次，因为新版存档旧版可能读不懂。</div></div>
+        <div class="setting-ctl io-row">
+          <button class="btn btn-sm" id="openVersionsBtn">版本列表</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div><div class="setting-label">更新日志</div>
+        <div class="setting-hint">这一版到底改了什么，正文里配了图。</div></div>
+        <div class="setting-ctl io-row">
+          <button class="btn btn-sm" id="openChangelogBtn">查看更新日志</button>
+        </div>
+      </div>
+
       <div class="setting">
         <div><div class="setting-label">导出存档 / 设置</div>
         <div class="setting-hint">导出成一个 <code>.json</code> 文件，可以备份、换设备继续玩。浏览器会存到「下载」文件夹。</div></div>
@@ -2707,6 +2756,51 @@ export class UI {
       audio.sfx('click');
       const text = dumpLog();
       saveText(text, `不属于我的周末-日志-${stamp()}.txt`, 'text/plain');
+    });
+
+    /* ---- 更新相关：检查更新 / 版本列表 / 更新日志 ----
+       这三个属于游戏本体，所以放在游戏自己的设置面板里，
+       不做成手机 MintOS 的 App。 */
+    const checkBtn = $('#checkUpdateBtn', this.el.panelBody);
+    if (checkBtn) checkBtn.addEventListener('click', async () => {
+      audio.sfx('click');
+      checkBtn.disabled = true;
+      checkBtn.textContent = '正在检查…';
+      try {
+        const m = await import('../core/update.js');
+        const r = await m.checkUpdate();
+        m.markChecked();
+        if (!r.ok) {
+          this.toast('检查失败，可能是网络不通', 2600);
+        } else if (r.kind === 'none') {
+          this.toast('已经是最新版本了', 2400);
+        } else {
+          this.closePanel();
+          if (this.saveAPI && typeof this.saveAPI.showUpdateNotice === 'function') {
+            this.saveAPI.showUpdateNotice(r);
+          } else {
+            this.toast('发现新版本，去首页的更新提示里查看', 3000);
+          }
+        }
+      } catch (e) {
+        this.toast('检查失败，可能是网络不通', 2600);
+      }
+      checkBtn.disabled = false;
+      checkBtn.textContent = '检查更新';
+    });
+
+    const verBtn = $('#openVersionsBtn', this.el.panelBody);
+    if (verBtn) verBtn.addEventListener('click', () => {
+      audio.sfx('click');
+      this.closePanel();
+      this.openVersionsPanel();
+    });
+
+    const clogBtn = $('#openChangelogBtn', this.el.panelBody);
+    if (clogBtn) clogBtn.addEventListener('click', () => {
+      audio.sfx('click');
+      this.closePanel();
+      this.openChangelog();
     });
 
     const fileInput = $('#importFile', this.el.panelBody);
@@ -3356,6 +3450,72 @@ export class UI {
     });
   }
 
+  /* ================= 版本管理（游戏面板，不是手机里的 App） =================
+     这属于「游戏本体」的功能，所以放在游戏自己的设置面板里，
+     不做成手机 MintOS 的一个 App——手机那边模拟的是系统，
+     游戏版本的事不该混进去。 */
+  async openVersionsPanel() {
+    const cur = CONFIG.version;
+    const body = `
+      <p class="vp-lead">当前版本 <b>v${escapeHtml(cur)}</b>。下面列出所有已经发布过的版本：
+         比当前新的可以「更新」，比当前旧的可以「回滚」。</p>
+      <div class="vp-list" id="vpList">${versionListHTML(cur, [])}</div>
+      <p class="vp-foot">切换版本会重新下载整套网页资源（约 38MB），完成后需要重启游戏。
+         回滚到旧版本后，新版存档可能无法被旧版读取；建议先导出存档备份。</p>`;
+
+    this.openPanel({ title: '版本管理', body });
+
+    const listEl = this.el.panelBody.querySelector('#vpList');
+    const render = (list) => {
+      if (!listEl) return;
+      listEl.innerHTML = versionListHTML(cur, list);
+      listEl.querySelectorAll('[data-vp]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const entry = (list || []).find(v => v.v === btn.dataset.vp);
+          if (!entry) return;
+          const isRollback = btn.classList.contains('vp-btn-down');
+          if (isRollback && !window.confirm(
+            `确定要回滚到 v${entry.v} 吗？\n\n` +
+            `旧版本可能读不懂新版新增的存档内容，回滚后这部分进度会看不到。\n` +
+            `建议先到「存档与设置」里导出一份存档再回滚。`
+          )) return;
+          btn.disabled = true;
+          const old = btn.textContent;
+          btn.textContent = isRollback ? '正在回滚…' : '正在更新…';
+          const r = await this._switchVersion(entry);
+          btn.textContent = old;
+          btn.disabled = false;
+          if (r && r.ok) {
+            this.toast('已下载完成，重启游戏后生效', 3200);
+          } else {
+            this.toast((r && r.reason === 'no-shell')
+              ? '网页版不能直接切换版本，请到发布页下载对应版本的安装包'
+              : '切换失败，请稍后再试', 3200);
+          }
+        });
+      });
+    };
+
+    let list = [];
+    try {
+      const m = await import('../core/versions.js');
+      const r = await m.fetchVersions();
+      list = (r && r.versions) || [];
+    } catch (e) { list = []; }
+    render(list);
+  }
+
+  async _switchVersion(entry) {
+    try {
+      const m = await import('../core/versions.js');
+      const r = await m.fetchVersions();
+      const base = r && r.base;
+      return await m.switchVersion(entry, base);
+    } catch (e) {
+      return { ok: false, reason: 'exception' };
+    }
+  }
+
   /* ================= 游戏内菜单 ================= */
   toggleMenu() {
     if (!this.el.panelLayer.hidden) { this.closePanel(); return; }
@@ -3683,7 +3843,11 @@ export class UI {
      让 mintdial 内部退回写死的几句，至少不是一段沉默。 */
   _dialAI() {
     const cfg = this.settings && this.settings.ai;
-    const configured = !!(cfg && cfg.enabled !== false && cfg.baseUrl && cfg.apiKey);
+    /* 之前这里判的是 cfg.enabled，但设置里真正的开关叫 cfg.on——
+       于是即使 AI 开着，cfg.enabled 是 undefined（!== false 成立），
+       看着能用；可一旦玩家把接口地址或 Key 清空，configured 仍为真，
+       每次打电话都要白等一次超时才落到内置回复。 */
+    const configured = aiConfigured(this.settings);
     return {
       configured,
       ask: async (persona, msgs) => {
@@ -3692,9 +3856,14 @@ export class UI {
           const out = await aiChat({
             settings: this.settings,
             system: persona.system,
-            messages: (msgs || []).map(m => ({ role: m.role, content: m.content }))
+            messages: (msgs || []).map(m => ({
+              role: m.role,
+              content: stripEmojiForAPI(m.content)
+            }))
           });
-          return out && out.ok ? String(out.text || '').trim() : '';
+          if (out && out.ok) return String(out.text || '').trim();
+          /* 限流就别再兜一大段解释，电话里说清楚"没接上"就行 */
+          return '';
         } catch (e) { return ''; }
       }
     };

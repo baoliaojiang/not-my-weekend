@@ -40,6 +40,19 @@ public class MainActivity extends Activity {
     // 玩家在内核过旧对话框里点了「仍要继续」后，跳过二次拦截
     private boolean forceStart = false;
 
+    /* =========================================================
+       存档导入：<input type="file"> 的回传通道
+       ---------------------------------------------------------
+       WebView 默认不会接管 input[type=file] 的点击，
+       必须自己实现 onShowFileChooser，用系统文件管理器选文件，
+       再通过 ValueCallback 把 Uri 交回网页。
+       不实现的话，「导入存档」在 APK 里点了毫无反应——
+       用户看到的就是"文件管理器拉不起来"。
+       ========================================================= */
+    private static final int REQ_FILE = 4101;
+    private ValueCallback<android.net.Uri[]> fileCallback;
+    private int fileAcceptType = 0;   // 0=任意 1=json 2=文本
+
     @Override
     @SuppressWarnings("deprecation")
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,6 +158,49 @@ public class MainActivity extends Activity {
                 android.util.Log.i("ZBWeb", "console " + m.messageLevel() + " "
                         + m.message() + " @" + m.sourceId() + ":" + m.lineNumber());
                 return true;
+            }
+
+            /* 存档导入的入口：网页里点 <input type="file"> 时系统会调这里。
+               之前完全没有这个实现，所以 APK 里点「导入存档」一点反应都没有，
+               玩家只看到"文件管理器拉不起来"。 */
+            @Override
+            public boolean onShowFileChooser(WebView view,
+                                             ValueCallback<android.net.Uri[]> callback,
+                                             WebChromeClient.FileChooserParams params) {
+                if (fileCallback != null) {
+                    fileCallback.onReceiveValue(null);
+                }
+                fileCallback = callback;
+                fileAcceptType = 0;
+                try {
+                    String[] accepts = params != null ? params.getAcceptTypes() : null;
+                    if (accepts != null) {
+                        for (String a : accepts) {
+                            if (a == null) continue;
+                            String t = a.toLowerCase();
+                            if (t.contains("json")) { fileAcceptType = 1; break; }
+                            if (t.contains("text") || t.contains("txt")) { fileAcceptType = 2; break; }
+                        }
+                    }
+                } catch (Throwable ignored) { }
+
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                if (fileAcceptType == 1) {
+                    intent.setType("application/json");
+                } else if (fileAcceptType == 2) {
+                    intent.setType("text/plain");
+                } else {
+                    intent.setType("*/*");
+                }
+                try {
+                    startActivityForResult(Intent.createChooser(intent, "选择存档文件"), REQ_FILE);
+                    return true;
+                } catch (Throwable t) {
+                    Toast.makeText(MainActivity.this, "无法打开文件管理器", Toast.LENGTH_LONG).show();
+                    fileCallback = null;
+                    return false;
+                }
             }
         });
 
@@ -901,6 +957,30 @@ public class MainActivity extends Activity {
         try {
             web.evaluateJavascript(js, null);
         } catch (Throwable ignored) { }
+    }
+
+    /** 文件管理器选完之后的回传：把 Uri 交还给网页的 input[type=file] */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_FILE) return;
+        ValueCallback<android.net.Uri[]> cb = fileCallback;
+        fileCallback = null;
+        if (cb == null) return;
+        if (resultCode != RESULT_OK || data == null) {
+            cb.onReceiveValue(null);   // 取消选择
+            return;
+        }
+        try {
+            android.net.Uri uri = data.getData();
+            if (uri == null) {
+                cb.onReceiveValue(null);
+                return;
+            }
+            cb.onReceiveValue(new android.net.Uri[]{ uri });
+        } catch (Throwable t) {
+            cb.onReceiveValue(null);
+        }
     }
 
     @Override

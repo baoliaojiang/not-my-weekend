@@ -51,24 +51,28 @@ await page.evaluate(async () => {
 await new Promise(r => setTimeout(r, 900));
 
 /* ---------- 1. 入口存在 ---------- */
+/* 入口在「游戏本体设置面板」里，不在手机 MintOS 设置里：
+   手机设置只管手机自己的事（上一版已把游戏更新/切换版本从那里摘掉）。 */
 console.log('\n[1] 入口');
 const entry = await page.evaluate(() => {
   const m = window.__ZBNX;
   if (!m) return { err: 'no debug hook' };
   const scr = m.ui;
-  const conf = scr._appConf('settings');
-  const html = conf ? conf.html : '';
   const uconf = scr._appConf('update');
+  const mint = scr._appConf('settings');
+  const mintHtml = mint ? mint.html : '';
   return {
-    settingsHas: html.includes('data-go-app="versions"'),
+    gameHas: typeof scr.openVersionsPanel === 'function',
+    openBtn: typeof scr.openVersionsPanel === 'function',
+    versionsConf: !!scr._appConf('versions'),
     updateHas: uconf ? uconf.html.includes('data-go-app="versions"') : false,
-    versionsConf: !!scr._appConf('versions')
+    mintClean: !mintHtml.includes('data-go-app="versions"')
   };
 });
 ok(!entry.err, '调试钩子可用');
-ok(entry.settingsHas, '设置页有「切换版本」入口');
-ok(entry.updateHas, '更新页有「切换版本」入口');
+ok(entry.gameHas, '游戏设置面板有「切换版本」入口');
 ok(entry.versionsConf, '版本管理页已注册');
+ok(entry.mintClean, '手机设置里不再有游戏版本入口');
 
 /* ---------- 2. 版本列表渲染 ---------- */
 console.log('\n[2] 列表渲染');

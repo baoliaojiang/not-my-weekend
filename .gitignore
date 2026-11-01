@@ -30,6 +30,9 @@ build/keystore.jks
 .deploy/
 build/_trash/
 
+# PV 试玩版与美术素材：内部资产，不开源
+pv/
+
 # 自查截图与一次性中间产物
 build/_*/
 build/_*.png

@@ -224,7 +224,11 @@ const saveAPI = {
     engine.stopAllModes();
     ui.closeAll();
     showTitle();
-  }
+  },
+
+  /** 弹「有新版本」提示：showUpdateNotice 定义在本文件，
+      UI 类拿不到这里的闭包，只能由这里转一手。 */
+  showUpdateNotice(r) { showUpdateNotice(r); }
 };
 
 /* ---------------- 装配 ---------------- */

@@ -157,18 +157,6 @@ export function settingsAppHTML(s, opts = {}) {
 
     <p class="mapp-gt">系统</p>
     <div class="mapp-card">
-      <div class="mapp-row mapp-row-nav" data-go-app="update">
-        <span class="mapp-rt"><span class="mapp-rl">软件更新</span></span>
-        <span class="mapp-rv">${esc(ver)}</span>
-        <span class="mapp-ar" aria-hidden="true">›</span>
-      </div>
-      <div class="mapp-row mapp-row-nav" data-go-app="versions">
-        <span class="mapp-rt">
-          <span class="mapp-rl">切换版本</span>
-          <span class="mapp-rs">可更新到最新版，也能回滚到旧版本</span>
-        </span>
-        <span class="mapp-ar" aria-hidden="true">›</span>
-      </div>
       <div class="mapp-row mapp-row-nav" data-go-app="about">
         <span class="mapp-rt"><span class="mapp-rl">关于手机</span></span>
         <span class="mapp-rv">${DEVICE.model}</span>
@@ -287,13 +275,6 @@ export function updateAppHTML(opts = {}) {
       ${(latest.items || []).slice(0, 3).map(t => `<div class="up-note"><span class="up-dot"></span><span>${esc(t)}</span></div>`).join('')}
       <div class="mapp-row mapp-row-nav" data-go-app="log">
         <span class="mapp-rt"><span class="mapp-rl">查看完整更新日志</span></span>
-        <span class="mapp-ar" aria-hidden="true">›</span>
-      </div>
-      <div class="mapp-row mapp-row-nav" data-go-app="versions">
-        <span class="mapp-rt">
-          <span class="mapp-rl">切换版本</span>
-          <span class="mapp-rs">更新到最新版，或回滚到旧版本</span>
-        </span>
         <span class="mapp-ar" aria-hidden="true">›</span>
       </div>
     </div>

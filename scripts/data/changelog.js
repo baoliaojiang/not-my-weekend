@@ -1,11 +1,14 @@
 /* =========================================================
    更新日志
    ---------------------------------------------------------
-   HyperOS 风格：每条一两句话，不展开细节。
+   语气参考小米澎湃 OS 的系统更新公告：
+     · 每条一行，短标题 + 一句话，不展开技术细节
+     · 说清「玩家能感觉到什么」，不讲「我们怎么实现」
+     · 分组标题是大方向，条目是大方向下的小改动
    结构：版本 → 分节 → 条目（type: fix/new/opt/note）
 
-   配图：像小米澎湃 OS 的更新公告那样，图**混在正文条目中间**，
-   说到哪一步就贴哪张图，而不是单独开一块放图。
+   配图：图**混在正文条目中间**，说到哪一步贴哪张，
+   而不是单独开一块放图。
    所以条目有两种：
      · { type, text }      一条文字说明
      · { type:'shot', src, cap, gif }  一张图（可选说明文字）
@@ -15,6 +18,36 @@
 
 export const CHANGELOG = [
   {
+    version: 'v0.6.7.0',
+    date: '2026-11-01',
+    intro: '本次更新修掉了几个用着不顺手的地方：手机端存档能正常导入了，说话带表情不会再卡住，打电话的人也多了起来。具体更新内容如下：',
+    sections: [
+      {
+        title: '一、修复',
+        items: [
+          { type: 'fix', text: '手机端导入存档拉不起文件管理器，现在能正常选文件并导入。' },
+          { type: 'fix', text: '给薄荷发带表情的消息不再卡住，也不会再因为接口限流而失败。' },
+          { type: 'fix', text: '浅色模式与通透模式下，对话框不再糊着一层黑底。' },
+          { type: 'fix', text: '检测到新版本时的更新提示不再弹不出来。' }
+        ]
+      },
+      {
+        title: '二、新增',
+        items: [
+          { type: 'new', text: '电话里不再只有薄荷一个人，剧情里的角色都能拨，AI 会按各自的人设跟你聊。' },
+          { type: 'new', text: '手机里的应用图标补上了圆角。' },
+          { type: 'opt', text: '手机设置里移除了与游戏无关的更新与版本入口。' }
+        ]
+      },
+      {
+        title: '三、其他',
+        items: [
+          { type: 'opt', text: '优化了性能与功耗，体验更流畅。' }
+        ]
+      }
+    ]
+  },
+  {
     version: 'v0.6.6.0',
     date: '2026-11-01',
     intro: '版本自己说了算：想更新就更新，想回旧版就回旧版；更新日志也终于有图了。',
@@ -22,31 +55,32 @@ export const CHANGELOG = [
       {
         title: '版本管理',
         items: [
-          { type: 'new', text: '设置里新加了「切换版本」：能看所有已经发布过的版本，随时手动更新或回滚。' },
+          { type: 'new', text: '全新版本管理：想更新就更新，想回旧版就回旧版' },
           { type: 'shot', src: 'assets/ui/changelog/versions.png', cap: '版本列表：当前版本、更新、回滚一目了然' },
-          { type: 'new', text: '比当前版本新的标「更新」，比当前旧的标「回滚」，当前正在用的那一条直接标出来，不会给错按钮。' },
-          { type: 'new', text: '回滚之前会先确认一遍：旧版本可能读不懂新版本新增的存档内容，别稀里糊涂就退回去了。' },
-          { type: 'shot', src: 'assets/ui/changelog/settings.png', cap: '设置页里的入口，与检查更新放在同一组' },
-          { type: 'note', text: '桌面版与手机版切版本是直接换掉整套网页资源，下载完重启游戏就生效。网页版没有这个能力，页面会如实说明并指向下载页。' }
+          { type: 'new', text: '新增版本列表：所有发布过的版本都在这儿' },
+          { type: 'new', text: '一键回滚：退回去之前会先问你一句' },
+          { type: 'shot', src: 'assets/ui/changelog/settings.png', cap: '设置页里的入口，和检查更新放在一起' },
+          { type: 'opt', text: '网页版没有外壳，不能直接切版本，会明确告诉你去哪下载' }
         ]
       },
       {
         title: '更新日志有图了',
         items: [
-          { type: 'new', text: '更新日志现在会配图，图就插在对应的文字条目中间——说到哪儿，贴到哪儿。' },
-          { type: 'shot', src: 'assets/ui/changelog/update-notice.png', cap: '游戏内的更新页面，图文混排' },
-          { type: 'new', text: '游戏里的更新页面和首页的更新日志入口，两处都能看到这些图，看到的是同一份内容。' },
-          { type: 'new', text: '动效也能放：浅色与深色两套配色来回切换的那一下，现在就在日志里。' },
+          { type: 'new', text: '更新日志开始配图：说到哪儿，贴到哪儿' },
+          { type: 'shot', src: 'assets/ui/changelog/update-notice.png', cap: '游戏里的更新页面，图文混排' },
+          { type: 'opt', text: '游戏内面板和首页入口，两边看到的是同一份' },
+          { type: 'new', text: '动效也能放：深浅配色切换的那一下就在日志里' },
           { type: 'shot', src: 'assets/ui/changelog/contrast.gif', cap: '深浅两套配色来回切换', gif: true }
         ]
       },
       {
         title: '立绘与性能',
         items: [
-          { type: 'fix', text: '立绘抠图残留的白块清掉了：之前头发缝隙里会卡着一缕白头发，现在那几处都干净了。' },
+          { type: 'fix', text: '修掉立绘白边：头发缝隙里那几缕白发没了' },
           { type: 'shot', src: 'assets/ui/changelog/dialog.png', cap: '处理后的实际画面：头发边缘不再有白块' },
-          { type: 'opt', text: '打包前把运存与内存过了一遍：切换场景时旧背景会及时释放，音效播放过的数据也会断掉，不再白占着。' },
-          { type: 'opt', text: '网页版的脚本包压缩了一遍，首屏少解析四百多 KB；体积变小，行为一点没变。' }
+          { type: 'opt', text: '场景切换及时释放旧背景，不白占内存' },
+          { type: 'opt', text: '音效播完就断，不再一直挂着' },
+          { type: 'opt', text: '网页版脚本包压缩四百多 KB，首屏更快' }
         ]
       }
     ]
@@ -54,42 +88,41 @@ export const CHANGELOG = [
   {
     version: 'v0.6.5.0',
     date: '2026-11-01',
-    intro: '看得清、点得到：界面的字在什么背景下都读得出来，功能不再有"点开是空的"。',
+    intro: '看得清、点得到：字在什么背景下都读得出来，功能不再有"点开是空的"。',
     sections: [
       {
         title: '看得清',
         items: [
-          { type: 'fix', text: '顶栏菜单展开后不再一片白：底色压实了，教室、操场这种亮背景上也读得清每个字。' },
+          { type: 'fix', text: '顶栏不再一片白：亮背景上也读得清每个字' },
           { type: 'shot', src: 'assets/ui/changelog/hud-light.png', cap: '顶栏展开后的实际样子' },
-          { type: 'fix', text: '顶栏收起时画面上只剩左上角一颗小圆点，不再留一条横着的遮罩；点开才展开那一条。' },
-          { type: 'fix', text: '全站排查了一遍深色与浅色两套配色，把太淡的灰字统一加深，浅底浅字、深底暗字都修了。' },
+          { type: 'fix', text: '顶栏收起时只剩一颗小圆点，不留横条' },
+          { type: 'fix', text: '全站排查对比度：太淡的灰字统一加深' },
           { type: 'shot', src: 'assets/ui/changelog/hud-dark.png', cap: '深色模式下同样读得清' },
-          { type: 'fix', text: '手机里的时间、日期、图标名称在浅色模式下改成深色，不再白字压浅底。' },
-          { type: 'shot', src: 'assets/ui/changelog/phone-home.png', cap: '手机桌面：时间、日期与图标名在浅色下也清楚' },
-          { type: 'fix', text: '试读预览框与"按当前速度试读"按钮在浅色模式下也看得清了。' },
-          { type: 'fix', text: '游戏中心的图标底色加深，图标里的字不再糊成一团。' }
+          { type: 'fix', text: '手机时间、日期、图标名在浅色下改成深色' },
+          { type: 'shot', src: 'assets/ui/changelog/phone-home.png', cap: '手机桌面：时间、日期与图标名都清楚' },
+          { type: 'fix', text: '试读预览框和试读按钮在浅色下也看得清' },
+          { type: 'fix', text: '游戏中心图标底色加深，图标里的字不再糊' }
         ]
       },
       {
         title: '校园通',
         items: [
-          { type: 'new', text: '「成绩查询」能看每次月考、期中的总分与班级排名，点开还有各科得分表。' },
+          { type: 'new', text: '全新成绩查询：每次月考期中都有总分和排名' },
           { type: 'shot', src: 'assets/ui/changelog/campus-score.png', cap: '成绩单：总分、各科得分与班级排名' },
-          { type: 'new', text: '成绩单上可以申请复核，提交后有明确回执。' },
-          { type: 'new', text: '「请假」能填假别、时间与事由，勾了家长同意才能提交，提交后有审批状态的回执。' },
+          { type: 'new', text: '成绩单可申请复核，提交后有回执' },
+          { type: 'new', text: '全新请假：填假别时间事由，勾了家长同意才能提交' },
           { type: 'shot', src: 'assets/ui/changelog/campus-leave.png', cap: '请假申请与提交回执' },
-          { type: 'new', text: '「我的课表」是完整的一周课表，周六那节课后服务单独标出来。' },
+          { type: 'new', text: '全新我的课表：完整一周，周六课后服务单独标出' },
           { type: 'shot', src: 'assets/ui/changelog/campus-timetable.png', cap: '一周课表，课后服务单独标出' },
-          { type: 'new', text: '「我的课后服务」能看到报名状态、已参加的次数与每次签到签退的时间。' }
+          { type: 'new', text: '全新我的课后服务：报名状态和每次签到签退时间都能看' }
         ]
       },
       {
         title: '更新与安装',
         items: [
-          { type: 'fix', text: '已经是最新版本时不再提示"发现新版本"——桌面版的外壳版本号之前落后于游戏版本号，已对齐。' },
-          { type: 'fix', text: '本地资源比远端还新时（比如已经装过更新的包）也不再提示更新。' },
-          { type: 'new', text: '设置里新加了「切换版本」：能看所有已发布的版本，也能手动回滚到旧版本。' },
-          { type: 'note', text: '发版前现在会自动跑一遍清档、密钥扫描和功能测试，任何一项不过就不允许提交与发布。' }
+          { type: 'fix', text: '修掉"明明是最新版本还提示更新"' },
+          { type: 'fix', text: '本地比远端还新时不再提示更新' },
+          { type: 'note', text: '发版前自动跑清档、密钥扫描和功能测试，不过就不发' }
         ]
       }
     ]

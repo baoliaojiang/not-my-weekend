@@ -70,9 +70,9 @@ export const SPRITES = {
   he:      { src: 'assets/characters/he_yu.webp',           label: '何雨' },
   sun:     { src: 'assets/characters/sun_peng.webp',        label: '孙芃' },
   ma:      { src: 'assets/characters/ma_wenjie.webp',       label: '马文杰' },
-  wu:      { src: 'assets/characters/wu_jianguo.webp',      label: '吴建国' },
+  wu:      { src: 'assets/characters/wu_jianguo.webp',      label: '吴老师' },
   zyi:     { src: 'assets/characters/zhou_yi.webp',         label: '周姨' },
-  fu:      { src: 'assets/characters/fu_yisheng.webp',      label: '傅医生' }
+  fu:      { src: 'assets/characters/fu_yisheng.webp',      label: '校医' }
 };
 
 /* 全部背景音乐为本作程序合成（tools/make_music.py）：

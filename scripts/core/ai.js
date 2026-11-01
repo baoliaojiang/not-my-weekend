@@ -268,6 +268,16 @@ export async function aiChat({ settings, system, messages, timeout }) {
     });
 
     if (!res.ok) {
+      /* 429 是限流，不是配置错。给它单独的提示，
+         并且在响应头给了 Retry-After 时按它等一等再试。 */
+      if (res.status === 429) {
+        const ra = Number(res.headers && res.headers.get && res.headers.get('retry-after'));
+        return {
+          ok: false, kind: 'rate', status: 429,
+          retryAfter: Number.isFinite(ra) && ra > 0 ? ra : 0,
+          error: '请求太频繁，被接口限流了。等一会儿再试，或者换个模型/接口。'
+        };
+      }
       const hint = res.status === 401 || res.status === 403
         ? '接口拒绝了请求，多半是 API Key 不对或者这个模型没开通。'
         : res.status === 404
