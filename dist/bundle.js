@@ -14,7 +14,7 @@
   var init_game = __esm({
     "scripts/config/game.js"() {
       CONFIG = {
-        version: "0.6.4.0",
+        version: "0.6.5.0",
         // 存储键（改这里不会影响旧存档兼容性，但会各存一份）
         keys: {
           save: "zbnx.save",
@@ -237,8 +237,11 @@
     const curShell = shellVersion();
     const shellMin = data.shellMin || data.shell || "0.0.0";
     const contentNewer = compareVersion(data.content, curContent) > 0;
-    const shellTooOld = compareVersion(curShell, shellMin) < 0;
-    const kind = contentNewer && shellTooOld ? "both" : contentNewer ? "content" : shellTooOld ? "shell" : "none";
+    const gate = compareVersion(shellMin, data.shell || shellMin) > 0 ? data.shell || shellMin : shellMin;
+    const shellTooOld = compareVersion(curShell, gate) < 0;
+    const localAhead = compareVersion(curContent, data.content) > 0;
+    const needContent = contentNewer && !localAhead;
+    const kind = needContent && shellTooOld ? "both" : needContent ? "content" : shellTooOld ? "shell" : "none";
     let absWww = data.www || "";
     try {
       absWww = new URL(data.www, usedBase).href;
@@ -3873,6 +3876,42 @@
   // scripts/data/changelog.js
   var CHANGELOG = [
     {
+      version: "v0.6.5.0",
+      date: "2026-11-01",
+      intro: '看得清、点得到：界面的字在什么背景下都读得出来，功能不再有"点开是空的"。',
+      sections: [
+        {
+          title: "看得清",
+          items: [
+            { type: "fix", text: "顶栏菜单展开后不再一片白：底色压实了，教室、操场这种亮背景上也读得清每个字。" },
+            { type: "fix", text: "顶栏收起时画面上只剩左上角一颗小圆点，不再留一条横着的遮罩；点开才展开那一条。" },
+            { type: "fix", text: "全站排查了一遍深色与浅色两套配色，把太淡的灰字统一加深，浅底浅字、深底暗字都修了。" },
+            { type: "fix", text: "手机里的时间、日期、图标名称在浅色模式下改成深色，不再白字压浅底。" },
+            { type: "fix", text: '试读预览框与"按当前速度试读"按钮在浅色模式下也看得清了。' },
+            { type: "fix", text: "游戏中心的图标底色加深，图标里的字不再糊成一团。" }
+          ]
+        },
+        {
+          title: "校园通",
+          items: [
+            { type: "new", text: "「成绩查询」能看每次月考、期中的总分与班级排名，点开还有各科得分表。" },
+            { type: "new", text: "成绩单上可以申请复核，提交后有明确回执。" },
+            { type: "new", text: "「请假」能填假别、时间与事由，勾了家长同意才能提交，提交后有审批状态的回执。" },
+            { type: "new", text: "「我的课表」是完整的一周课表，周六那节课后服务单独标出来。" },
+            { type: "new", text: "「我的课后服务」能看到报名状态、已参加的次数与每次签到签退的时间。" }
+          ]
+        },
+        {
+          title: "更新与安装",
+          items: [
+            { type: "fix", text: '已经是最新版本时不再提示"发现新版本"——桌面版的外壳版本号之前落后于游戏版本号，已对齐。' },
+            { type: "fix", text: "本地资源比远端还新时（比如已经装过更新的包）也不再提示更新。" },
+            { type: "note", text: "发版前现在会自动跑一遍清档、密钥扫描和功能测试，任何一项不过就不允许提交与发布。" }
+          ]
+        }
+      ]
+    },
+    {
       version: "v0.6.4.0",
       date: "2026-11-01",
       intro: "手机第一次像一台真的手机，跳过也不用再盲跳了。",
@@ -5712,6 +5751,160 @@ ${ctx}
       </div>`).join("")}
   </div>`;
   }
+  var CAMPUS_SCORES = [
+    { term: "2025—2026 学年第一学期 · 高一上 · 第一次月考", date: "9 月 6 日", total: 612, rank: 18, of: 43, rows: [
+      ["语文", 108, 150],
+      ["数学", 96, 150],
+      ["英语", 121, 150],
+      ["物理", 78, 100],
+      ["化学", 82, 100],
+      ["生物", 71, 100],
+      ["政治", 56, 100]
+    ] },
+    { term: "2025—2026 学年第一学期 · 高一上 · 期中考试", date: "11 月 8 日", total: 578, rank: 24, of: 43, rows: [
+      ["语文", 101, 150],
+      ["数学", 88, 150],
+      ["英语", 115, 150],
+      ["物理", 71, 100],
+      ["化学", 79, 100],
+      ["生物", 68, 100],
+      ["政治", 56, 100]
+    ] }
+  ];
+  function campusScoreHTML() {
+    return `<div class="cpsc">
+    ${CAMPUS_SCORES.map((s, i) => `<section class="cpsc-card" data-score="${i}">
+      <div class="cpsc-head">
+        <span class="cpsc-term">${s.term}</span>
+        <span class="cpsc-date">${s.date}</span>
+      </div>
+      <div class="cpsc-sum">
+        <span class="cpsc-total"><b>${s.total}</b> 分</span>
+        <span class="cpsc-rank">班级第 ${s.rank} 名 / 共 ${s.of} 人</span>
+      </div>
+      <ul class="cpsc-list">
+        ${s.rows.map((r) => `<li class="cpsc-row">
+          <span class="cpsc-sub">${r[0]}</span>
+          <span class="cpsc-bar"><i style="width:${Math.round(r[1] / r[2] * 100)}%"></i></span>
+          <span class="cpsc-num">${r[1]}</span>
+        </li>`).join("")}
+      </ul>
+      <p class="cpsc-note">点一下看这一场的缺考与复核记录</p>
+    </section>`).join("")}
+  </div>`;
+  }
+  function campusScoreDetail(i) {
+    const s = CAMPUS_SCORES[i] || CAMPUS_SCORES[0];
+    return `<div class="cpsd">
+    <h3 class="cpsd-t">${s.term}</h3>
+    <p class="cpsd-meta">考试日期 ${s.date} · 总分 ${s.total} · 班级第 ${s.rank} 名</p>
+    <table class="cpsd-table">
+      <thead><tr><th>科目</th><th>得分</th><th>满分</th><th>得分率</th></tr></thead>
+      <tbody>
+        ${s.rows.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${Math.round(r[1] / r[2] * 100)}%</td></tr>`).join("")}
+      </tbody>
+    </table>
+    <p class="cpsd-note">本场无缺考记录。若对成绩有异议，可在成绩单下方提交复核申请，
+      复核结果将于三个工作日内短信通知。</p>
+    <button class="btn btn-primary cpsd-btn" type="button" id="cpsdAppeal">申请复核</button>
+  </div>`;
+  }
+  function campusLeaveHTML() {
+    return `<div class="cpl">
+    <p class="cpl-tip">请假需要家长知情同意。提交后由班主任审批，结果会推送到校园通。</p>
+    <label class="cpl-f">
+      <span class="cpl-l">请假类型</span>
+      <select class="cpl-sel" id="cplType">
+        <option value="事假">事假</option>
+        <option value="病假">病假</option>
+        <option value="公假">公假</option>
+      </select>
+    </label>
+    <label class="cpl-f">
+      <span class="cpl-l">开始时间</span>
+      <input class="cpl-in" id="cplFrom" type="date" value="2025-09-13" />
+    </label>
+    <label class="cpl-f">
+      <span class="cpl-l">结束时间</span>
+      <input class="cpl-in" id="cplTo" type="date" value="2025-09-13" />
+    </label>
+    <label class="cpl-f">
+      <span class="cpl-l">事由</span>
+      <textarea class="cpl-ta" id="cplBody" rows="4" placeholder="写清原因与去向。"></textarea>
+    </label>
+    <label class="cpl-check">
+      <input type="checkbox" id="cplParent" />
+      <span>家长已知情并同意</span>
+    </label>
+    <button class="btn btn-primary cpl-submit" id="cplSubmit" type="button">提交请假</button>
+    <div class="cpl-history" id="cplHistory"></div>
+  </div>`;
+  }
+  function campusLeaveReceipt(kind, from, to, reason) {
+    return `<div class="cpr">
+    <div class="cpr-ok">✓</div>
+    <h3 class="cpr-t">请假已提交</h3>
+    <p class="cpr-kv">假别：<b>${escape(kind)}</b></p>
+    <p class="cpr-kv">时间：<b>${escape(from)}</b> 至 <b>${escape(to)}</b></p>
+    <p class="cpr-kv">事由：${escape(reason || "（未填写）")}</p>
+    <p class="cpr-kv">当前状态：<b>待班主任审批</b></p>
+    <p class="cpr-note">审批通过前仍需正常到校。离校请走北门门卫登记。</p>
+  </div>`;
+  }
+  var CAMPUS_TIMETABLE = {
+    "周一": [["语文", "第 1 节"], ["数学", "第 2 节"], ["英语", "第 3 节"], ["物理", "第 4 节"], ["班会", "第 7 节"]],
+    "周二": [["语文", "第 1 节"], ["数学", "第 2 节"], ["英语", "第 3 节"], ["化学", "第 4 节"], ["体育", "第 7 节"]],
+    "周三": [["语文", "第 1 节"], ["数学", "第 2 节"], ["英语", "第 3 节"], ["生物", "第 4 节"], ["自习", "第 7 节"]],
+    "周四": [["语文", "第 1 节"], ["数学", "第 2 节"], ["英语", "第 3 节"], ["物理", "第 4 节"], ["劳动", "第 7 节"]],
+    "周五": [["语文", "第 1 节"], ["数学", "第 2 节"], ["英语", "第 3 节"], ["化学", "第 4 节"], ["课后服务", "第 7–8 节"]]
+  };
+  function campusTimetableHTML() {
+    const days = Object.keys(CAMPUS_TIMETABLE);
+    return `<div class="cpt">
+    <div class="cpt-head">
+      <span class="cpt-week">2025—2026 学年第一学期</span>
+      <span class="cpt-sub">高一（2）班 · 周课表</span>
+    </div>
+    <div class="cpt-grid">
+      <div class="cpt-corner">节次</div>
+      ${days.map((d) => `<div class="cpt-day">${d}</div>`).join("")}
+      ${["第 1 节", "第 2 节", "第 3 节", "第 4 节", "第 7 节"].map((slot, ri) => `
+        <div class="cpt-slot">${slot}</div>
+        ${days.map((d) => {
+      const hit = CAMPUS_TIMETABLE[d][ri];
+      const isAfter = hit && hit[0] === "课后服务";
+      return `<div class="cpt-cell${isAfter ? " is-after" : ""}">${hit ? escape(hit[0]) : "—"}</div>`;
+    }).join("")}`).join("")}
+    </div>
+    <p class="cpt-note">"课后服务"一栏标的是周六的服务时段，是否参加需家长自愿签字，
+      报名截止到每周五。</p>
+  </div>`;
+  }
+  function campusAfterschoolHTML(state2) {
+    const signed = state2 && state2.gov ? true : true;
+    return `<div class="cpaf">
+    <div class="cpaf-card">
+      <div class="cpaf-head">
+        <span class="cpaf-t">周六课后服务</span>
+        <span class="cpaf-tag${signed ? " is-on" : ""}">${signed ? "已报名" : "未报名"}</span>
+      </div>
+      <p class="cpaf-kv">时间：<b>每周六 8:00—11:30、14:00—16:30，共四节</b></p>
+      <p class="cpaf-kv">地点：<b>教学楼三层 · 高一（2）班教室及物理实验室</b></p>
+      <p class="cpaf-kv">科目：<b>数学（自习答疑）、物理（实验）、语文（阅读）、体育（球场）</b></p>
+      <p class="cpaf-kv">本学期已参加：<b>3 次（9 月 6 日、9 月 13 日、9 月 20 日）</b></p>
+    </div>
+    <div class="cpaf-card">
+      <div class="cpaf-head"><span class="cpaf-t">报名记录</span></div>
+      <ul class="cpaf-list">
+        <li class="cpaf-row"><span class="cpaf-d">9 月 6 日</span><span class="cpaf-s">已签到 07:41　已签退 12:05</span></li>
+        <li class="cpaf-row"><span class="cpaf-d">9 月 13 日</span><span class="cpaf-s">已签到 07:38　已签退 12:02</span></li>
+        <li class="cpaf-row"><span class="cpaf-d">9 月 20 日</span><span class="cpaf-s">已签到 07:45　已签退 11:58</span></li>
+      </ul>
+    </div>
+    <p class="cpaf-note">参加与否由学生与家长自愿决定。报名表已通过校园通推送至家长，
+      未提交的自愿申请表视为不参加。</p>
+  </div>`;
+  }
   function chainHTML(state2) {
     const list = [
       { who: "沈予安妈妈", time: "9 月 8 日 21:04", text: "收到，已签。" },
@@ -5768,18 +5961,18 @@ ${ctx}
   </div>`;
   }
   function calcHTML() {
-    const keys = [
+    const rows = [
       ["C", "⌫", "%", "÷"],
       ["7", "8", "9", "×"],
       ["4", "5", "6", "−"],
       ["1", "2", "3", "+"],
-      ["0", ".", "=", "="]
+      ["0", ".", "="]
     ];
-    const cells = keys.flat().map((k) => {
-      if (k === "=") return "";
-      const cls = /[0-9.]/.test(k) ? "is-num" : "is-op";
-      return `<button class="mk ${cls}" type="button" data-k="${k}">${k}</button>`;
-    }).join("");
+    const cells = rows.map((row2) => row2.map((k) => {
+      const cls = k === "=" ? "mk is-eq" : /[0-9.]/.test(k) ? "mk is-num" : "mk is-op";
+      const span = k === "0" ? ' style="grid-column:span 2"' : "";
+      return `<button class="${cls}" type="button" data-k="${k}"${span}>${k}</button>`;
+    }).join("")).join("");
     return `<div class="mca">
     <div class="mca-screen" id="calcScreen">0</div>
     <div class="mca-pad">${cells}</div>
@@ -8563,8 +8756,51 @@ ${custom}`);
               }
             }));
           });
-        } else if (id === "attend" || id === "afterschool") {
+        } else if (id === "attend") {
           this._mintPush(campusAttendHTML(this.state), "我的考勤");
+        } else if (id === "afterschool") {
+          this._mintPush(campusAfterschoolHTML(this.state), "我的课后服务");
+        } else if (id === "timetable") {
+          this._mintPush(campusTimetableHTML(), "我的课表");
+        } else if (id === "score") {
+          this._mintPush(campusScoreHTML(), "成绩查询", (b2) => {
+            b2.querySelectorAll("[data-score]").forEach((c) => c.addEventListener("click", () => {
+              this.audio.sfx("page");
+              this._mintPush(campusScoreDetail(Number(c.dataset.score)), "成绩单", (b3) => {
+                const ap = b3.querySelector("#cpsdAppeal");
+                if (ap) ap.addEventListener("click", () => {
+                  this.audio.sfx("ok");
+                  this.toast("复核申请已提交，三个工作日内短信通知", 2600);
+                });
+              });
+            }));
+          });
+        } else if (id === "leave") {
+          this._mintPush(campusLeaveHTML(), "请假", (b2) => {
+            const btn = b2.querySelector("#cplSubmit");
+            if (btn) btn.addEventListener("click", () => {
+              const kind = (b2.querySelector("#cplType") || {}).value || "事假";
+              const from = (b2.querySelector("#cplFrom") || {}).value || "";
+              const to = (b2.querySelector("#cplTo") || {}).value || "";
+              const reason = ((b2.querySelector("#cplBody") || {}).value || "").trim();
+              const agree = b2.querySelector("#cplParent");
+              if (!agree || !agree.checked) {
+                this.toast("要先勾选「家长已知情并同意」", 2200);
+                return;
+              }
+              if (!reason) {
+                this.toast("还没写事由", 1800);
+                return;
+              }
+              this.audio.sfx("ok");
+              const st = this._mintStack[this._mintStack.length - 1];
+              if (st) {
+                st.html = campusLeaveReceipt(kind, from, to, reason);
+                st.title = "提交结果";
+                this._mintRender();
+              }
+            });
+          });
         } else {
           this.toast(`${b.textContent.trim()}：Demo 里还没有做`, 2e3);
         }

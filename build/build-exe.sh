@@ -25,6 +25,14 @@ mkdir -p "$APP/resources/app"
 cp "$ROOT/build/electron/main.js" "$APP/resources/app/main.js"
 cp "$ROOT/build/electron/preload.js" "$APP/resources/app/preload.js"
 cp "$ROOT/build/electron/package.json" "$APP/resources/app/package.json"
+# 外壳版本必须和游戏版本一致：main.js 用 app.getVersion() 把外壳版本报给
+# 网页层，更新检查拿它跟 version.json 的 shellMin 比。两者不一致时，
+# 已是最新的玩家也会被反复提示"要更新客户端"。这里以 game.js 为准改写。
+node -e "
+const fs=require('fs');const p='$APP/resources/app/package.json';
+const j=JSON.parse(fs.readFileSync(p,'utf8'));j.version='$VER';
+fs.writeFileSync(p,JSON.stringify(j,null,2));
+console.log('    外壳版本 →',j.version);"
 # 网页资源以加密包形式随程序发布：程序目录里只有 www.pkg，
 # 首次启动时由主进程解密到用户数据目录，再从那里加载。
 cp "$ROOT/build/pkg/www.pkg" "$APP/resources/app/www.pkg"

@@ -60,6 +60,10 @@ jobs:
       - name: 生成 version.json 与热更包
         run: node tools/make-dist.mjs
 
+      # 每版都单独出一个热更包 + 解压目录，不覆盖上一版
+      - name: 生成各版本热更包与解压目录
+        run: node tools/make-hotfix.mjs
+
       # Pages 只放网页版，不带 APK/分卷（体积大，也没必要）。
       - name: 部署到 GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -121,4 +125,6 @@ jobs:
             dist/version.json
             dist/rel/*.apk
             dist/win/*
+            releases/hotfix-*/*.zip
+            releases/hotfix-*/SHA256SUMS.txt
           body_path: dist/release-body.md

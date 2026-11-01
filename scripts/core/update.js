@@ -152,11 +152,29 @@ export async function checkUpdate() {
   const curShell = shellVersion();
   const shellMin = data.shellMin || data.shell || '0.0.0';
 
+  /* 版本比较只看"谁更新"，相等一律当没更新。
+     之前踩过的坑：远端 content 与本地相同时仍弹窗，玩家看到
+     "已是最新版本却一直提示更新"，比不检查还糟。 */
   const contentNewer = compareVersion(data.content, curContent) > 0;
-  const shellTooOld = compareVersion(curShell, shellMin) < 0;
 
-  const kind = contentNewer && shellTooOld ? 'both'
-    : contentNewer ? 'content'
+  /* 外壳要不要更新，看两条：
+       · shellMin    —— 这次发布声明的最低兼容外壳
+       · data.shell  —— 这次发布的外壳版本
+     两条取"更宽松"的那个作为门槛：只要客户端不比本次发布的
+     外壳更旧，就不该被拦下来要重装。少了这一步，
+     shellMin 一旦被调高，所有老客户端都会被反复提示。 */
+  const gate = compareVersion(shellMin, data.shell || shellMin) > 0
+    ? data.shell || shellMin
+    : shellMin;
+  const shellTooOld = compareVersion(curShell, gate) < 0;
+
+  /* 本地资源已经比远端还新（本地装了更新的包、或远端回滚）时，
+     不该再提示"有新版本"——直接当没有更新。 */
+  const localAhead = compareVersion(curContent, data.content) > 0;
+  const needContent = contentNewer && !localAhead;
+
+  const kind = needContent && shellTooOld ? 'both'
+    : needContent ? 'content'
       : shellTooOld ? 'shell'
         : 'none';
 

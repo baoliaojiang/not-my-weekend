@@ -295,6 +295,182 @@ export function campusAttendHTML(state) {
 }
 
 /* =========================================================
+   成绩查询 / 我的成绩
+   ---------------------------------------------------------
+   剧情里成绩单是关键的物证：分数、排名、缺考记录都能对上
+   （第三章要拿它跟考勤记录对照）。这里做成能点开每一科的表格。
+   ========================================================= */
+const CAMPUS_SCORES = [
+  { term: '2025—2026 学年第一学期 · 高一上 · 第一次月考', date: '9 月 6 日', total: 612, rank: 18, of: 43, rows: [
+    ['语文', 108, 150], ['数学', 96, 150], ['英语', 121, 150],
+    ['物理', 78, 100], ['化学', 82, 100], ['生物', 71, 100], ['政治', 56, 100]
+  ] },
+  { term: '2025—2026 学年第一学期 · 高一上 · 期中考试', date: '11 月 8 日', total: 578, rank: 24, of: 43, rows: [
+    ['语文', 101, 150], ['数学', 88, 150], ['英语', 115, 150],
+    ['物理', 71, 100], ['化学', 79, 100], ['生物', 68, 100], ['政治', 56, 100]
+  ] }
+];
+
+export function campusScoreHTML() {
+  return `<div class="cpsc">
+    ${CAMPUS_SCORES.map((s, i) => `<section class="cpsc-card" data-score="${i}">
+      <div class="cpsc-head">
+        <span class="cpsc-term">${s.term}</span>
+        <span class="cpsc-date">${s.date}</span>
+      </div>
+      <div class="cpsc-sum">
+        <span class="cpsc-total"><b>${s.total}</b> 分</span>
+        <span class="cpsc-rank">班级第 ${s.rank} 名 / 共 ${s.of} 人</span>
+      </div>
+      <ul class="cpsc-list">
+        ${s.rows.map(r => `<li class="cpsc-row">
+          <span class="cpsc-sub">${r[0]}</span>
+          <span class="cpsc-bar"><i style="width:${Math.round(r[1] / r[2] * 100)}%"></i></span>
+          <span class="cpsc-num">${r[1]}</span>
+        </li>`).join('')}
+      </ul>
+      <p class="cpsc-note">点一下看这一场的缺考与复核记录</p>
+    </section>`).join('')}
+  </div>`;
+}
+
+export function campusScoreDetail(i) {
+  const s = CAMPUS_SCORES[i] || CAMPUS_SCORES[0];
+  return `<div class="cpsd">
+    <h3 class="cpsd-t">${s.term}</h3>
+    <p class="cpsd-meta">考试日期 ${s.date} · 总分 ${s.total} · 班级第 ${s.rank} 名</p>
+    <table class="cpsd-table">
+      <thead><tr><th>科目</th><th>得分</th><th>满分</th><th>得分率</th></tr></thead>
+      <tbody>
+        ${s.rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${Math.round(r[1] / r[2] * 100)}%</td></tr>`).join('')}
+      </tbody>
+    </table>
+    <p class="cpsd-note">本场无缺考记录。若对成绩有异议，可在成绩单下方提交复核申请，
+      复核结果将于三个工作日内短信通知。</p>
+    <button class="btn btn-primary cpsd-btn" type="button" id="cpsdAppeal">申请复核</button>
+  </div>`;
+}
+
+/* =========================================================
+   请假
+   ---------------------------------------------------------
+   剧情里请假条是要交给班主任那张纸。这里做成能填、能提交、
+   能看到受理状态的表单，走的是校园通自己的流程（不是政务平台）。
+   ========================================================= */
+export function campusLeaveHTML() {
+  return `<div class="cpl">
+    <p class="cpl-tip">请假需要家长知情同意。提交后由班主任审批，结果会推送到校园通。</p>
+    <label class="cpl-f">
+      <span class="cpl-l">请假类型</span>
+      <select class="cpl-sel" id="cplType">
+        <option value="事假">事假</option>
+        <option value="病假">病假</option>
+        <option value="公假">公假</option>
+      </select>
+    </label>
+    <label class="cpl-f">
+      <span class="cpl-l">开始时间</span>
+      <input class="cpl-in" id="cplFrom" type="date" value="2025-09-13" />
+    </label>
+    <label class="cpl-f">
+      <span class="cpl-l">结束时间</span>
+      <input class="cpl-in" id="cplTo" type="date" value="2025-09-13" />
+    </label>
+    <label class="cpl-f">
+      <span class="cpl-l">事由</span>
+      <textarea class="cpl-ta" id="cplBody" rows="4" placeholder="写清原因与去向。"></textarea>
+    </label>
+    <label class="cpl-check">
+      <input type="checkbox" id="cplParent" />
+      <span>家长已知情并同意</span>
+    </label>
+    <button class="btn btn-primary cpl-submit" id="cplSubmit" type="button">提交请假</button>
+    <div class="cpl-history" id="cplHistory"></div>
+  </div>`;
+}
+
+export function campusLeaveReceipt(kind, from, to, reason) {
+  return `<div class="cpr">
+    <div class="cpr-ok">✓</div>
+    <h3 class="cpr-t">请假已提交</h3>
+    <p class="cpr-kv">假别：<b>${escape(kind)}</b></p>
+    <p class="cpr-kv">时间：<b>${escape(from)}</b> 至 <b>${escape(to)}</b></p>
+    <p class="cpr-kv">事由：${escape(reason || '（未填写）')}</p>
+    <p class="cpr-kv">当前状态：<b>待班主任审批</b></p>
+    <p class="cpr-note">审批通过前仍需正常到校。离校请走北门门卫登记。</p>
+  </div>`;
+}
+
+/* =========================================================
+   我的课表
+   ---------------------------------------------------------
+   周一到周五的固定课表。上午四节、下午三节，
+   最后一列是"课后服务"，剧情里那行"加粗的自愿"就在这儿。
+   ========================================================= */
+const CAMPUS_TIMETABLE = {
+  '周一': [['语文', '第 1 节'], ['数学', '第 2 节'], ['英语', '第 3 节'], ['物理', '第 4 节'], ['班会', '第 7 节']],
+  '周二': [['语文', '第 1 节'], ['数学', '第 2 节'], ['英语', '第 3 节'], ['化学', '第 4 节'], ['体育', '第 7 节']],
+  '周三': [['语文', '第 1 节'], ['数学', '第 2 节'], ['英语', '第 3 节'], ['生物', '第 4 节'], ['自习', '第 7 节']],
+  '周四': [['语文', '第 1 节'], ['数学', '第 2 节'], ['英语', '第 3 节'], ['物理', '第 4 节'], ['劳动', '第 7 节']],
+  '周五': [['语文', '第 1 节'], ['数学', '第 2 节'], ['英语', '第 3 节'], ['化学', '第 4 节'], ['课后服务', '第 7–8 节']]
+};
+
+export function campusTimetableHTML() {
+  const days = Object.keys(CAMPUS_TIMETABLE);
+  return `<div class="cpt">
+    <div class="cpt-head">
+      <span class="cpt-week">2025—2026 学年第一学期</span>
+      <span class="cpt-sub">高一（2）班 · 周课表</span>
+    </div>
+    <div class="cpt-grid">
+      <div class="cpt-corner">节次</div>
+      ${days.map(d => `<div class="cpt-day">${d}</div>`).join('')}
+      ${['第 1 节', '第 2 节', '第 3 节', '第 4 节', '第 7 节'].map((slot, ri) => `
+        <div class="cpt-slot">${slot}</div>
+        ${days.map(d => {
+          const hit = CAMPUS_TIMETABLE[d][ri];
+          const isAfter = hit && hit[0] === '课后服务';
+          return `<div class="cpt-cell${isAfter ? ' is-after' : ''}">${hit ? escape(hit[0]) : '—'}</div>`;
+        }).join('')}`).join('')}
+    </div>
+    <p class="cpt-note">"课后服务"一栏标的是周六的服务时段，是否参加需家长自愿签字，
+      报名截止到每周五。</p>
+  </div>`;
+}
+
+/* =========================================================
+   我的课后服务
+   ---------------------------------------------------------
+   周六那两节课的报名状态。剧情里这一栏是"已报名"，
+   后面才变成"要不要续"的问题。
+   ========================================================= */
+export function campusAfterschoolHTML(state) {
+  const signed = state && state.gov ? true : true;
+  return `<div class="cpaf">
+    <div class="cpaf-card">
+      <div class="cpaf-head">
+        <span class="cpaf-t">周六课后服务</span>
+        <span class="cpaf-tag${signed ? ' is-on' : ''}">${signed ? '已报名' : '未报名'}</span>
+      </div>
+      <p class="cpaf-kv">时间：<b>每周六 8:00—11:30、14:00—16:30，共四节</b></p>
+      <p class="cpaf-kv">地点：<b>教学楼三层 · 高一（2）班教室及物理实验室</b></p>
+      <p class="cpaf-kv">科目：<b>数学（自习答疑）、物理（实验）、语文（阅读）、体育（球场）</b></p>
+      <p class="cpaf-kv">本学期已参加：<b>3 次（9 月 6 日、9 月 13 日、9 月 20 日）</b></p>
+    </div>
+    <div class="cpaf-card">
+      <div class="cpaf-head"><span class="cpaf-t">报名记录</span></div>
+      <ul class="cpaf-list">
+        <li class="cpaf-row"><span class="cpaf-d">9 月 6 日</span><span class="cpaf-s">已签到 07:41　已签退 12:05</span></li>
+        <li class="cpaf-row"><span class="cpaf-d">9 月 13 日</span><span class="cpaf-s">已签到 07:38　已签退 12:02</span></li>
+        <li class="cpaf-row"><span class="cpaf-d">9 月 20 日</span><span class="cpaf-s">已签到 07:45　已签退 11:58</span></li>
+      </ul>
+    </div>
+    <p class="cpaf-note">参加与否由学生与家长自愿决定。报名表已通过校园通推送至家长，
+      未提交的自愿申请表视为不参加。</p>
+  </div>`;
+}
+
+/* =========================================================
    家长群接龙
    ---------------------------------------------------------
    剧情里那个"没有人要求，却自己发起"的接龙。
@@ -370,18 +546,20 @@ export function galleryDetailHTML(i) {
    这里做成真能按的计算器，不是摆设。
    ========================================================= */
 export function calcHTML() {
-  const keys = [
+  /* 5 行 4 列。最后一行是 0(占两格) . = —— 等号必须有，
+     以前 flat() 之后把所有 '=' 直接丢掉，等于键在界面上根本不存在。 */
+  const rows = [
     ['C', '⌫', '%', '÷'],
     ['7', '8', '9', '×'],
     ['4', '5', '6', '−'],
     ['1', '2', '3', '+'],
-    ['0', '.', '=', '=']
+    ['0', '.', '=']
   ];
-  const cells = keys.flat().map(k => {
-    if (k === '=') return '';
-    const cls = /[0-9.]/.test(k) ? 'is-num' : 'is-op';
-    return `<button class="mk ${cls}" type="button" data-k="${k}">${k}</button>`;
-  }).join('');
+  const cells = rows.map(row => row.map(k => {
+    const cls = k === '=' ? 'mk is-eq' : /[0-9.]/.test(k) ? 'mk is-num' : 'mk is-op';
+    const span = k === '0' ? ' style="grid-column:span 2"' : '';
+    return `<button class="${cls}" type="button" data-k="${k}"${span}>${k}</button>`;
+  }).join('')).join('');
   return `<div class="mca">
     <div class="mca-screen" id="calcScreen">0</div>
     <div class="mca-pad">${cells}</div>

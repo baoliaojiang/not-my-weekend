@@ -14,7 +14,9 @@ PYEXE="C:/Users/12821/.workbuddy/binaries/python/envs/default/Scripts/python.exe
 PKG="com.zhouri.bufanxiao"
 NAME="不属于我的周末"
 # 版本号不再手写：直接从 scripts/config/game.js 里读，免得和游戏内版本对不上
-VER_CODE="22"
+# versionCode 必须严格递增：装过旧包的玩家要能覆盖安装。
+# 每次发版手动改这里太容易忘，改成按日期算（2026-11-01 → 26110101 形式）。
+VER_CODE="$(date +%y%m%d)"
 VER_NAME="$(grep -oE "version: *'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'" "$ROOT/scripts/config/game.js" | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")"
 [ -n "$VER_NAME" ] || VER_NAME="0.0.0.0"
 
@@ -72,6 +74,18 @@ fi
 mkdir -p "$APP/assets"
 cp "$ROOT/build/pkg/www.pkg" "$APP/assets/www.pkg"
 ls -lh "$APP/assets/www.pkg" "$APP/assets/boot/index.html"
+
+# manifest 里写死的 versionName / versionCode 必须改成当前版本。
+# 原因：aapt2 link 的 --version-name / --version-code 只有在 manifest
+# 没有显式声明时才生效；manifest 里写死了 → 打包出来还是旧版本号，
+# 客户端上报的外壳版本就永远比远端旧，于是每次启动都误报"要更新客户端"。
+MANIFEST="$APP/AndroidManifest.xml"
+if [ -f "$MANIFEST" ]; then
+  sed -i.bak -E 's/android:versionCode="[0-9]+"/android:versionCode="'"$VER_CODE"'"/' "$MANIFEST"
+  sed -i.bak -E 's/android:versionName="[^"]+"/android:versionName="'"$VER_NAME"'"/' "$MANIFEST"
+  rm -f "$MANIFEST.bak"
+  echo "    manifest: versionCode=$VER_CODE versionName=$VER_NAME"
+fi
 
 echo "[2/7] aapt2 编译资源"
 "$BT/aapt2.exe" compile --dir "$APP/res" -o "$PROJ/res.zip"

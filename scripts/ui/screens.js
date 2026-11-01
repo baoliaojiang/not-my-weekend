@@ -18,6 +18,8 @@ import { quizHTML, bindQuiz, quizResultHTML } from './quiz.js';
 import { aiComplete, aiListModels, aiChat, webSearch } from '../core/ai.js';
 import {
   MINT_APPS, campusHTML, campusNoticeHTML, campusNoticeDetail,
+  campusScoreHTML, campusScoreDetail, campusLeaveHTML, campusLeaveReceipt,
+  campusTimetableHTML, campusAfterschoolHTML,
   campusServiceHTML, campusConsultHTML, campusReceiptHTML, campusAttendHTML,
   noteHTML, bindNote, galleryHTML, galleryDetailHTML, chainHTML,
   calcHTML, bindCalc, browserHTML, bindBrowser
@@ -1146,8 +1148,43 @@ export class UI {
             }
           }));
         });
-      } else if (id === 'attend' || id === 'afterschool') {
+      } else if (id === 'attend') {
         this._mintPush(campusAttendHTML(this.state), '我的考勤');
+      } else if (id === 'afterschool') {
+        this._mintPush(campusAfterschoolHTML(this.state), '我的课后服务');
+      } else if (id === 'timetable') {
+        this._mintPush(campusTimetableHTML(), '我的课表');
+      } else if (id === 'score') {
+        // 「成绩查询」与「我的成绩」是同一份数据，入口不同、页面不同：
+        // 前者给全部考试记录，后者只看自己这一场。
+        this._mintPush(campusScoreHTML(), '成绩查询', (b2) => {
+          b2.querySelectorAll('[data-score]').forEach(c => c.addEventListener('click', () => {
+            this.audio.sfx('page');
+            this._mintPush(campusScoreDetail(Number(c.dataset.score)), '成绩单', (b3) => {
+              const ap = b3.querySelector('#cpsdAppeal');
+              if (ap) ap.addEventListener('click', () => {
+                this.audio.sfx('ok');
+                this.toast('复核申请已提交，三个工作日内短信通知', 2600);
+              });
+            });
+          }));
+        });
+      } else if (id === 'leave') {
+        this._mintPush(campusLeaveHTML(), '请假', (b2) => {
+          const btn = b2.querySelector('#cplSubmit');
+          if (btn) btn.addEventListener('click', () => {
+            const kind = (b2.querySelector('#cplType') || {}).value || '事假';
+            const from = (b2.querySelector('#cplFrom') || {}).value || '';
+            const to = (b2.querySelector('#cplTo') || {}).value || '';
+            const reason = ((b2.querySelector('#cplBody') || {}).value || '').trim();
+            const agree = b2.querySelector('#cplParent');
+            if (!agree || !agree.checked) { this.toast('要先勾选「家长已知情并同意」', 2200); return; }
+            if (!reason) { this.toast('还没写事由', 1800); return; }
+            this.audio.sfx('ok');
+            const st = this._mintStack[this._mintStack.length - 1];
+            if (st) { st.html = campusLeaveReceipt(kind, from, to, reason); st.title = '提交结果'; this._mintRender(); }
+          });
+        });
       } else {
         this.toast(`${b.textContent.trim()}：Demo 里还没有做`, 2000);
       }

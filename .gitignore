@@ -39,3 +39,9 @@ _sprite_test.html
 build/_kmcache/
 build/_orig/
 build/_music_bak/
+
+# 各版本的热更包解压目录：可由 zip 重新解出来，不进仓库（省几十 MB）
+releases/hotfix-*/www-*/
+
+# 各版本的热更包解压目录：可由 zip 重新解出来，不进仓库（省几十 MB）
+releases/hotfix-*/www-*/

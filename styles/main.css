@@ -119,7 +119,7 @@ body.motion-off .boot-card-ic{ animation:none; }
 }
 .boot-card-f{
   margin:14px 0 0; font-size:.64rem; letter-spacing:.04em;
-  color:rgba(233,230,223,.26);
+  color:rgba(233,230,223,.44);
 }
 .boot-upd-bar{
   width:100%; height:4px; border-radius:4px;
@@ -172,7 +172,7 @@ body.motion-off .boot-title{ animation:none; }
 }
 .boot-ver{
   margin:22px 0 0; font-size:.66rem; letter-spacing:.16em;
-  color:rgba(233,230,223,.28);
+  color:rgba(233,230,223,.5);
 }
 
 /* 4/5 忠告与警告 */
@@ -965,12 +965,17 @@ body:not(.night) .panel{ background-image:none; }
    顶栏按钮、对话框工具条这些直接压在**背景图**上，不挂在面板里，
    拿不到 .panel-layer 那套 --ink。深色模式下它们的字容易塌成黑色，
    在暗背景上基本看不清。这里统一抬到浅色。 */
+/* 这里以前写的是 var(--ink-2)：那个 token 在 body.night 下是**深色**，
+   压在深色顶栏上等于把字涂黑——展开顶部菜单后什么都看不见。
+   顶栏这几个控件是"压在背景图上的"，与主题无关，永远用浅色。 */
 body.night .hud .hbtn,
 body.night .hud-chapter,
+body.night .hud-day,
+body.night .hud-island,
 body.night .place-tag,
 body.night .dlg-tools button,
 body.night .choice-tools button,
-body.night .ap-bar{ color:var(--ink-2); }
+body.night .ap-bar{ color:rgba(247,244,236,.88); }
 
 /* 主按钮是"浅米底 + 深字"，但落进浅色的手机 / 政务拟真面板里会糊成一片，
    那里退回深墨底浅字。 */
@@ -1142,7 +1147,7 @@ input[type=range]::-webkit-slider-thumb{
   padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.1);
   display:flex; align-items:center; gap:10px; font-size:.8rem; letter-spacing:.1em;
 }
-.phone-head .back{font-size:1rem; color:#9aa3ad; padding:0 4px;}
+.phone-head .back{font-size:1rem; color:#5f6672; padding:0 4px;}
 .phone-tabs{display:flex; gap:1px; background:rgba(255,255,255,.08);}
 .phone-tabs button{
   flex:1; padding:10px; font-size:.76rem; letter-spacing:.1em; color:#8e97a2;
@@ -1844,7 +1849,7 @@ select.gov-input{appearance:none; background-image:linear-gradient(45deg,transpa
   font-size:.78rem; background:#fff; border-radius:2px;
 }
 .gov-cancel:hover{border-color:var(--g-ink3);}
-.gov-foot{font-size:.68rem; color:#9aa5b4; margin-top:12px; letter-spacing:.02em;}
+.gov-foot{font-size:.68rem; color:#5f6672; margin-top:12px; letter-spacing:.02em;}
 
 /* 回执 */
 .gov-done{text-align:center; padding-top:26px;}
@@ -1930,7 +1935,7 @@ select.gov-input{appearance:none; background-image:linear-gradient(45deg,transpa
 .panel-hot{ width:min(430px,94vw); }
 .panel-hot .panel-body{ padding:0; background:#0f1216; }
 .panel-hot .panel-head{ background:#0f1216; color:#e8e6df; border-bottom:1px solid rgba(255,255,255,.1); }
-.panel-hot .panel-close{ color:#9aa3ad; }
+.panel-hot .panel-close{ color:#5f6672; }
 .hot{
   display:flex; flex-direction:column; min-height:min(560px,70vh);
   background:#0f1216; color:#e8e6df;
@@ -3404,7 +3409,7 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 .mos-note{
   position:absolute; bottom:2px; left:0; right:0;
   text-align:center; font-size:.58rem; letter-spacing:.12em;
-  color:rgba(240,240,245,.3); pointer-events:none;
+  color:rgba(240,240,245,.52); pointer-events:none;
 }
 
 /* =========================================================
@@ -3453,7 +3458,7 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 .cp-logo{
   font-size:1.05rem; font-weight:700; letter-spacing:.08em; color:#128a4c;
 }
-.cp-crumb{ font-size:.72rem; color:#8a8f98; }
+.cp-crumb{ font-size:.72rem; color:#5b6270; }
 .cp-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .cp-entry{
   position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -3469,11 +3474,11 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
   border-radius:8px; background:#f24d4d; color:#fff; font-size:.6rem; line-height:16px;
 }
 .cp-sec{ margin-top:18px; }
-.cp-sec-h{ margin:0 0 8px; font-size:.78rem; font-weight:600; color:#8a8f98; letter-spacing:.08em; }
+.cp-sec-h{ margin:0 0 8px; font-size:.78rem; font-weight:600; color:#5b6270; letter-spacing:.08em; }
 .cp-note{
   margin:16px 0 0; padding:10px 12px; border-radius:10px;
   background:#fff; border:1px solid rgba(0,0,0,.06);
-  font-size:.72rem; line-height:1.7; color:#7b818a;
+  font-size:.72rem; line-height:1.7; color:#565d69;
 }
 .cp-note b{ color:#33383f; }
 
@@ -3487,7 +3492,7 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 .cpn-item:active{ background:#eceef1; }
 .cpn-title{ font-size:.84rem; line-height:1.55; color:#2b2f36; }
 .cpn-item.is-unread .cpn-title{ font-weight:600; }
-.cpn-time{ font-size:.68rem; color:#9aa0a8; }
+.cpn-time{ font-size:.68rem; color:#5f6672; }
 .cpn-badge{
   align-self:flex-start; font-size:.6rem; color:#f24d4d;
   border:1px solid rgba(242,77,77,.4); border-radius:4px; padding:0 4px;
@@ -3496,7 +3501,7 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 /* 通知详情 */
 .cpd{ padding:16px; color:#2b2f36; }
 .cpd-t{ margin:0 0 6px; font-size:.98rem; line-height:1.6; }
-.cpd-time{ margin:0 0 14px; font-size:.7rem; color:#9aa0a8; }
+.cpd-time{ margin:0 0 14px; font-size:.7rem; color:#5f6672; }
 .cpd-body p{ margin:0 0 10px; font-size:.84rem; line-height:1.95; }
 .cpd-attach{
   display:flex; align-items:center; gap:10px; width:100%; text-align:left;
@@ -3508,7 +3513,7 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
   padding:3px 6px; border-radius:4px; letter-spacing:.04em;
 }
 .cpd-attach-n{ font-size:.76rem; color:#3a4048; line-height:1.5; }
-.cpd-stat{ margin:12px 0 0; font-size:.7rem; color:#9aa0a8; }
+.cpd-stat{ margin:12px 0 0; font-size:.7rem; color:#5f6672; }
 
 /* 服务大厅 */
 .cps{ padding:14px; color:#2b2f36; }
@@ -3518,24 +3523,24 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
   border:1px solid rgba(0,0,0,.06); font-size:.8rem; color:#33383f; cursor:pointer;
 }
 .cps-cat:active{ background:#eef1f4; }
-.cps-hint{ margin:12px 0; font-size:.7rem; color:#9aa0a8; }
+.cps-hint{ margin:12px 0; font-size:.7rem; color:#5f6672; }
 .cps-case{
   display:flex; flex-direction:column; gap:4px; width:100%; text-align:left;
   padding:12px; border-radius:12px; background:#fff; border:1px solid rgba(0,0,0,.07);
   cursor:pointer;
 }
 .cps-case-t{ font-size:.84rem; color:#2b2f36; }
-.cps-case-m{ font-size:.68rem; color:#9aa0a8; }
+.cps-case-m{ font-size:.68rem; color:#5f6672; }
 .cps-badge{
   align-self:flex-start; font-size:.62rem; color:#128a4c;
   border:1px solid rgba(18,138,76,.35); border-radius:4px; padding:1px 5px;
 }
-.cps-empty{ font-size:.76rem; color:#9aa0a8; }
+.cps-empty{ font-size:.76rem; color:#5f6672; }
 
 /* 咨询建议表单 */
 .cpc{ padding:16px; color:#2b2f36; }
 .cpc-warn{ margin:0 0 6px; font-size:.76rem; color:#c0392b; line-height:1.7; }
-.cpc-sub{ margin:0 0 14px; font-size:.72rem; color:#9aa0a8; line-height:1.7; }
+.cpc-sub{ margin:0 0 14px; font-size:.72rem; color:#5f6672; line-height:1.7; }
 .cpc-f{ display:block; margin-bottom:14px; }
 .cpc-l{ display:block; margin-bottom:6px; font-size:.76rem; color:#5a6068; }
 .cpc-ta,.cpc-sel{
@@ -3559,14 +3564,14 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 .cpr-kv{ margin:0 0 6px; font-size:.82rem; text-align:left; }
 .cpr-note{
   margin:16px 0 0; padding:10px 12px; border-radius:10px; background:#fff;
-  border:1px solid rgba(0,0,0,.06); font-size:.72rem; color:#7b818a; text-align:left; line-height:1.8;
+  border:1px solid rgba(0,0,0,.06); font-size:.72rem; color:#565d69; text-align:left; line-height:1.8;
 }
 
 /* 我的考勤 */
 .cpa{ padding:14px; color:#2b2f36; }
 .cpa-head{ display:flex; flex-direction:column; gap:2px; margin-bottom:10px; }
 .cpa-head span:first-child{ font-size:.9rem; font-weight:600; }
-.cpa-sub{ font-size:.68rem; color:#9aa0a8; }
+.cpa-sub{ font-size:.68rem; color:#5f6672; }
 .cpa-row{
   display:flex; align-items:center; gap:8px; flex-wrap:wrap;
   padding:12px; border-radius:12px; background:#fff; border:1px solid rgba(0,0,0,.06);
@@ -3574,7 +3579,7 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 }
 .cpa-row.is-weekend{ border-color:rgba(18,138,76,.3); background:#f3fbf6; }
 .cpa-d{ font-size:.8rem; color:#2b2f36; }
-.cpa-t{ font-size:.72rem; color:#7b818a; }
+.cpa-t{ font-size:.72rem; color:#565d69; }
 .cpa-tag{
   font-size:.62rem; color:#128a4c; border:1px solid rgba(18,138,76,.35);
   border-radius:4px; padding:0 5px;
@@ -3589,15 +3594,15 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
   border-bottom:1px solid rgba(0,0,0,.06); background:#faf9f6;
 }
 .mn-h em{
-  font-style:normal; font-size:.66rem; color:#8a8f98;
+  font-style:normal; font-size:.66rem; color:#5b6270;
   background:#eceef1; border-radius:9px; padding:1px 7px;
 }
 .mn-list{ list-style:none; margin:0; padding:6px 13px; }
 .mn-item{ padding:8px 0; border-bottom:1px dashed rgba(0,0,0,.07); }
 .mn-item:last-child{ border-bottom:none; }
 .mn-text{ display:block; font-size:.8rem; line-height:1.75; color:#33383f; }
-.mn-sub{ display:block; margin-top:3px; font-size:.66rem; color:#a0a5ad; }
-.mn-empty{ padding:14px 0; font-size:.74rem; color:#b0b5bd; }
+.mn-sub{ display:block; margin-top:3px; font-size:.66rem; color:#616875; }
+.mn-empty{ padding:14px 0; font-size:.74rem; color:#6b7280; }
 .mn-add{ display:flex; gap:6px; padding:10px 13px; border-top:1px solid rgba(0,0,0,.06); }
 .mn-input{
   flex:1 1 auto; min-width:0; padding:8px 10px; border-radius:9px;
@@ -3612,8 +3617,8 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 .mch{ padding:14px; color:#2b2f36; }
 .mch-h{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .mch-t{ font-size:.92rem; font-weight:600; }
-.mch-c{ font-size:.7rem; color:#8a8f98; }
-.mch-note{ margin:8px 0 12px; font-size:.72rem; color:#9aa0a8; }
+.mch-c{ font-size:.7rem; color:#5b6270; }
+.mch-note{ margin:8px 0 12px; font-size:.72rem; color:#5f6672; }
 .mch-list{ list-style:none; margin:0; padding:0; }
 .mch-item{
   display:flex; flex-direction:column; gap:3px; padding:10px 12px;
@@ -3621,14 +3626,14 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
 }
 .mch-n{ font-size:.78rem; color:#2b2f36; }
 .mch-x{ font-size:.8rem; color:#128a4c; }
-.mch-time{ font-size:.64rem; color:#a0a5ad; }
-.mch-foot{ margin:12px 0 0; font-size:.72rem; color:#9aa0a8; line-height:1.8; }
+.mch-time{ font-size:.64rem; color:#616875; }
+.mch-foot{ margin:12px 0 0; font-size:.72rem; color:#5f6672; line-height:1.8; }
 
 /* ---- 相册 ---- */
 .mg{ padding:12px; }
 .mg-head{
   display:flex; justify-content:space-between; margin-bottom:10px;
-  font-size:.74rem; color:#8a8f98;
+  font-size:.74rem; color:#5b6270;
 }
 .mg-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
 .mg-item{
@@ -3640,14 +3645,14 @@ body.night .cont-resume .cr-go{color:var(--ink-3);}
   background:#d9dce1 center/cover no-repeat; border:1px solid rgba(0,0,0,.06);
 }
 .mg-cap{ font-size:.72rem; color:#33383f; line-height:1.5; }
-.mg-date{ font-size:.64rem; color:#a0a5ad; }
+.mg-date{ font-size:.64rem; color:#616875; }
 .mgd{ padding:14px; }
 .mgd-img{
   width:100%; aspect-ratio:3/4; border-radius:14px; background:#d9dce1 center/cover no-repeat;
   border:1px solid rgba(0,0,0,.06);
 }
 .mgd-cap{ margin:12px 0 4px; font-size:.84rem; color:#2b2f36; line-height:1.7; }
-.mgd-date{ margin:0; font-size:.7rem; color:#a0a5ad; }
+.mgd-date{ margin:0; font-size:.7rem; color:#616875; }
 
 /* ---- 计算器 ---- */
 .mca{ padding:14px; display:flex; flex-direction:column; gap:12px; }
@@ -3788,10 +3793,10 @@ body.glass .tk-opt{ background:var(--glass-bg-2); border-color:var(--glass-line)
 .pv-box{
   margin:8px 0 2px; padding:14px 16px;
   border-radius:var(--r-2);
-  background:rgba(0,0,0,.35);
+  background:rgba(0,0,0,.58);
   border:1px solid var(--line-strong);
 }
-body.night .pv-box{ background:rgba(0,0,0,.42); }
+body.night .pv-box{ background:rgba(0,0,0,.66); }
 .pv-name{
   display:inline-block; margin-bottom:7px; padding:2px 11px;
   border-radius:var(--r-pill);
@@ -3812,7 +3817,11 @@ body.night .pv-box{ background:rgba(0,0,0,.42); }
 .pv-bar{
   display:flex; align-items:center; gap:10px; margin-top:10px;
 }
-.pv-meta{ font-size:.68rem; letter-spacing:.08em; color:var(--ink-3); margin-left:auto; }
+.pv-meta{ font-size:.68rem; letter-spacing:.08em; color:rgba(242,238,227,.72); margin-left:auto; }
+/* 试读框整体压在暗色遮罩上，里面的按钮也得跟着变浅，
+   否则浅色模式下一枚深灰字的按钮浮在黑底上，几乎看不见。 */
+.pv-box .btn{ background:rgba(255,255,255,.10); color:#f2eee3; border:1px solid rgba(255,255,255,.22); }
+.pv-box .btn:hover{ background:rgba(255,255,255,.18); }
 
 /* ---- 滑块 + 数值 ---- */
 .range-row{ display:flex; align-items:center; gap:10px; }
@@ -4475,7 +4484,7 @@ body.motion-off .boot-card-ic{ animation:none; }
   margin:0 0 16px; font-size:.76rem; line-height:1.7; letter-spacing:.02em;
   color:rgba(233,230,223,.56); min-height:1.7em;
 }
-.boot-card-f{ margin:14px 0 0; font-size:.64rem; letter-spacing:.04em; color:rgba(233,230,223,.26); }
+.boot-card-f{ margin:14px 0 0; font-size:.64rem; letter-spacing:.04em; color:rgba(233,230,223,.46); }
 .boot-upd-bar{
   width:100%; height:4px; border-radius:4px;
   background:rgba(255,255,255,.09); overflow:hidden;
@@ -4556,7 +4565,7 @@ body.motion-off .boot-card-ic{ animation:none; }
   margin:0 0 16px; font-size:.76rem; line-height:1.7; letter-spacing:.02em;
   color:rgba(233,230,223,.56); min-height:1.7em;
 }
-.boot-card-f{ margin:14px 0 0; font-size:.64rem; letter-spacing:.04em; color:rgba(233,230,223,.26); }
+.boot-card-f{ margin:14px 0 0; font-size:.64rem; letter-spacing:.04em; color:rgba(233,230,223,.46); }
 .boot-upd-bar{
   width:100%; height:4px; border-radius:4px;
   background:rgba(255,255,255,.09); overflow:hidden;
@@ -4570,7 +4579,7 @@ body.motion-off .boot-card-ic{ animation:none; }
 /* 启动卡片顶部的小标签 */
 .boot-card-kicker{
   font-size:.6rem; letter-spacing:.34em; text-indent:.34em;
-  color:rgba(233,230,223,.3);
+  color:rgba(233,230,223,.46);
 }
 /* 设置页的导入导出按钮行 */
 .io-row{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -4601,7 +4610,7 @@ body.motion-off .boot-avatar{ animation:none; }
   margin:0 0 6px; font-size:.72rem; letter-spacing:.16em;
   color:rgba(233,230,223,.52);
 }
-.boot-ids.is-dim{ color:rgba(233,230,223,.3); letter-spacing:.12em; }
+.boot-ids.is-dim{ color:rgba(233,230,223,.55); letter-spacing:.12em; }
 
 /* ---- 热更新确认：清单 + 两个按钮 ---- */
 .boot-upd-list{
@@ -4701,18 +4710,18 @@ body.motion-off .boot-avatar{ animation:none; }
 }
 .br-lock{
   flex:0 0 auto; width:9px; height:11px; border-radius:2px;
-  border:1.6px solid #8b95a3; border-top:none; position:relative;
+  border:1.6px solid #5b6270; border-top:none; position:relative;
 }
 .br-lock::before{
   content:""; position:absolute; left:50%; top:-6px; width:7px; height:7px;
-  transform:translateX(-50%); border:1.6px solid #8b95a3; border-bottom:none;
+  transform:translateX(-50%); border:1.6px solid #5b6270; border-bottom:none;
   border-radius:5px 5px 0 0;
 }
 .br-input{
   flex:1 1 auto; min-width:0; border:none; outline:none; background:transparent;
   font-family:var(--sans); font-size:.8rem; color:#1e2228; padding:6px 0;
 }
-.br-input::placeholder{ color:#98a1ad; }
+.br-input::placeholder{ color:#5f6672; }
 .br-go{
   flex:0 0 auto; height:30px; padding:0 14px; border-radius:9px;
   font-size:.76rem; letter-spacing:.04em; color:#fff;
@@ -4723,7 +4732,7 @@ body.motion-off .boot-avatar{ animation:none; }
 .br-body{ flex:1 1 auto; min-height:0; overflow-y:auto; padding:2px 0 8px; }
 .br-h{
   margin:2px 0 8px; font-size:.68rem; letter-spacing:.14em;
-  color:#8b95a3;
+  color:#5b6270;
 }
 .br-sites{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
 .br-site{
@@ -4735,16 +4744,16 @@ body.motion-off .boot-avatar{ animation:none; }
 .br-site-ico{ width:30px; height:30px; border-radius:8px; margin-bottom:4px; }
 .br-site-t{ font-size:.78rem; color:#1e2228; }
 .br-site-d{
-  font-size:.62rem; color:#8b95a3; letter-spacing:.01em;
+  font-size:.62rem; color:#5b6270; letter-spacing:.01em;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;
 }
 .br-recent{ margin-top:14px; }
-.br-recent-t{ display:block; font-size:.66rem; color:#8b95a3; letter-spacing:.14em; margin-bottom:6px; }
+.br-recent-t{ display:block; font-size:.66rem; color:#5b6270; letter-spacing:.14em; margin-bottom:6px; }
 .br-link{
   display:block; width:100%; text-align:left; padding:9px 11px; border-radius:10px;
   font-size:.76rem; color:#2f6be4; background:#fff; border:1px solid rgba(0,0,0,.07);
 }
-.br-tip{ margin:16px 0 0; font-size:.64rem; line-height:1.8; color:#98a1ad; }
+.br-tip{ margin:16px 0 0; font-size:.64rem; line-height:1.8; color:#5f6672; }
 .br-off{
   padding:26px 6px; text-align:center;
   font-size:.78rem; line-height:1.9; color:#5b6472;
@@ -4844,22 +4853,49 @@ body.motion-off .boot-avatar{ animation:none; }
 }
 .hud-island:hover{ background:rgba(10,12,16,.66); border-color:rgba(247,244,236,.28); }
 .hud-island .hud-chapter{ border:none; padding:0; font-size:.82rem; letter-spacing:.16em; }
-.hud-island .hud-day{ font-size:.68rem; letter-spacing:.1em; color:rgba(247,244,236,.55); }
+.hud-island .hud-day{ font-size:.68rem; letter-spacing:.1em; color:rgba(247,244,236,.72); }
 .hud-dots{ display:inline-flex; gap:2.5px; margin-left:2px; }
 .hud-dots i{
   width:3px; height:3px; border-radius:50%; background:rgba(247,244,236,.6);
   display:block;
 }
-/* 收起态：只留岛 */
-.hud.is-min{ justify-content:flex-start; gap:0; }
+/* 收起态：整条横栏连同遮罩一起消失，只在左上角留一颗小圆钮。
+   以前收起后仍是一条半透明横带压在画面上，进游戏第一眼就是一条黑边；
+   现在收起时画面上什么都不该有，只剩一颗可以点开的圆点。 */
+.hud.is-min{
+  justify-content:flex-start; gap:0;
+  padding:9px 12px;
+  background:none; border-color:transparent; box-shadow:none;
+  pointer-events:none;
+}
 .hud.is-min .hud-right{ display:none; }
-/* 展开态：岛稍微亮一点，右侧出现按钮条 */
+.hud.is-min .hud-island{
+  pointer-events:auto;
+  width:36px; height:36px; padding:0; gap:0;
+  justify-content:center;
+  background:rgba(10,12,16,.78);
+  border-color:rgba(247,244,236,.26);
+  box-shadow:0 4px 12px rgba(0,0,0,.30);
+}
+.hud.is-min .hud-island:hover{ background:rgba(10,12,16,.92); }
+.hud.is-min .hud-island .hud-chapter,
+.hud.is-min .hud-island .hud-day{ display:none; }
+.hud.is-min .hud-island .hud-dots{ margin:0; gap:3px; }
+.hud.is-min .hud-island .hud-dots i{ width:3.5px; height:3.5px; background:rgba(247,244,236,.78); }
+/* 展开态：整条横栏 + 上方压暗，功能都在这一条里。
+   底色必须够实：游戏画面大半是明亮的教室，rgba(10,12,16,.5) 压不住，
+   浅色字就白茫茫一片（截图里就是这个毛病）。这里给到 .88 并加投影，
+   保证在教室、操场、天空这些高明度背景上都读得清。 */
 .hud:not(.is-min) .hud-dots{ display:none; }
+.hud:not(.is-min){
+  background:linear-gradient(180deg, rgba(8,10,13,.86) 0%, rgba(8,10,13,.62) 68%, rgba(8,10,13,0) 100%);
+}
 .hud:not(.is-min) .hud-right{
   display:flex; align-items:center; gap:2px;
   padding:3px 6px; border-radius:999px;
-  background:rgba(10,12,16,.5);
-  border:1px solid rgba(247,244,236,.12);
+  background:rgba(10,12,16,.88);
+  border:1px solid rgba(247,244,236,.22);
+  box-shadow:0 6px 18px rgba(0,0,0,.32);
   animation:hudIn .18s var(--ease-out) both;
 }
 @keyframes hudIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
@@ -4921,7 +4957,7 @@ body.motion-off .boot-avatar{ animation:none; }
    照澎湃 OS 4 的分组式设置来排，不做玻璃、不做渐变糊。
    ========================================================= */
 .mapp{
-  --m-bg:#f4f1ea; --m-card:#fff; --m-ink:#1c1f24; --m-ink2:#8b93a1;
+  --m-bg:#f4f1ea; --m-card:#fff; --m-ink:#1c1f24; --m-ink2:#5f6672;
   --m-line:rgba(0,0,0,.055); --m-accent:#2f6be4; --m-red:#e5484d;
   min-height:100%; padding:12px 12px 22px;
   background:var(--m-bg); color:var(--m-ink);
@@ -4955,7 +4991,7 @@ body.motion-off .boot-avatar{ animation:none; }
   flex:0 0 auto; font-size:.78rem; color:var(--m-ink2);
   max-width:46%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.mapp-ar{ flex:0 0 auto; color:#c5cbd6; font-size:1rem; line-height:1; }
+.mapp-ar{ flex:0 0 auto; color:#8b93a1; font-size:1rem; line-height:1; }
 .mapp-row-nav{ cursor:pointer; }
 .mapp-row-nav:active{ background:#f7f8fa; }
 .mapp-row-slider{ gap:12px; }
@@ -4993,7 +5029,7 @@ body.motion-off .boot-avatar{ animation:none; }
 
 .mapp-foot{
   margin:18px 6px 0; font-size:.63rem; line-height:1.9;
-  color:#a4abb8; text-align:center;
+  color:#646b78; text-align:center;
 }
 .mapp-empty{
   margin:26px 10px; text-align:center; font-size:.78rem; line-height:2; color:var(--m-ink2);
@@ -5077,15 +5113,15 @@ body.motion-off .boot-avatar{ animation:none; }
   display:flex; align-items:center; gap:8px;
   height:36px; padding:0 12px; margin-bottom:4px;
   border-radius:11px; background:#e9e6de;
-  font-size:.76rem; color:#98a0ad;
+  font-size:.76rem; color:#5f6672;
 }
 .ct-mag{
-  width:12px; height:12px; border:1.7px solid #98a0ad; border-radius:50%;
+  width:12px; height:12px; border:1.7px solid #5f6672; border-radius:50%;
   position:relative; flex:0 0 auto;
 }
 .ct-mag::after{
   content:""; position:absolute; right:-4px; bottom:-3px; width:6px; height:1.7px;
-  background:#98a0ad; transform:rotate(45deg); border-radius:1px;
+  background:#5f6672; transform:rotate(45deg); border-radius:1px;
 }
 .ct-letter{ margin:14px 6px 6px; font-size:.68rem; letter-spacing:.1em; color:var(--m-ink2); }
 .ct-row{
@@ -5098,7 +5134,7 @@ body.motion-off .boot-avatar{ animation:none; }
 .ct-face{
   flex:0 0 auto; width:38px; height:38px; border-radius:50%;
   background:#eef1f6 center/cover no-repeat; border:1px solid rgba(0,0,0,.05);
-  display:grid; place-items:center; font-size:.84rem; color:#98a0ad;
+  display:grid; place-items:center; font-size:.84rem; color:#5f6672;
 }
 .ct-t{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .ct-t b{ font-size:.86rem; font-weight:500; }
@@ -5134,7 +5170,7 @@ body.motion-off .boot-avatar{ animation:none; }
 .bk-no{ font-size:.8rem; color:var(--m-ink); }
 .bk-time{ font-size:.66rem; color:var(--m-ink2); }
 .bk-meta{ margin-top:5px; font-size:.72rem; color:#5b6472; line-height:1.7; }
-.bk-empty{ color:#a4abb8; }
+.bk-empty{ color:#646b78; }
 .bk-btn{
   display:block; width:100%; margin-top:10px; min-height:34px;
   border-radius:10px; border:1px solid rgba(47,107,228,.28);
@@ -5151,10 +5187,11 @@ body.motion-off .boot-avatar{ animation:none; }
 .rd-head i{ font-style:normal; font-size:.68rem; color:var(--m-ink2); }
 .rd-row{ gap:12px; }
 .rd-no{
-  flex:0 0 auto; width:2.6em; font-size:.72rem; color:#98a0ad; letter-spacing:.04em;
+  flex:0 0 auto; width:2.6em; font-size:.72rem; color:#5f6672; letter-spacing:.04em;
 }
 .rd-row.is-done .rd-no{ color:#2f6be4; }
-.rd-flag{ flex:0 0 auto; font-size:.66rem; color:#a4abb8; }
+body.night .rd-no{ color:#9aa2ae; }
+.rd-flag{ flex:0 0 auto; font-size:.66rem; color:#646b78; }
 .rd-row.is-done .rd-flag{ color:#31a05a; }
 
 /* =========================================================
@@ -5167,7 +5204,7 @@ body.motion-off .boot-avatar{ animation:none; }
 .lg-head{ display:flex; align-items:baseline; justify-content:space-between; }
 .lg-head b{ font-size:.9rem; }
 .lg-head i{ font-style:normal; font-size:.64rem; color:var(--m-ink2); }
-.lg-intro{ margin:7px 0 4px; font-size:.74rem; line-height:1.85; color:#4a515b; }
+.lg-intro{ margin:7px 0 4px; font-size:.74rem; line-height:1.85; color:#454c56; }
 .lg-sec{ margin:12px 0 6px; font-size:.68rem; letter-spacing:.08em; color:var(--m-ink2); }
 .lg-item{ display:flex; gap:8px; align-items:flex-start; padding:4px 0; font-size:.75rem; line-height:1.8; color:#3a4048; }
 .lg-tag{
@@ -5228,10 +5265,14 @@ body:not(.night) .mos{
   color:#1c1f24;
 }
 body:not(.night) .mos-bar{ color:#1c1f24; }
+body:not(.night) .mos-time{ color:#1c1f24; }
+body:not(.night) .mos-sig,
+body:not(.night) .mos-wifi,
+body:not(.night) .mos-bat{ background:#3a4048; }
 body:not(.night) .mos-clock{ color:#1c1f24; text-shadow:none; }
 body:not(.night) .mos-date{ color:rgba(28,31,36,.62); }
 body:not(.night) .mos-name{ color:rgba(28,31,36,.82); text-shadow:none; }
-body:not(.night) .mos-note{ color:rgba(28,31,36,.3); }
+body:not(.night) .mos-note{ color:rgba(28,31,36,.52); }
 body:not(.night) .mos-ico{ background:rgba(0,0,0,.05); box-shadow:0 2px 8px rgba(20,25,40,.12); }
 body:not(.night) .mos-exit{ background:rgba(0,0,0,.07); color:#3a4048; }
 
@@ -5261,7 +5302,8 @@ body.night .lg-item{ color:#c3c8d0; }
 body.night .bk-meta{ color:#aeb5bf; }
 body.night .mapp-sw{ background:#3a3f47; }
 body.night .mapp-range::-webkit-slider-runnable-track{ background:#3a3f47; }
-body.night .mapp-foot{ color:#6f767f; }
+body.night .mapp-foot{ color:#9aa2ae; }
+body.night .mapp-ar{ color:#8b93a1; }
 body.night .mos-appview .mos-exit{ background:rgba(255,255,255,.12); }
 
 /* =========================================================
@@ -5502,9 +5544,9 @@ body.is-portrait .sprite-layer[data-count="4"] .sprite{
   display:grid; place-items:center; font-size:1rem; color:#fff;
   font-weight:600;
 }
-.g-2048{ background:linear-gradient(145deg,#f0a24a,#e0742f); }
-.g-mine{ background:linear-gradient(145deg,#5b8def,#3f63c9); }
-.g-snake{ background:linear-gradient(145deg,#7fbf6a,#4e9645); }
+.g-2048{ background:linear-gradient(145deg,#c9701f,#a14f10); }
+.g-mine{ background:linear-gradient(145deg,#3a63c4,#2b4a9e); }
+.g-snake{ background:linear-gradient(145deg,#4e8a3c,#356a29); }
 .gc-t{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .gc-t b{ font-size:.9rem; font-weight:500; }
 .gc-t i{ font-style:normal; font-size:.66rem; color:var(--m-ink2); }
@@ -5573,7 +5615,7 @@ body.night .mn-cell.is-open{ background:#24272c; }
 .mn-cell.n1{ color:#2f6be4; } .mn-cell.n2{ color:#2b8b4f; }
 .mn-cell.n3{ color:#d33b40; } .mn-cell.n4{ color:#7a4bc9; }
 .mn-cell.n5{ color:#a05a2c; } .mn-cell.n6{ color:#2a8f9c; }
-.mn-cell.n7{ color:#4a515b; } .mn-cell.n8{ color:#8b93a1; }
+.mn-cell.n7{ color:#454c56; } .mn-cell.n8{ color:#5f6672; }
 
 /* =========================================================
    钉钉进步体：只用在标题级，不碰正文
@@ -5737,7 +5779,10 @@ body.night .mn-cell.is-open{ background:#24272c; }
 .dl-beta-tag{
   flex:0 0 auto; padding:1px 7px; border-radius:6px;
   font-size:.6rem; letter-spacing:.12em; text-transform:uppercase;
-  color:#c96a4a; background:rgba(201,106,74,.16); border:1px solid rgba(201,106,74,.34);
+  color:#a34d2f; background:rgba(201,106,74,.16); border:1px solid rgba(201,106,74,.34);
+}
+body.night .dl-beta-tag{
+  color:#e8a184; background:rgba(201,106,74,.22); border-color:rgba(201,106,74,.44);
 }
 .dl-beta p{
   margin:0; font-size:.7rem; line-height:1.65; color:var(--m-ink2);
@@ -6047,3 +6092,180 @@ a.boot-ids{
 }
 a.boot-ids:hover{ color:#f6f3ec; opacity:1; }
 a.boot-ids.is-dim:hover{ color:rgba(246,243,236,.8); }
+
+/* =========================================================
+   v0.6.5 修复
+   ---------------------------------------------------------
+   这一节只放"上一版明显坏了"的东西，按问题分组，方便以后回看。
+   ========================================================= */
+
+/* ---- 1. 顶部菜单展开后看不见字 ----
+   深色模式下 --ink-2 是**深色**，被套在压在背景图上的顶栏按钮上，
+   等于把字涂成和背景一样的黑。这里直接钉死浅色，不跟主题走。 */
+.hud .hbtn,
+.hud .hud-chapter,
+.hud .hud-day{
+  color:rgba(247,244,236,.86);
+}
+.hud .hbtn:hover{ color:#fff; }
+.hud .hbtn.active{ color:#f6e9c9; }
+
+/* ---- 2. 校园通 / 计算器 / 浏览器：别人的界面，永远浅色 ----
+   这些页面里的文字和卡片全是按浅色写死的（深灰字 + 白卡片），
+   而深色模式把 .mos-appview 的底换成了 #15171b，
+   结果就是"深灰字压深黑底"——校园通整页看不见字。
+   与其给每个组件再写一套深色皮肤，不如让它们保持拟真的浅色：
+   现实里的校园通也不会跟着你的手机变成黑的。 */
+.cp, .cpn, .cpd, .cps, .cpc, .cpr, .cpa, .mch, .mca, .br, .mg, .mgd{
+  background:#f5f2ea;
+  min-height:100%;
+  box-sizing:border-box;
+}
+body.night .cp, body.night .cpn, body.night .cpd, body.night .cps,
+body.night .cpc, body.night .cpr, body.night .cpa, body.night .mch,
+body.night .mca, body.night .br, body.night .mg, body.night .mgd{
+  color:#2b2f36;
+}
+body.night .cp-note b,
+body.night .cpn-title,
+body.night .cps-case-t{ color:#2b2f36; }
+
+/* ---- 3. 计算器的等号 ---- */
+.mk.is-eq{
+  background:#2f6be4; color:#fff; font-weight:700;
+  border-color:#2f6be4;
+}
+.mk.is-eq:active{ background:#2456bd; }
+
+/* ---- 4. 手机里的更新日志：深色模式下卡片也得跟着变深 ----
+   以前只把字改成浅灰，卡片底还是白的，浅字白底等于看不见。 */
+body.night .lg-ver{ background:#212429; box-shadow:none; }
+body.night .lg-intro{ color:#aeb5bf; }
+body.night .lg-item{ color:#c8ced6; }
+body.night .lg-sec{ color:#8d949f; }
+body.night .lg-tag{ background:#2a2e34; color:#aeb5bf; }
+body.night .lg-tag.new{ background:rgba(47,107,228,.18); color:#7fa6ff; }
+body.night .lg-tag.fix{ background:rgba(229,72,77,.18); color:#ff8b8f; }
+body.night .lg-tag.opt{ background:rgba(49,160,90,.18); color:#6fd394; }
+
+/* ---- 5. 滚动：面板与手机页面 ----
+   面板里内容比视口长时必须能滚到底（设置页就是个典型）。
+   以前 .panel-body 没有 flex:1 1 auto，高度按内容撑，
+   超出部分被 .panel 的 overflow:hidden 直接裁掉，看起来"划不动"。 */
+.panel-body{
+  flex:1 1 auto; min-height:0;
+  overflow-y:auto; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.panel-body.mos-host{ flex:1 1 auto; min-height:0; }
+.panel-body.mos-host > .mos{
+  flex:1 1 auto; min-height:0; height:auto; max-height:none;
+}
+.mos-view{
+  flex:1 1 auto; min-height:0;
+  overflow-y:auto; overscroll-behavior:contain;
+  touch-action:pan-y; -webkit-overflow-scrolling:touch;
+}
+.mos-appview{ min-height:0; }
+
+/* ---- 6. 圆角：补齐漏掉的几处 ---- */
+.tcard, .tcard-sm, .title-quit, .age-btn, .hbtn, .hud-island,
+.cp-entry, .cp-note, .cpn-item, .cps-cat, .cps-case, .cpc-ta, .cpc-sel,
+.cpd-attach, .mk, .mca-screen, .lg-ver, .lg-tag, .mapp-card,
+.st-row, .st-tab, .dl-person, .about-link, .skip-card{
+  border-radius:var(--r-1);
+}
+.cp-entry, .mk, .mca-screen, .lg-ver, .cps-cat, .cps-case, .cpd-attach{
+  border-radius:12px;
+}
+.hud-island, .hbtn, .title-quit, .age-btn{ border-radius:999px; }
+.lg-tag{ border-radius:5px; }
+
+/* =========================================================
+   v0.6.5 校园通补全
+   ---------------------------------------------------------
+   成绩查询 / 请假 / 我的课表 / 我的课后服务 四个页面。
+   和已有的校园通页面一样：纸感浅色底、深灰字、深色模式也不翻色。
+   ========================================================= */
+.cpsc{ padding:14px; }
+.cpsc-card{
+  background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:12px;
+  padding:13px 14px; margin-bottom:10px; cursor:pointer;
+}
+.cpsc-head{ display:flex; flex-direction:column; gap:2px; margin-bottom:9px; }
+.cpsc-term{ font-size:.8rem; font-weight:600; color:#2b2f36; line-height:1.5; }
+.cpsc-date{ font-size:.66rem; color:#5f6672; }
+.cpsc-sum{ display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
+.cpsc-total{ font-size:.8rem; color:#2b2f36; }
+.cpsc-total b{ font-size:1.3rem; font-family:var(--serif); color:#2f6be4; }
+.cpsc-rank{ font-size:.68rem; color:#5f6672; }
+.cpsc-list{ list-style:none; margin:0; padding:0; }
+.cpsc-row{ display:flex; align-items:center; gap:9px; padding:3px 0; }
+.cpsc-sub{ flex:0 0 3.2em; font-size:.72rem; color:#33383f; }
+.cpsc-bar{ flex:1 1 auto; height:5px; border-radius:3px; background:#eceef1; overflow:hidden; }
+.cpsc-bar i{ display:block; height:100%; background:#2f6be4; border-radius:3px; }
+.cpsc-num{ flex:0 0 2.4em; text-align:right; font-size:.72rem; color:#2b2f36; }
+.cpsc-note{ margin:9px 0 0; font-size:.64rem; color:#5f6672; }
+
+.cpsd{ padding:14px; }
+.cpsd-t{ margin:0 0 4px; font-size:.92rem; color:#2b2f36; line-height:1.6; }
+.cpsd-meta{ margin:0 0 12px; font-size:.7rem; color:#5f6672; }
+.cpsd-table{ width:100%; border-collapse:collapse; font-size:.74rem; }
+.cpsd-table th{
+  text-align:left; font-weight:600; color:#5f6672; font-size:.68rem;
+  padding:6px 8px; border-bottom:1px solid rgba(0,0,0,.08);
+}
+.cpsd-table td{ padding:7px 8px; border-bottom:1px solid rgba(0,0,0,.05); color:#33383f; }
+.cpsd-table td:nth-child(2){ font-weight:600; color:#2b2f36; }
+.cpsd-table td:nth-child(4){ color:#5f6672; }
+.cpsd-note{ margin:12px 0 0; font-size:.72rem; color:#5f6672; line-height:1.8; }
+.cpsd-btn{ width:100%; margin-top:12px; }
+
+.cpl{ padding:14px; }
+.cpl-tip{ margin:0 0 14px; font-size:.72rem; color:#5f6672; line-height:1.8; }
+.cpl-f{ display:block; margin-bottom:13px; }
+.cpl-l{ display:block; margin-bottom:6px; font-size:.74rem; color:#33383f; }
+.cpl-sel,.cpl-in,.cpl-ta{
+  width:100%; padding:9px 11px; border-radius:9px;
+  border:1px solid rgba(0,0,0,.12); background:#fff;
+  font-size:.78rem; font-family:inherit; color:#1e2228;
+}
+.cpl-ta{ resize:vertical; line-height:1.7; }
+.cpl-check{ display:flex; align-items:center; gap:8px; margin:4px 0 14px; font-size:.74rem; color:#33383f; }
+.cpl-submit{ width:100%; }
+.cpl-history{ margin-top:14px; }
+
+.cpt{ padding:14px; }
+.cpt-head{ display:flex; flex-direction:column; gap:2px; margin-bottom:12px; }
+.cpt-week{ font-size:.86rem; font-weight:600; color:#2b2f36; }
+.cpt-sub{ font-size:.68rem; color:#5f6672; }
+.cpt-grid{
+  display:grid; grid-template-columns:3.2em repeat(5,1fr);
+  gap:1px; background:rgba(0,0,0,.07);
+  border:1px solid rgba(0,0,0,.07); border-radius:10px; overflow:hidden;
+}
+.cpt-corner,.cpt-day,.cpt-slot,.cpt-cell{ background:#fff; padding:8px 4px; text-align:center; font-size:.68rem; }
+.cpt-day{ font-weight:600; color:#2b2f36; background:#f0f1f3; }
+.cpt-slot{ color:#5f6672; background:#f7f8fa; font-size:.64rem; }
+.cpt-cell{ color:#33383f; }
+.cpt-cell.is-after{ background:#eef4ff; color:#2f6be4; font-weight:600; }
+.cpt-note{ margin:11px 0 0; font-size:.68rem; color:#5f6672; line-height:1.8; }
+
+.cpaf{ padding:14px; }
+.cpaf-card{ background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:12px; padding:13px 14px; margin-bottom:10px; }
+.cpaf-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
+.cpaf-t{ font-size:.86rem; font-weight:600; color:#2b2f36; }
+.cpaf-tag{ font-size:.64rem; padding:2px 9px; border-radius:9px; background:#eceef1; color:#5f6672; }
+.cpaf-tag.is-on{ background:#e6f6ed; color:#128a4c; }
+.cpaf-kv{ margin:0 0 5px; font-size:.74rem; color:#33383f; line-height:1.7; }
+.cpaf-kv b{ color:#2b2f36; }
+.cpaf-list{ list-style:none; margin:0; padding:0; }
+.cpaf-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid rgba(0,0,0,.05); }
+.cpaf-row:last-child{ border-bottom:none; }
+.cpaf-d{ font-size:.74rem; color:#33383f; }
+.cpaf-s{ font-size:.68rem; color:#5f6672; text-align:right; }
+.cpaf-note{ margin:0; font-size:.68rem; color:#5f6672; line-height:1.8; }
+
+/* 这几个页面在深色模式下也保持浅色（拟真的第三方界面） */
+body.night .cpsc, body.night .cpsd, body.night .cpl,
+body.night .cpt, body.night .cpaf{ color:#2b2f36; }
