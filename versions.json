@@ -6,7 +6,7 @@
       "date": "2026-11-01",
       "shell": "0.6.7.0",
       "www": "www-0.6.7.0.zip",
-      "sha256": "0fa17f1dcc419fb4d7fe44997d05455cde41b878f97399d0f612bcf773ec1081",
+      "sha256": "c900a923fce8cee7ee8af79b80e6cdc2bc3f8aca677c198922df82647cb0cf51",
       "size": 38880107,
       "title": "本次更新修掉了几个用着不顺手的地方：手机端存档能正常导入了，说话带表情不会再卡住",
       "notes": [
