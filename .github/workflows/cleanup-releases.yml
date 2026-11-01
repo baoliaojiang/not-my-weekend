@@ -1,0 +1,64 @@
+name: cleanup-releases
+
+# 手动触发：删掉除指定版本之外的所有旧 Release（以及对应 tag）。
+# 为什么要这个：玩家看到的"最新版本"只应该有一个，
+# 旧 Release 挂在页面上会让人下载到过期包。
+#
+# 触发方式：GitHub 页面 → Actions → cleanup-releases → Run workflow，
+# 在 "keep" 里填要保留的 tag（例如 v0.6.6.0），留空则保留最新的一个。
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep:
+        description: '要保留的 tag，例如 v0.6.6.0；留空表示保留最新发布的那一个'
+        required: false
+        type: string
+      delete_tags:
+        description: '是否同时删除旧 tag（默认是）'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 删掉旧 Release（保留 keep 指定的那一个）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEP: ${{ inputs.keep }}
+          DELETE_TAGS: ${{ inputs.delete_tags }}
+        run: |
+          set -e
+          # 先确定要保留哪一个
+          if [ -n "$KEEP" ]; then
+            KEEP_TAG="$KEEP"
+          else
+            KEEP_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          fi
+          echo "保留：$KEEP_TAG"
+
+          # 所有 Release id（排除保留的那个）
+          gh api "repos/${{ github.repository }}/releases" --paginate \
+            --jq '.[] | "\(.id) \(.tag_name)"' \
+            | while IFS=' ' read -r id tag; do
+                [ -z "$id" ] && continue
+                if [ "$tag" = "$KEEP_TAG" ]; then
+                  echo "跳过（保留）：$tag"
+                  continue
+                fi
+                echo "删除 Release：$tag"
+                gh api -X DELETE "repos/${{ github.repository }}/releases/$id"
+                if [ "$DELETE_TAGS" = "true" ]; then
+                  echo "删除 tag：$tag"
+                  git tag -d "$tag" || true
+                  git push origin ":refs/tags/$tag" || true
+                fi
+              done
+
+          echo '--- 剩下的 Release ---'
+          gh release list --limit 20
