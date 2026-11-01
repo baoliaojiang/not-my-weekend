@@ -78,8 +78,26 @@ jobs:
           cp /tmp/rel/win/* dist/win/ 2>/dev/null || true
           # GitHub 会把非 ASCII 文件名压成同一串（两个中文 APK 都会变成 -0.6.2.3-.apk），
           # 第二个就会撞名被当成「更新已存在附件」而 404。所以附件改用 ASCII 文件名。
-          cp /tmp/rel/apk/*标准版*.apk dist/rel/NotMyWeekend-${{ steps.ver.outputs.v }}-standard.apk 2>/dev/null || true
-          cp /tmp/rel/apk/*兼容版*.apk dist/rel/NotMyWeekend-${{ steps.ver.outputs.v }}-compat.apk 2>/dev/null || true
+          #
+          # dist/apk 里存的已经是 ASCII 名（NotMyWeekend-<版本>-standard.apk），
+          # 早先这里按中文名「*标准版*」去匹配，匹配不到，
+          # 于是 Release 页面一个 APK 附件都没有。这里两种命名都认，
+          # 认不到就直接失败，别再悄悄发出一个没有 APK 的版本。
+          V="${{ steps.ver.outputs.v }}"
+          if   ls /tmp/rel/apk/*standard*.apk >/dev/null 2>&1; then
+            cp /tmp/rel/apk/*standard*.apk "dist/rel/NotMyWeekend-${V}-standard.apk"
+          elif ls /tmp/rel/apk/*标准版*.apk >/dev/null 2>&1; then
+            cp /tmp/rel/apk/*标准版*.apk "dist/rel/NotMyWeekend-${V}-standard.apk"
+          else
+            echo "::error::dist/apk 里找不到标准版 APK"; exit 1
+          fi
+          if   ls /tmp/rel/apk/*compat*.apk >/dev/null 2>&1; then
+            cp /tmp/rel/apk/*compat*.apk "dist/rel/NotMyWeekend-${V}-compat.apk"
+          elif ls /tmp/rel/apk/*兼容版*.apk >/dev/null 2>&1; then
+            cp /tmp/rel/apk/*兼容版*.apk "dist/rel/NotMyWeekend-${V}-compat.apk"
+          else
+            echo "::error::dist/apk 里找不到兼容版 APK"; exit 1
+          fi
           ls -lh dist/rel dist/win
 
       - name: 清理旧附件（避免同名「更新附件」404）
